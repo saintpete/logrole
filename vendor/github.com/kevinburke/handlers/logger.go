@@ -19,6 +19,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/inconshreveable/log15/term"
+	"github.com/kevinburke/rest"
 	"github.com/mattn/go-colorable"
 )
 
@@ -35,6 +36,7 @@ func init() {
 	} else {
 		Logger.SetHandler(log15.StreamHandler(os.Stdout, logfmtFormat()))
 	}
+	rest.Logger = Logger
 }
 
 // LogfmtFormat prints records in logfmt format, an easy machine-parseable but human-readable

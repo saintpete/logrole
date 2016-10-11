@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"crypto/subtle"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,10 +14,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kevinburke/rest"
 	"github.com/satori/go.uuid"
 )
 
-const version = "0.9"
+const version = "0.10"
 
 // All wraps h with every handler in this file.
 func All(h http.Handler, serverName string) http.Handler {
@@ -72,6 +74,40 @@ func UUID(h http.Handler) http.Handler {
 		rid := r.Header.Get("X-Request-Id")
 		if rid == "" {
 			r = SetRequestID(r, uuid.NewV4())
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+// BasicAuth protects all requests to the given handler, unless the request has
+// basic auth with a username and password in the users map.
+func BasicAuth(h http.Handler, realm string, users map[string]string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+		if !ok {
+			rest.Unauthorized(w, r, realm)
+			return
+		}
+
+		serverPass, ok := users[user]
+		if !ok {
+			if user == "" {
+				rest.Unauthorized(w, r, realm)
+			} else {
+				rest.Forbidden(w, r, &rest.Error{
+					Title: "Username or password are invalid. Please double check your credentials",
+					ID:    "forbidden",
+				})
+			}
+			return
+		}
+		if subtle.ConstantTimeCompare([]byte(pass), []byte(serverPass)) != 1 {
+			rest.Forbidden(w, r, &rest.Error{
+				Title:    fmt.Sprintf("Incorrect password for user %s", user),
+				ID:       "incorrect_password",
+				Instance: r.URL.Path,
+			})
+			return
 		}
 		h.ServeHTTP(w, r)
 	})

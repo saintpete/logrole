@@ -23,8 +23,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/handlers",
-			"Comment": "0.9",
-			"Rev": "fa2039ed15f04400fd5d2fcaefd5597647a10670"
+			"Comment": "0.10",
+			"Rev": "4970646695ad0b4a2fa59a3b9ffe2810fae4ea37"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
@@ -43,6 +43,11 @@
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
+		},
+		{
+			"ImportPath": "github.com/kevinburke/rest",
+			"Comment": "0.8",
+			"Rev": "e528b2440f4c3dc2ba3f6d9f2c1a4d05215982eb"
 		}
 	]
 }

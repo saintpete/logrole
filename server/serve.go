@@ -1,6 +1,10 @@
 package server
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/kevinburke/handlers"
+)
 
 type server struct {
 }
@@ -33,8 +37,12 @@ func UpgradeInsecureHandler(h http.Handler, allowUnencryptedTraffic bool) http.H
 	})
 }
 
-var Server = NewServer(false)
-
-func NewServer(allowUnencryptedTraffic bool) http.Handler {
-	return UpgradeInsecureHandler(&server{}, allowUnencryptedTraffic)
+// NewServer returns a new Handler that can serve requests. If the users map is
+// empty, Basic Authentication is disabled.
+func NewServer(allowUnencryptedTraffic bool, users map[string]string) http.Handler {
+	var h http.Handler = &server{}
+	if len(users) > 0 {
+		h = handlers.BasicAuth(&server{}, "logrole", users)
+	}
+	return UpgradeInsecureHandler(h, allowUnencryptedTraffic)
 }

@@ -6,8 +6,19 @@ import (
 	"testing"
 )
 
+func TestUnknownUsersDenied(t *testing.T) {
+	s := NewServer(true, map[string]string{"test": "test"})
+	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
+	req.SetBasicAuth("test", "wrongpassword")
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, req)
+	if w.Code != 403 {
+		t.Errorf("expected Code to be 403, got %d", w.Code)
+	}
+}
+
 func TestRequestsUpgraded(t *testing.T) {
-	s := NewServer(false)
+	s := NewServer(false, map[string]string{})
 	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
 	req.Header.Set("X-Forwarded-Proto", "http")
 	w := httptest.NewRecorder()

@@ -1,5 +1,5 @@
 serve:
-	go run commands/server/*.go
+	go run commands/server/*.go --user=test --password=test
 
 test: vet
 	go test -short ./server/... ./commands/...
