@@ -23,8 +23,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/handlers",
-			"Comment": "0.10",
-			"Rev": "4970646695ad0b4a2fa59a3b9ffe2810fae4ea37"
+			"Comment": "0.11",
+			"Rev": "7de6d365f512f9063cdf3e9ceaa0fe36aed6fd43"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
