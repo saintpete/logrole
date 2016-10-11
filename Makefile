@@ -15,3 +15,6 @@ assets: templates/sms.html static/css/bootstrap.min.css
 
 watch:
 	justrun -c 'make assets serve' templates/sms.html server/serve.go
+
+deps:
+	godep save ./...

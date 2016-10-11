@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -11,28 +12,41 @@ import (
 	"github.com/kevinburke/handlers"
 	"github.com/saintpete/logrole/server"
 	"github.com/saintpete/logrole/services"
+	yaml "gopkg.in/yaml.v2"
 )
 
-const DefaultPort = "4114"
+type config struct {
+	Port       string       `yaml:"port"`
+	AccountSID string       `yaml:"twilio_account_sid"`
+	AuthToken  string       `yaml:"twilio_auth_token"`
+	User       string       `yaml:"basic_auth_user"`
+	Password   string       `yaml:"basic_auth_password"`
+	Realm      services.Rlm `yaml:"realm"`
+}
 
 func main() {
-	fmt.Printf("environ: %v\n", os.Environ())
-	port := flag.String("port", DefaultPort, "Port to listen on")
-
-	user := flag.String("user", "", "Username for HTTP Basic Auth")
-	pass := flag.String("password", "", "Password for HTTP Basic Auth")
+	cfg := flag.String("config", "config.yml", "Path to a config file")
 	flag.Parse()
-	realm := services.Realm()
-	if realm == services.Prod && (*user == "" || *pass == "") {
+	data, err := ioutil.ReadFile(*cfg)
+	if err != nil {
+		handlers.Logger.Error("Couldn't find config file", "err", err)
+		os.Exit(2)
+	}
+	c := new(config)
+	if err := yaml.Unmarshal(data, c); err != nil {
+		handlers.Logger.Error("Couldn't parse config file", "err", err)
+		os.Exit(2)
+	}
+	if c.Realm == services.Prod && (c.User == "" || c.Password == "") {
 		handlers.Logger.Error("Cannot run in production without Basic Auth")
 		os.Exit(2)
 	}
 	allowHTTP := false
-	if realm == services.Local {
+	if c.Realm == services.Local {
 		allowHTTP = true
 	}
 	s := server.NewServer(allowHTTP, map[string]string{
-		*user: *pass,
+		c.User: c.Password,
 	})
 	publicMux := http.NewServeMux()
 	publicMux.Handle("/", s)
@@ -47,14 +61,14 @@ func main() {
 			),
 		),
 	}
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", *port))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", c.Port))
 	if err != nil {
-		handlers.Logger.Error("Error listening", "err", err, "port", *port)
+		handlers.Logger.Error("Error listening", "err", err, "port", c.Port)
 		os.Exit(2)
 	}
 	go func(p string) {
 		time.Sleep(30 * time.Millisecond)
 		handlers.Logger.Info("Started server", "port", p)
-	}(*port)
+	}(c.Port)
 	publicServer.Serve(listener)
 }

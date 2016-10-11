@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+# Drop some environment variables by writing them to a config file, and then
+# start the server.
+
+main() {
+	local current_directory="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+	local config="$current_directory/../config.yml"
+	echo "port: $PORT" >> "$config"
+	echo "basic_auth_user: $BASIC_AUTH_USER" >> "$config"
+	echo "basic_auth_password: $BASIC_AUTH_PASS" >> "$config"
+	echo "twilio_account_sid: $TWILIO_ACCOUNT_SID" >> "$config"
+	echo "twilio_auth_token: $TWILIO_AUTH_TOKEN" >> "$config"
+	echo "realm: $REALM" >> "$config"
+
+	exec envdir "$current_directory/../env" server --config="$config"
+}
+
+main "$@"

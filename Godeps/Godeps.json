@@ -27,6 +27,11 @@
 			"Rev": "7de6d365f512f9063cdf3e9ceaa0fe36aed6fd43"
 		},
 		{
+			"ImportPath": "github.com/kevinburke/rest",
+			"Comment": "0.8",
+			"Rev": "e528b2440f4c3dc2ba3f6d9f2c1a4d05215982eb"
+		},
+		{
 			"ImportPath": "github.com/mattn/go-colorable",
 			"Comment": "v0.0.5",
 			"Rev": "9056b7a9f2d1f2d96498d6d146acd1f9d5ed3d59"
@@ -45,9 +50,8 @@
 			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
 		},
 		{
-			"ImportPath": "github.com/kevinburke/rest",
-			"Comment": "0.8",
-			"Rev": "e528b2440f4c3dc2ba3f6d9f2c1a4d05215982eb"
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "a5b47d31c556af34a302ce5d659e6fea44d90de0"
 		}
 	]
 }
