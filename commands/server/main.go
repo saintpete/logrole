@@ -16,6 +16,7 @@ import (
 const DefaultPort = "4114"
 
 func main() {
+	fmt.Printf("environ: %v\n", os.Environ())
 	port := flag.String("port", DefaultPort, "Port to listen on")
 
 	user := flag.String("user", "", "Username for HTTP Basic Auth")
