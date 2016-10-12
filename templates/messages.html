@@ -27,6 +27,7 @@
           <tr>
             <th>Date</th>
             <th>Direction</th>
+            <th>Status</th>
             <th class="pn">From</th>
             <th class="pn">To</th>
             <th>Body</th>
@@ -37,6 +38,7 @@
           <tr class="message">
             <td> {{ friendly_date (.DateCreated.Time.In $.Loc) }} </td>
             <td> {{ .Direction.Friendly }} </td>
+            <td> {{ .Status.Friendly }} </td>
             <td class="pn"> {{ .From.Friendly }} </td>
             <td class="pn"> {{ .To.Friendly }} </td>
             <td> {{ .Body }} </td>
