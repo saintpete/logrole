@@ -16,7 +16,7 @@ import (
 	"github.com/saintpete/logrole/services"
 )
 
-const Version = "0.1"
+const Version = "0.2"
 
 var messageTemplate *template.Template
 var year = time.Now().UTC().Year()
