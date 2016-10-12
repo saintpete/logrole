@@ -16,10 +16,15 @@ import (
 )
 
 var messageTemplate *template.Template
+var year = time.Now().UTC().Year()
+
+var funcMap = template.FuncMap{
+	"year": func() int { return year },
+}
 
 func init() {
 	idx := assets.MustAsset("templates/messages.html")
-	messageTemplate = template.Must(template.New("messages").Parse(string(idx))).Option("missingkey=error")
+	messageTemplate = template.Must(template.New("messages").Funcs(funcMap).Parse(string(idx))).Option("missingkey=error")
 	staticServer = &static{
 		modTime: time.Now().UTC(),
 	}
@@ -30,12 +35,14 @@ type static struct {
 }
 
 type server struct {
-	Client *twilio.Client
+	Client   *twilio.Client
+	Location *time.Location
 }
 
 type messageData struct {
 	Duration time.Duration
 	Page     *twilio.MessagePage
+	Loc      *time.Location
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +54,11 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	duration := time.Since(start)
-	if err := messageTemplate.Execute(w, messageData{duration, page}); err != nil {
+	if err := messageTemplate.Execute(w, messageData{
+		Duration: duration,
+		Page:     page,
+		Loc:      s.Location,
+	}); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -85,9 +96,13 @@ func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // NewServer returns a new Handler that can serve requests. If the users map is
 // empty, Basic Authentication is disabled.
-func NewServer(allowUnencryptedTraffic bool, users map[string]string, client *twilio.Client) http.Handler {
+func NewServer(allowUnencryptedTraffic bool, users map[string]string, client *twilio.Client, location *time.Location) http.Handler {
 	s := &server{
-		Client: client,
+		Client:   client,
+		Location: location,
+	}
+	if location == nil {
+		s.Location = time.UTC
 	}
 	r := new(handlers.Regexp)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, s)

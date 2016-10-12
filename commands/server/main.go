@@ -25,6 +25,7 @@ type config struct {
 	User       string       `yaml:"basic_auth_user"`
 	Password   string       `yaml:"basic_auth_password"`
 	Realm      services.Rlm `yaml:"realm"`
+	Timezone   string       `yaml:"timezone"`
 }
 
 func main() {
@@ -58,7 +59,20 @@ func main() {
 	if c.User != "" {
 		users[c.User] = c.Password
 	}
-	s := server.NewServer(allowHTTP, users, client)
+	var location *time.Location
+	if c.Timezone == "" {
+		handlers.Logger.Info("No timezone provided, defaulting to UTC")
+		location = time.UTC
+	} else {
+		var err error
+		location, err = time.LoadLocation(c.Timezone)
+		if err != nil {
+			handlers.Logger.Error("Couldn't find timezone", "err", err, "timezone", c.Timezone)
+			os.Exit(2)
+		}
+	}
+
+	s := server.NewServer(allowHTTP, users, client, location)
 	publicMux := http.NewServeMux()
 	publicMux.Handle("/", s)
 	publicServer := http.Server{

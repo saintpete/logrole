@@ -7,7 +7,7 @@ import (
 )
 
 func TestUnknownUsersDenied(t *testing.T) {
-	s := NewServer(true, map[string]string{"test": "test"}, nil)
+	s := NewServer(true, map[string]string{"test": "test"}, nil, nil)
 	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
 	req.SetBasicAuth("test", "wrongpassword")
 	w := httptest.NewRecorder()
@@ -18,7 +18,7 @@ func TestUnknownUsersDenied(t *testing.T) {
 }
 
 func TestRequestsUpgraded(t *testing.T) {
-	s := NewServer(false, map[string]string{}, nil)
+	s := NewServer(false, map[string]string{}, nil, nil)
 	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
 	req.Header.Set("X-Forwarded-Proto", "http")
 	w := httptest.NewRecorder()

@@ -14,6 +14,7 @@ main() {
 	echo "twilio_account_sid: $TWILIO_ACCOUNT_SID" >> "$config"
 	echo "twilio_auth_token: $TWILIO_AUTH_TOKEN" >> "$config"
 	echo "realm: $REALM" >> "$config"
+	echo "timezone: $TZ" >> "$config"
 
 	exec envdir "$current_directory/../env" server --config="$config"
 }
