@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"runtime"
+	"strings"
 	"time"
 )
 
@@ -18,7 +20,7 @@ type UploadType string
 var JSON UploadType = "application/json"
 var FormURLEncoded UploadType = "application/x-www-form-urlencoded"
 
-const Version = "0.8"
+const Version = "0.9"
 
 var defaultTimeout = 6500 * time.Millisecond
 var defaultHttpClient = &http.Client{Timeout: defaultTimeout}
@@ -72,7 +74,10 @@ func (c *Client) NewRequest(method, path string, body io.Reader) (*http.Request,
 	if c.ID != "" || c.Token != "" {
 		req.SetBasicAuth(c.ID, c.Token)
 	}
-	req.Header.Add("User-Agent", fmt.Sprintf("rest-client/%s (https://github.com/kevinburke/rest)", Version))
+	gv := strings.Replace(runtime.Version(), "go", "", 1)
+	ua := fmt.Sprintf("rest-client/%s (https://github.com/kevinburke/rest) go/%s (%s/%s)",
+		Version, gv, runtime.GOOS, runtime.GOARCH)
+	req.Header.Add("User-Agent", ua)
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Accept-Charset", "utf-8")
 	if method == "POST" || method == "PUT" {

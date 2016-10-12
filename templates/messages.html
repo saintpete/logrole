@@ -17,7 +17,12 @@
 
         <div class="container">
           <h2>Messages</h2>
-          <p>Hello world! This is HTML5 Boilerplate.</p>
+          {{ range .Page.Messages }}
+          <div class="message">
+            {{ .Sid }}
+          </div>
+          {{ end }}
+          API request time: {{ .Duration }}
         </div>
     </body>
 </html>

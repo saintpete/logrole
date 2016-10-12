@@ -4,19 +4,21 @@ import (
 	"bytes"
 	"html/template"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
+	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/assets"
 )
 
 var messageTemplate *template.Template
 
 func init() {
-	idx := assets.MustAsset("templates/sms.html")
+	idx := assets.MustAsset("templates/messages.html")
 	messageTemplate = template.Must(template.New("messages").Parse(string(idx))).Option("missingkey=error")
 	staticServer = &static{
 		modTime: time.Now().UTC(),
@@ -28,11 +30,24 @@ type static struct {
 }
 
 type server struct {
+	Client *twilio.Client
+}
+
+type messageData struct {
+	Duration time.Duration
+	Page     *twilio.MessagePage
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := messageTemplate.Execute(w, nil); err != nil {
+	start := time.Now()
+	page, err := s.Client.Messages.GetPage(url.Values{})
+	if err != nil {
+		rest.ServerError(w, r, err)
+		return
+	}
+	duration := time.Since(start)
+	if err := messageTemplate.Execute(w, messageData{duration, page}); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -70,8 +85,10 @@ func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // NewServer returns a new Handler that can serve requests. If the users map is
 // empty, Basic Authentication is disabled.
-func NewServer(allowUnencryptedTraffic bool, users map[string]string) http.Handler {
-	s := &server{}
+func NewServer(allowUnencryptedTraffic bool, users map[string]string, client *twilio.Client) http.Handler {
+	s := &server{
+		Client: client,
+	}
 	r := new(handlers.Regexp)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, s)
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
