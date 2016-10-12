@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;subset=latin-ex" rel="stylesheet">
   </head>
   <body>
     <!--[if lte IE 9]>
@@ -45,7 +46,7 @@
           {{- end }}
         </tbody>
       </table>
-      {{ if .Page.NextPageURI.Valid }}
+      {{- if .Page.NextPageURI.Valid }}
       <div class="row">
         <div class="col-md-2 col-md-offset-10">
           <a class="btn btn-info btn-lg btn-default btn-next" href="/messages?next={{ shorturl .Page.NextPageURI.String }}">Next Page</a>

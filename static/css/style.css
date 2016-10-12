@@ -5,10 +5,11 @@ footer {
 /* TODO media queries here - not as wide margins on smaller screens */
 .page {
 	margin: 30px 40px;
+	font-family: 'PT Sans', Helvetica, Arial, sans-serif;
 }
 
 .pn {
-	min-width: 135px;
+	min-width: 110px;
 }
 
 .btn-next {
