@@ -51,14 +51,22 @@ type messageData struct {
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	query := r.URL.Query()
 	start := time.Now()
-	page, err := s.Client.Messages.GetPage(url.Values{})
+	page := new(twilio.MessagePage)
+	var err error
+	next := query.Get("next")
+	if next != "" && strings.HasPrefix(next, "/"+twilio.APIVersion) {
+		err = s.Client.GetNextPage(next, page)
+	} else {
+		page, err = s.Client.Messages.GetPage(url.Values{})
+	}
 	if err != nil {
 		rest.ServerError(w, r, err)
 		return
 	}
 	duration := time.Since(start)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := messageTemplate.Execute(w, messageData{
 		Duration: duration,
 		Page:     page,

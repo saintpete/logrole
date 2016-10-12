@@ -2,8 +2,9 @@ footer {
 	margin-top: 40px;
 }
 
+/* TODO media queries here - not as wide margins on smaller screens */
 .page {
-	margin-bottom: 40px;
+	margin: 30px 40px;
 }
 
 .pn {
@@ -12,4 +13,5 @@ footer {
 
 .btn-next {
 	min-width: 135px;
+	float: right;
 }
