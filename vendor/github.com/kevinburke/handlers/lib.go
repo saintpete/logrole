@@ -18,11 +18,11 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-const version = "0.11"
+const version = "0.12"
 
 // All wraps h with every handler in this file.
 func All(h http.Handler, serverName string) http.Handler {
-	return Log(Debug(UUID(JSON(Server(h, serverName)))))
+	return Duration(Log(Debug(UUID(JSON(Server(h, serverName))))))
 }
 
 // JSON sets the Content-Type to application/json; charset=utf-8
@@ -31,6 +31,33 @@ func JSON(h http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		h.ServeHTTP(w, r)
 	})
+}
+
+// startWriter is used by Duration in ctx.go/noctx.go
+type startWriter struct {
+	w           http.ResponseWriter
+	start       time.Time
+	wroteHeader bool
+}
+
+func (s *startWriter) WriteHeader(code int) {
+	if s.wroteHeader == false {
+		s.w.Header().Set("X-Request-Duration", time.Since(s.start).String())
+		s.wroteHeader = true
+	}
+	s.w.WriteHeader(code)
+}
+
+func (s *startWriter) Write(b []byte) (int, error) {
+	if s.wroteHeader == false {
+		s.w.Header().Set("X-Request-Duration", time.Since(s.start).String())
+		s.wroteHeader = true
+	}
+	return s.w.Write(b)
+}
+
+func (s *startWriter) Header() http.Header {
+	return s.w.Header()
 }
 
 type serverWriter struct {

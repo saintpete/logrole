@@ -16,12 +16,15 @@ import (
 	"github.com/saintpete/logrole/services"
 )
 
+const Version = "0.1"
+
 var messageTemplate *template.Template
 var year = time.Now().UTC().Year()
 
 var funcMap = template.FuncMap{
 	"year":          func() int { return year },
 	"friendly_date": services.FriendlyDate,
+	"shorturl":      services.Shorter,
 }
 
 func init() {
@@ -113,5 +116,15 @@ func NewServer(allowUnencryptedTraffic bool, users map[string]string, client *tw
 	if len(users) > 0 {
 		h = handlers.BasicAuth(r, "logrole", users)
 	}
-	return UpgradeInsecureHandler(h, allowUnencryptedTraffic)
+	return handlers.Duration(
+		handlers.Log(
+			handlers.Debug(
+				handlers.UUID(
+					handlers.Server(
+						UpgradeInsecureHandler(h, allowUnencryptedTraffic),
+						"logrole/"+Version),
+				),
+			),
+		),
+	)
 }

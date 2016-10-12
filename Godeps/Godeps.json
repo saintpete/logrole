@@ -28,8 +28,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/handlers",
-			"Comment": "0.11",
-			"Rev": "7de6d365f512f9063cdf3e9ceaa0fe36aed6fd43"
+			"Comment": "0.15",
+			"Rev": "67195d16e9ad16adc7a33245f6ed382af5ce168c"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/rest",

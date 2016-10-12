@@ -78,13 +78,7 @@ func main() {
 	publicServer := http.Server{
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 60 * time.Second,
-		Handler: handlers.Log(
-			handlers.Debug(
-				handlers.UUID(
-					handlers.Server(publicMux, "logrole"),
-				),
-			),
-		),
+		Handler:      publicMux,
 	}
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", c.Port))
 	if err != nil {

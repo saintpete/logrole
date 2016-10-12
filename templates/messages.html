@@ -15,7 +15,6 @@
     <!--[if lte IE 9]>
     <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
     <![endif]-->
-
     <div class="page container-fluid">
       <div class="row">
         <div class="col-md-12">
@@ -34,7 +33,7 @@
           </tr>
         </thead>
         <tbody>
-          {{ range .Page.Messages }}
+          {{- range .Page.Messages }}
           <tr class="message">
             <td> {{ friendly_date (.DateCreated.Time.In $.Loc) }} </td>
             <td> {{ .Direction.Friendly }} </td>
@@ -43,9 +42,16 @@
             <td class="pn"> {{ .To.Friendly }} </td>
             <td> {{ .Body }} </td>
           </tr>
-          {{ end }}
+          {{- end }}
         </tbody>
       </table>
+      {{ if .Page.NextPageURI.Valid }}
+      <div class="row">
+        <div class="col-md-2 col-md-offset-10">
+          <a class="btn btn-large btn-default btn-next" href="/messages?next={{ shorturl .Page.NextPageURI.String }}">Next</a>
+        </div>
+      </div>
+      {{ end }}
       <div class="row">
         <div class="col-md-12">
           API request time: {{ .Duration }}

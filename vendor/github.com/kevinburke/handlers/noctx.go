@@ -4,6 +4,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/satori/go.uuid"
 )
@@ -26,4 +27,18 @@ func GetRequestID(r *http.Request) (uuid.UUID, bool) {
 		}
 	}
 	return uuid.UUID{}, false
+}
+
+// Duration sets a X-Request-Duration header on the response. This header
+// should go outside of any others to accurately capture the request duration.
+func Duration(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now().UTC()
+		sw := &startWriter{
+			w:           w,
+			start:       start,
+			wroteHeader: false,
+		}
+		h.ServeHTTP(sw, r)
+	})
 }
