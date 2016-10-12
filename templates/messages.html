@@ -27,16 +27,22 @@
           <tr>
             <th>Date</th>
             <th>Direction</th>
+            <th class="pn">From</th>
+            <th class="pn">To</th>
             <th>Body</th>
           </tr>
         </thead>
-        {{ range .Page.Messages }}
-        <tr class="message">
-          <td> {{ (.DateCreated.Time.In $.Loc) }} </td>
-          <td> {{ .Direction.Friendly }} </td>
-          <td> {{ .Body }} </td>
-        </tr>
-        {{ end }}
+        <tbody>
+          {{ range .Page.Messages }}
+          <tr class="message">
+            <td> {{ friendly_date (.DateCreated.Time.In $.Loc) }} </td>
+            <td> {{ .Direction.Friendly }} </td>
+            <td class="pn"> {{ .From.Friendly }} </td>
+            <td class="pn"> {{ .To.Friendly }} </td>
+            <td> {{ .Body }} </td>
+          </tr>
+          {{ end }}
+        </tbody>
       </table>
       <div class="row">
         <div class="col-md-12">

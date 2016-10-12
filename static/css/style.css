@@ -5,3 +5,7 @@ footer {
 .page {
 	margin-bottom: 40px;
 }
+
+.pn {
+	min-width: 135px;
+}

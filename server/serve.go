@@ -13,13 +13,15 @@ import (
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/assets"
+	"github.com/saintpete/logrole/services"
 )
 
 var messageTemplate *template.Template
 var year = time.Now().UTC().Year()
 
 var funcMap = template.FuncMap{
-	"year": func() int { return year },
+	"year":          func() int { return year },
+	"friendly_date": services.FriendlyDate,
 }
 
 func init() {

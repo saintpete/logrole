@@ -38,8 +38,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/twilio-go",
-			"Comment": "0.4",
-			"Rev": "f54640b0d4f9ab9f9c903dcf118be25362faccd9"
+			"Comment": "0.5",
+			"Rev": "1a81b9b696fabb784d04ef38dcdd1e9cb19b8ddf"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
@@ -62,6 +62,18 @@
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
 			"Rev": "a5b47d31c556af34a302ce5d659e6fea44d90de0"
+		},
+		{
+			"ImportPath": "github.com/ttacon/libphonenumber",
+			"Rev": "5cb77679a4c77d45f2496c9ed8e60b5eec03bb47"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "3571fb58c2425ca244702e8e2dfb156d95c44246"
+		},
+		{
+			"ImportPath": "github.com/ttacon/builder",
+			"Rev": "7f152c3cf4714fd6318739f8f3dbcd14c2a18b39"
 		}
 	]
 }
