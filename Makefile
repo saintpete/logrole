@@ -18,3 +18,11 @@ watch:
 
 deps:
 	godep save ./...
+
+release:
+	go get github.com/Shyp/bump_version
+	bump_version minor server/serve.go
+
+docs:
+	go get github.com/kevinburke/godocdoc
+	godocdoc
