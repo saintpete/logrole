@@ -93,10 +93,12 @@ func NewServer(allowUnencryptedTraffic bool, users map[string]string, client *tw
 	return handlers.Duration(
 		handlers.Log(
 			handlers.Debug(
-				handlers.UUID(
-					handlers.Server(
-						UpgradeInsecureHandler(h, allowUnencryptedTraffic),
-						"logrole/"+Version),
+				handlers.TrailingSlashRedirect(
+					handlers.UUID(
+						handlers.Server(
+							UpgradeInsecureHandler(h, allowUnencryptedTraffic),
+							"logrole/"+Version),
+					),
 				),
 			),
 		),

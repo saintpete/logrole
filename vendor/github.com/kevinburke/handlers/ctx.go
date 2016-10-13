@@ -36,7 +36,8 @@ func GetRequestID(ctx context.Context) (uuid.UUID, bool) {
 func GetDuration(ctx context.Context) time.Duration {
 	val := ctx.Value(startTime)
 	if val != nil {
-		return val.(time.Duration)
+		t := val.(time.Time)
+		return time.Since(t)
 	}
 	return time.Duration(0)
 }

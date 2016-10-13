@@ -20,3 +20,15 @@ pre, code {
 	min-width: 135px;
 	float: right;
 }
+
+a {
+    text-decoration: underline;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+a:visited {
+    color: purple;
+}

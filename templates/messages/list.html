@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
-    <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;subset=latin-ex" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;subset=latin-ext" rel="stylesheet">
   </head>
   <body>
     <!--[if lte IE 9]>
@@ -36,12 +36,12 @@
         <tbody>
           {{- range .Page.Messages }}
           <tr class="message">
-            <td> {{ friendly_date (.DateCreated.Time.In $.Loc) }} </td>
-            <td> {{ .Direction.Friendly }} </td>
-            <td> {{ .Status.Friendly }} </td>
-            <td class="pn"> {{ .From.Friendly }} </td>
-            <td class="pn"> {{ .To.Friendly }} </td>
-            <td> {{ .Body }} </td>
+            <td><a href="/messages/{{ .Sid }}" title="View more details">{{ friendly_date (.DateCreated.Time.In $.Loc) }}</a></td>
+            <td>{{ .Direction.Friendly }}</td>
+            <td>{{ .Status.Friendly }}</td>
+            <td class="pn">{{ .From.Friendly }}</td>
+            <td class="pn">{{ .To.Friendly }}</td>
+            <td>{{ .Body }}</td>
           </tr>
           {{- end }}
         </tbody>

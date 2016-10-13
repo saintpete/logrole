@@ -1,3 +1,13 @@
+// Package handlers implements a number of useful HTTP middlewares.
+//
+// The general format of the middlewares in this package is to wrap an existing
+// http.Handler in another one. So if you have a ServeMux, you can simply do:
+//
+//     mux := http.NewServeMux()
+//     h := handlers.Log(handlers.Debug(mux))
+//     http.ListenAndServe(":5050", h)
+//
+// And wrap as many handlers as you'd like using that idiom.
 package handlers
 
 import (
@@ -18,7 +28,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-const version = "0.12"
+const Version = "0.18"
 
 // All wraps h with every handler in this file.
 func All(h http.Handler, serverName string) http.Handler {
@@ -40,17 +50,24 @@ type startWriter struct {
 	wroteHeader bool
 }
 
+func (s *startWriter) duration() string {
+	d := (time.Since(s.start) / (100 * time.Microsecond)) * (100 * time.Microsecond)
+	return d.String()
+}
+
 func (s *startWriter) WriteHeader(code int) {
 	if s.wroteHeader == false {
-		s.w.Header().Set("X-Request-Duration", time.Since(s.start).String())
+		s.w.Header().Set("X-Request-Duration", s.duration())
 		s.wroteHeader = true
 	}
 	s.w.WriteHeader(code)
 }
 
 func (s *startWriter) Write(b []byte) (int, error) {
+	// Some chunked encoding transfers won't ever call WriteHeader(), so set
+	// the header here.
 	if s.wroteHeader == false {
-		s.w.Header().Set("X-Request-Duration", time.Since(s.start).String())
+		s.w.Header().Set("X-Request-Duration", s.duration())
 		s.wroteHeader = true
 	}
 	return s.w.Write(b)
@@ -75,11 +92,27 @@ func (s *serverWriter) WriteHeader(code int) {
 }
 
 func (s *serverWriter) Write(b []byte) (int, error) {
+	if s.wroteHeader == false {
+		s.w.Header().Set("Server", s.name)
+		s.wroteHeader = true
+	}
 	return s.w.Write(b)
 }
 
 func (s *serverWriter) Header() http.Header {
 	return s.w.Header()
+}
+
+// TrailingSlashRedirect redirects any path that ends with a "/" - say,
+// "/messages/" - to the stripped version, say "/messages".
+func TrailingSlashRedirect(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(r.URL.Path) > 1 && strings.HasSuffix(r.URL.Path, "/") {
+			http.Redirect(w, r, r.URL.Path[:len(r.URL.Path)-1], http.StatusMovedPermanently)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }
 
 // Server attaches a Server header to the response.

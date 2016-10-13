@@ -39,21 +39,46 @@ type messageInstanceData struct {
 	Message  *twilio.Message
 	Duration time.Duration
 	Loc      *time.Location
+	Media    *mediaResp
+}
+
+type mediaResp struct {
+	Err  error
+	URLs []*url.URL
+}
+
+// Just make sure we get all of the media when we make a request
+var mediaUrlsFilters = url.Values{
+	"PageSize": []string{"100"},
 }
 
 func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sid := messageInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	start := time.Now()
+	rch := make(chan *mediaResp, 1)
+	go func(sid string) {
+		urls, err := s.Client.Messages.GetMediaURLs(sid, mediaUrlsFilters)
+		r := &mediaResp{
+			URLs: urls,
+			Err:  err,
+		}
+		rch <- r
+		close(rch)
+	}(sid)
 	message, err := s.Client.Messages.Get(sid)
 	if err != nil {
 		rest.ServerError(w, r, err)
 	}
-	d := time.Since(start)
-	if err := messageInstanceTemplate.Execute(w, &messageInstanceData{
-		Duration: d,
-		Message:  message,
-		Loc:      s.Location,
-	}); err != nil {
+	data := &messageInstanceData{
+		Message: message,
+		Loc:     s.Location,
+	}
+	if message.NumMedia > 0 {
+		r := <-rch
+		data.Media = r
+	}
+	data.Duration = time.Since(start)
+	if err := messageInstanceTemplate.Execute(w, data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
