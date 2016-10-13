@@ -26,6 +26,7 @@ type config struct {
 	Password   string       `yaml:"basic_auth_password"`
 	Realm      services.Rlm `yaml:"realm"`
 	Timezone   string       `yaml:"timezone"`
+	PublicHost string       `yaml:"public_host"`
 }
 
 func main() {
@@ -72,7 +73,14 @@ func main() {
 		}
 	}
 
-	s := server.NewServer(allowHTTP, users, client, location)
+	settings := &server.Settings{
+		AllowUnencryptedTraffic: allowHTTP,
+		Users:      users,
+		Client:     client,
+		Location:   location,
+		PublicHost: c.PublicHost,
+	}
+	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()
 	publicMux.Handle("/", s)
 	publicServer := http.Server{

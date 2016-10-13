@@ -14,7 +14,7 @@ assets: templates/base.html templates/messages/list.html templates/messages/inst
 	go-bindata -o=assets/bindata.go --pkg=assets templates/... static/...
 
 watch:
-	justrun -c 'make assets serve' static/css/style.css commands/server/main.go templates/base.html templates/messages/list.html templates/messages/instance.html server/serve.go server/messages.go
+	justrun -c 'make assets serve' static/css/style.css commands/server/main.go templates/base.html templates/messages/list.html templates/messages/instance.html server/serve.go server/messages.go server/search.go
 
 deps:
 	godep save ./...

@@ -67,28 +67,42 @@ func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, r.URL.Path, s.modTime, bytes.NewReader(bits))
 }
 
+type Settings struct {
+	// The host the user visits to get to this site.
+	PublicHost              string
+	AllowUnencryptedTraffic bool
+	Users                   map[string]string
+	Client                  *twilio.Client
+	Location                *time.Location
+}
+
 // NewServer returns a new Handler that can serve requests. If the users map is
 // empty, Basic Authentication is disabled.
-func NewServer(allowUnencryptedTraffic bool, users map[string]string, client *twilio.Client, location *time.Location) http.Handler {
+func NewServer(settings *Settings) http.Handler {
 	mls := &messageListServer{
-		Client:   client,
-		Location: location,
+		Client:   settings.Client,
+		Location: settings.Location,
 	}
 	mis := &messageInstanceServer{
-		Client:   client,
-		Location: location,
+		Client:   settings.Client,
+		Location: settings.Location,
 	}
-	if location == nil {
+	if settings.Location == nil {
 		mls.Location = time.UTC
 		mis.Location = time.UTC
 	}
+	o := &openSearchXMLServer{
+		PublicHost:              settings.PublicHost,
+		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
+	}
 	r := new(handlers.Regexp)
+	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
 	r.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
 	var h http.Handler = r
-	if len(users) > 0 {
-		h = handlers.BasicAuth(r, "logrole", users)
+	if len(settings.Users) > 0 {
+		h = handlers.BasicAuth(r, "logrole", settings.Users)
 	}
 	return handlers.Duration(
 		handlers.Log(
@@ -96,7 +110,7 @@ func NewServer(allowUnencryptedTraffic bool, users map[string]string, client *tw
 				handlers.TrailingSlashRedirect(
 					handlers.UUID(
 						handlers.Server(
-							UpgradeInsecureHandler(h, allowUnencryptedTraffic),
+							UpgradeInsecureHandler(h, settings.AllowUnencryptedTraffic),
 							"logrole/"+Version),
 					),
 				),
