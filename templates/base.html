@@ -1,0 +1,32 @@
+{{/* Strategy taken from http://stackoverflow.com/a/11468132/329700 */}}
+<!doctype html>
+<html class="no-js" lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Logrole</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;subset=latin-ext" rel="stylesheet">
+  </head>
+  <body>
+    <!--[if lte IE 9]>
+    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+    <![endif]-->
+    <div class="page container-fluid">
+      <div class="row">
+        <div class="col-md-12">
+          <h2>{{ if .Title }}{{ .Title }}{{ else }}Logrole{{ end }}</h2>
+        </div>
+      </div>
+      {{template "content" . }}
+      <footer>
+      Copyright {{ year }} Chris Bennett
+      </footer>
+    </div>
+  </body>
+</html>

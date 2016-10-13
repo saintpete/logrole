@@ -19,15 +19,16 @@ var messageListTemplate *template.Template
 var messageInstanceRoute = regexp.MustCompile(`^/messages/(?P<sid>(MM|SM)[a-f0-9]{32})$`)
 
 func init() {
-	listIdx := string(assets.MustAsset("templates/messages/list.html"))
-	messageListTemplate = template.Must(
-		template.New("messages.list").Funcs(funcMap).Parse(listIdx),
-	).Option("missingkey=error")
+	base := string(assets.MustAsset("templates/base.html"))
+	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
 
-	instanceIdx := string(assets.MustAsset("templates/messages/instance.html"))
-	messageInstanceTemplate = template.Must(
-		template.New("messages.instance").Funcs(funcMap).Parse(instanceIdx),
-	).Option("missingkey=error")
+	tlist := template.Must(templates.Clone())
+	listTpl := string(assets.MustAsset("templates/messages/list.html"))
+	messageListTemplate = template.Must(tlist.Parse(listTpl))
+
+	tinstance := template.Must(templates.Clone())
+	instanceTpl := string(assets.MustAsset("templates/messages/instance.html"))
+	messageInstanceTemplate = template.Must(tinstance.Parse(instanceTpl))
 }
 
 type messageInstanceServer struct {
@@ -40,6 +41,10 @@ type messageInstanceData struct {
 	Duration time.Duration
 	Loc      *time.Location
 	Media    *mediaResp
+}
+
+func (m *messageInstanceData) Title() string {
+	return "Message Details"
 }
 
 type mediaResp struct {
@@ -78,7 +83,7 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		data.Media = r
 	}
 	data.Duration = time.Since(start)
-	if err := messageInstanceTemplate.Execute(w, data); err != nil {
+	if err := messageInstanceTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -92,6 +97,10 @@ type messageData struct {
 	Duration time.Duration
 	Page     *twilio.MessagePage
 	Loc      *time.Location
+}
+
+func (m *messageData) Title() string {
+	return "Messages"
 }
 
 func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +120,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	duration := time.Since(start)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := messageListTemplate.Execute(w, messageData{
+	if err := messageListTemplate.ExecuteTemplate(w, "base", &messageData{
 		Duration: duration,
 		Page:     page,
 		Loc:      s.Location,

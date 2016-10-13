@@ -1,66 +1,38 @@
-<!doctype html>
-<html class="no-js" lang="">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Logrole</title>
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;subset=latin-ext" rel="stylesheet">
-  </head>
-  <body>
-    <!--[if lte IE 9]>
-    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
-    <![endif]-->
-    <div class="page container-fluid">
-      <div class="row">
-        <div class="col-md-12">
-          <h2>Messages</h2>
-        </div>
-      </div>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Direction</th>
-            <th>Status</th>
-            <th class="pn">From</th>
-            <th class="pn">To</th>
-            <th>Body</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{- range .Page.Messages }}
-          <tr class="message">
-            <td><a href="/messages/{{ .Sid }}" title="View more details">{{ friendly_date (.DateCreated.Time.In $.Loc) }}</a></td>
-            <td>{{ .Direction.Friendly }}</td>
-            <td>{{ .Status.Friendly }}</td>
-            <td class="pn">{{ .From.Friendly }}</td>
-            <td class="pn">{{ .To.Friendly }}</td>
-            <td>{{ .Body }}</td>
-          </tr>
-          {{- end }}
-        </tbody>
-      </table>
-      {{- if .Page.NextPageURI.Valid }}
-      <div class="row">
-        <div class="col-md-2 col-md-offset-10">
-          <a class="btn btn-info btn-lg btn-default btn-next" href="/messages?next={{ shorturl .Page.NextPageURI.String }}">Next Page</a>
-        </div>
-      </div>
-      {{ end }}
-      <div class="row">
-        <div class="col-md-12">
-          API request time: {{ duration .Duration }}
-        </div>
-      </div>
-      <footer>
-      Copyright {{ year }} Chris Bennett
-      </footer>
-    </div>
-  </body>
-</html>
+{{ define "content" }}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Direction</th>
+      <th>Status</th>
+      <th class="pn">From</th>
+      <th class="pn">To</th>
+      <th>Body</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{- range .Page.Messages }}
+    <tr class="message">
+      <td><a href="/messages/{{ .Sid }}" title="View more details">{{ friendly_date (.DateCreated.Time.In $.Loc) }}</a></td>
+      <td>{{ .Direction.Friendly }}</td>
+      <td>{{ .Status.Friendly }}</td>
+      <td class="pn">{{ .From.Friendly }}</td>
+      <td class="pn">{{ .To.Friendly }}</td>
+      <td>{{ .Body }}</td>
+    </tr>
+    {{- end }}
+  </tbody>
+</table>
+{{- if .Page.NextPageURI.Valid }}
+<div class="row">
+  <div class="col-md-2 col-md-offset-10">
+    <a class="btn btn-info btn-lg btn-default btn-next" href="/messages?next={{ shorturl .Page.NextPageURI.String }}">Next Page</a>
+  </div>
+</div>
+{{ end }}
+<div class="row">
+  <div class="col-md-12">
+    API request time: {{ duration .Duration }}
+  </div>
+</div>
+{{ end }}

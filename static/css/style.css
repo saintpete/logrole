@@ -32,3 +32,11 @@ a:hover {
 a:visited {
     color: purple;
 }
+
+/* http://stackoverflow.com/a/17183996/329700 */
+.mms-image {
+    display: block;
+    max-height: 300px;
+    width: auto;
+    height: auto;
+}
