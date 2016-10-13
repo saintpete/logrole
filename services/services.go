@@ -1,5 +1,7 @@
 package services
 
+import "time"
+
 // Shorter returns a potentially obfuscated, shorter version of the given
 // string.
 func Shorter(s string) (string, error) {
@@ -13,4 +15,11 @@ func Shorter(s string) (string, error) {
 func Unshorter(compressed string) string {
 	// TODO
 	return compressed
+}
+
+// Duration returns a friendly duration (with the insignificant bits rounded
+// off).
+func Duration(d time.Duration) string {
+	d2 := (d / (100 * time.Microsecond)) * (100 * time.Microsecond)
+	return d2.String()
 }

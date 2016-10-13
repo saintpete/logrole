@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"html/template"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -18,18 +17,16 @@ import (
 
 const Version = "0.2"
 
-var messageTemplate *template.Template
 var year = time.Now().UTC().Year()
 
 var funcMap = template.FuncMap{
 	"year":          func() int { return year },
 	"friendly_date": services.FriendlyDate,
 	"shorturl":      services.Shorter,
+	"duration":      services.Duration,
 }
 
 func init() {
-	idx := assets.MustAsset("templates/messages.html")
-	messageTemplate = template.Must(template.New("messages").Funcs(funcMap).Parse(string(idx))).Option("missingkey=error")
 	staticServer = &static{
 		modTime: time.Now().UTC(),
 	}
@@ -37,43 +34,6 @@ func init() {
 
 type static struct {
 	modTime time.Time
-}
-
-type server struct {
-	Client   *twilio.Client
-	Location *time.Location
-}
-
-type messageData struct {
-	Duration time.Duration
-	Page     *twilio.MessagePage
-	Loc      *time.Location
-}
-
-func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	start := time.Now()
-	page := new(twilio.MessagePage)
-	var err error
-	next := query.Get("next")
-	if next != "" && strings.HasPrefix(next, "/"+twilio.APIVersion) {
-		err = s.Client.GetNextPage(next, page)
-	} else {
-		page, err = s.Client.Messages.GetPage(url.Values{})
-	}
-	if err != nil {
-		rest.ServerError(w, r, err)
-		return
-	}
-	duration := time.Since(start)
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := messageTemplate.Execute(w, messageData{
-		Duration: duration,
-		Page:     page,
-		Loc:      s.Location,
-	}); err != nil {
-		rest.ServerError(w, r, err)
-	}
 }
 
 func UpgradeInsecureHandler(h http.Handler, allowUnencryptedTraffic bool) http.Handler {
@@ -110,15 +70,21 @@ func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // NewServer returns a new Handler that can serve requests. If the users map is
 // empty, Basic Authentication is disabled.
 func NewServer(allowUnencryptedTraffic bool, users map[string]string, client *twilio.Client, location *time.Location) http.Handler {
-	s := &server{
+	mls := &messageListServer{
+		Client:   client,
+		Location: location,
+	}
+	mis := &messageInstanceServer{
 		Client:   client,
 		Location: location,
 	}
 	if location == nil {
-		s.Location = time.UTC
+		mls.Location = time.UTC
+		mis.Location = time.UTC
 	}
 	r := new(handlers.Regexp)
-	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, s)
+	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
+	r.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
 	var h http.Handler = r
 	if len(users) > 0 {

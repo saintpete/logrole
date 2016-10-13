@@ -2,6 +2,10 @@ footer {
 	margin-top: 40px;
 }
 
+pre, code {
+	font-family: Consolas, Monaco, monospace;
+}
+
 /* TODO media queries here - not as wide margins on smaller screens */
 .page {
 	margin: 30px 40px;

@@ -10,11 +10,11 @@ vet:
 deploy: 
 	git push heroku master
 
-assets: templates/messages.html static/css/style.css static/css/bootstrap.min.css
+assets: templates/messages/list.html templates/messages/instance.html static/css/style.css static/css/bootstrap.min.css
 	go-bindata -o=assets/bindata.go --pkg=assets templates/... static/...
 
 watch:
-	justrun -c 'make assets serve' static/css/style.css commands/server/main.go templates/messages.html server/serve.go
+	justrun -c 'make assets serve' static/css/style.css commands/server/main.go templates/messages/list.html templates/messages/instance.html server/serve.go server/messages.go
 
 deps:
 	godep save ./...

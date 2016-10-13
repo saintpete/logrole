@@ -1,0 +1,101 @@
+<!doctype html>
+<html class="no-js" lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Logrole</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;subset=latin-ex" rel="stylesheet">
+  </head>
+  <body>
+    <!--[if lte IE 9]>
+    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+    <![endif]-->
+    <div class="page container-fluid">
+      <div class="row">
+        <div class="col-md-12">
+          <h2>Message Details</h2>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <table class="table table-striped">
+            <thead>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Sid</th>
+                <td><code>{{ .Message.Sid }}</code></td>
+              </tr>
+              <tr>
+                <th>Date Created</th>
+                <td> {{ friendly_date (.Message.DateCreated.Time.In $.Loc) }} </td>
+              </tr>
+              <tr>
+                <th>From</th>
+                <td> {{ .Message.From.Friendly }} </td>
+              </tr>
+              <tr>
+                <th>To</th>
+                <td> {{ .Message.To.Friendly }} </td>
+              </tr>
+              <tr>
+                <th>Status</th>
+                <td> {{ .Message.Status.Friendly }} </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="col-md-6">
+          <table class="table table-striped">
+            <thead>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Direction</th>
+                <td> {{ .Message.Direction.Friendly }} </td>
+              </tr>
+              <tr>
+                <th>Status</th>
+                <td> {{ .Message.Status.Friendly }} </td>
+              </tr>
+              <tr>
+                <th>Segments</th>
+                <td> {{ .Message.NumSegments }} </td>
+              </tr>
+              <tr>
+                <th>Price</th>
+                <td> {{ .Message.Price }} </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <table class="table">
+            <tbody>
+              <tr>
+                <th>Body</th>
+                <td><code>{{ .Message.Body }}</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          API request time: {{ duration .Duration }}
+        </div>
+      </div>
+      <footer>
+      Copyright {{ year }} Chris Bennett
+      </footer>
+    </div>
+  </body>
+</html>
