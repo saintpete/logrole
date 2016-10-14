@@ -19,7 +19,7 @@ watch:
 deps:
 	godep save ./...
 
-release:
+release: test
 	go get github.com/Shyp/bump_version
 	bump_version minor server/serve.go
 
