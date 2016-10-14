@@ -13,19 +13,19 @@
     <div class="form-messages-search col-md-10">
       <div class="form-group">
         <label for="from">From</label>
-        <input type="text" class="form-control" name="from" id="from" placeholder="From">
+        <input type="text" class="form-control" name="from" id="from" placeholder="From" value="{{ (.Query.Get "from") }}">
       </div>
       <div class="form-group">
         <label for="to">To</label>
-        <input type="text" class="form-control" name="to" id="to" placeholder="To">
+        <input type="text" class="form-control" name="to" id="to" placeholder="To" value="{{ (.Query.Get "to") }}">
       </div>
       <div class="form-group">
         <label for="start">Start</label>
-        <input type="date" class="form-control" name="start" id="start" min="2016-09-13" max="2016-10-13" placeholder="Start">
+        <input type="date" class="form-control" name="start" id="start" min="2016-09-13" max="2016-10-13" placeholder="Start" value="{{ (.Query.Get "start") }}">
       </div>
       <div class="form-group">
         <label for="end">End</label>
-        <input type="date" class="form-control" name="end" id="end" min="2016-09-13" max="2016-10-13" placeholder="End">
+        <input type="date" class="form-control" name="end" id="end" min="2016-09-13" max="2016-10-13" placeholder="End" value="{{ (.Query.Get "end") }}">
       </div>
     </div>
     <div class="col-md-2">

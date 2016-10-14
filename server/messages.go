@@ -98,6 +98,7 @@ type messageData struct {
 	Duration time.Duration
 	Page     *twilio.MessagePage
 	Loc      *time.Location
+	Query    url.Values
 	Err      string
 }
 
@@ -105,9 +106,9 @@ func (m *messageData) Title() string {
 	return "Messages"
 }
 
-func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, err error) {
+func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, query url.Values, err error) {
 	str := strings.Replace(err.Error(), "twilio: ", "", 1)
-	data := &messageData{Err: str, Page: new(twilio.MessagePage)}
+	data := &messageData{Err: str, Query: query, Page: new(twilio.MessagePage)}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		rest.ServerError(w, r, err)
@@ -128,7 +129,8 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if from := query.Get("from"); from != "" {
 			fromPN, err := twilio.NewPhoneNumber(from)
 			if err != nil {
-				s.renderError(w, r, err)
+				query.Del("from")
+				s.renderError(w, r, query, err)
 				return
 			}
 			data.Set("From", string(fromPN))
@@ -136,7 +138,8 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if to := query.Get("to"); to != "" {
 			toPN, err := twilio.NewPhoneNumber(to)
 			if err != nil {
-				s.renderError(w, r, err)
+				query.Del("to")
+				s.renderError(w, r, query, err)
 				return
 			}
 			data.Set("To", string(toPN))
@@ -152,7 +155,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		page, err = s.Client.Messages.GetPage(data)
 	}
 	if err != nil {
-		s.renderError(w, r, err)
+		s.renderError(w, r, query, err)
 		return
 	}
 	duration := time.Since(start)
@@ -160,10 +163,11 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Duration: duration,
 		Page:     page,
 		Loc:      s.Location,
+		Query:    query,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		// TODO buffer here
-		s.renderError(w, r, err)
+		s.renderError(w, r, query, err)
 	}
 }
