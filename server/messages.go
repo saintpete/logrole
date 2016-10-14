@@ -36,8 +36,9 @@ func init() {
 }
 
 type messageInstanceServer struct {
-	Client   *twilio.Client
-	Location *time.Location
+	Client    *twilio.Client
+	Location  *time.Location
+	SecretKey *[32]byte
 }
 
 type messageInstanceData struct {
@@ -66,13 +67,30 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 	start := time.Now()
 	rch := make(chan *mediaResp, 1)
 	go func(sid string) {
+		defer close(rch)
 		urls, err := s.Client.Messages.GetMediaURLs(sid, mediaUrlsFilters)
-		r := &mediaResp{
-			URLs: urls,
-			Err:  err,
+		if err != nil {
+			rch <- &mediaResp{Err: err}
+			return
 		}
-		rch <- r
-		close(rch)
+		opaqueImages := make([]*url.URL, len(urls))
+		for i, u := range urls {
+			enc, err := services.Opaque(u.String(), s.SecretKey)
+			if err != nil {
+				rch <- &mediaResp{Err: err}
+				return
+			}
+			opaqueURL, err := url.Parse("/images/" + enc)
+			if err != nil {
+				rch <- &mediaResp{Err: err}
+				return
+			}
+			opaqueImages[i] = opaqueURL
+		}
+		rch <- &mediaResp{
+			URLs: opaqueImages,
+			Err:  nil,
+		}
 	}(sid)
 	message, err := s.Client.Messages.Get(sid)
 	if err != nil {

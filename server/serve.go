@@ -126,8 +126,9 @@ func NewServer(settings *Settings) http.Handler {
 		SecretKey: settings.SecretKey,
 	}
 	mis := &messageInstanceServer{
-		Client:   settings.Client,
-		Location: settings.Location,
+		Client:    settings.Client,
+		Location:  settings.Location,
+		SecretKey: settings.SecretKey,
 	}
 	if settings.Location == nil {
 		mls.Location = time.UTC
@@ -138,9 +139,13 @@ func NewServer(settings *Settings) http.Handler {
 		PublicHost:              settings.PublicHost,
 		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
 	}
-	i := &indexServer{}
+	index := &indexServer{}
+	image := &imageServer{
+		SecretKey: settings.SecretKey,
+	}
 	r := new(handlers.Regexp)
-	r.Handle(regexp.MustCompile(`^/$`), []string{"GET"}, i)
+	r.Handle(regexp.MustCompile(`^/$`), []string{"GET"}, index)
+	r.Handle(imageRoute, []string{"GET"}, image)
 	r.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
