@@ -15,7 +15,7 @@ import (
 	"github.com/saintpete/logrole/services"
 )
 
-const Version = "0.6"
+const Version = "0.7"
 
 var year = time.Now().UTC().Year()
 
