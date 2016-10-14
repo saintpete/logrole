@@ -3,6 +3,7 @@ package server
 import (
 	"html/template"
 	"net/http"
+	"regexp"
 
 	"github.com/kevinburke/rest"
 )
@@ -13,13 +14,22 @@ func init() {
 	openSearchTemplate = template.Must(template.New("opensearch.xml").Option("missingkey=error").Parse(openSearchTpl))
 }
 
-type searchServer struct {
-	Host                    string
-	AllowUnencryptedTraffic bool
-}
+type searchServer struct{}
+
+var smsSid = regexp.MustCompile(messagePattern)
 
 func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
+	query := r.URL.Query()
+	q := query.Get("q")
+	if q == "" {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	if smsSid.MatchString(q) {
+		http.Redirect(w, r, "/messages/"+q, http.StatusMovedPermanently)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 type openSearchXMLServer struct {

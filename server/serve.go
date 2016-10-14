@@ -93,11 +93,13 @@ func NewServer(settings *Settings) http.Handler {
 		mls.Location = time.UTC
 		mis.Location = time.UTC
 	}
+	ss := &searchServer{}
 	o := &openSearchXMLServer{
 		PublicHost:              settings.PublicHost,
 		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
 	}
 	r := new(handlers.Regexp)
+	r.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
 	r.Handle(messageInstanceRoute, []string{"GET"}, mis)
