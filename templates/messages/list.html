@@ -1,4 +1,38 @@
 {{ define "content" }}
+{{- if .Err }}
+<div class="row">
+  <div class="col-md-12">
+    <div class="alert alert-danger">
+      <p>{{ .Err }}</p>
+    </div>
+  </div>
+</div>
+{{- end }}
+<div class="row row-search">
+  <form class="form-inline" method="get" action="/messages">
+    <div class="form-messages-search col-md-10">
+      <div class="form-group">
+        <label for="from">From</label>
+        <input type="text" class="form-control" name="from" id="from" placeholder="From">
+      </div>
+      <div class="form-group">
+        <label for="to">To</label>
+        <input type="text" class="form-control" name="to" id="to" placeholder="To">
+      </div>
+      <div class="form-group">
+        <label for="start">Start</label>
+        <input type="date" class="form-control" name="start" id="start" min="2016-09-13" max="2016-10-13" placeholder="Start">
+      </div>
+      <div class="form-group">
+        <label for="end">End</label>
+        <input type="date" class="form-control" name="end" id="end" min="2016-09-13" max="2016-10-13" placeholder="End">
+      </div>
+    </div>
+    <div class="col-md-2">
+      <input type="submit" value="Search" class="btn-search btn btn-default btn-info" />
+    </div>
+  </form>
+</div>
 <table class="table table-striped">
   <thead>
     <tr>

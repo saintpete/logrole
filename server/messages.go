@@ -83,6 +83,7 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		data.Media = r
 	}
 	data.Duration = time.Since(start)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := messageInstanceTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
@@ -97,34 +98,72 @@ type messageData struct {
 	Duration time.Duration
 	Page     *twilio.MessagePage
 	Loc      *time.Location
+	Err      string
 }
 
 func (m *messageData) Title() string {
 	return "Messages"
 }
 
+func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, err error) {
+	str := strings.Replace(err.Error(), "twilio: ", "", 1)
+	data := &messageData{Err: str, Page: new(twilio.MessagePage)}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
+		rest.ServerError(w, r, err)
+	}
+}
+
 func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	start := time.Now()
 	page := new(twilio.MessagePage)
 	var err error
 	next := query.Get("next")
+	start := time.Now()
 	if next != "" && strings.HasPrefix(next, "/"+twilio.APIVersion) {
 		err = s.Client.GetNextPage(services.Unshorter(next), page)
 	} else {
-		page, err = s.Client.Messages.GetPage(url.Values{})
+		// valid values: https://www.twilio.com/docs/api/rest/message#list
+		data := url.Values{}
+		if from := query.Get("from"); from != "" {
+			fromPN, err := twilio.NewPhoneNumber(from)
+			if err != nil {
+				s.renderError(w, r, err)
+				return
+			}
+			data.Set("From", string(fromPN))
+		}
+		if to := query.Get("to"); to != "" {
+			toPN, err := twilio.NewPhoneNumber(to)
+			if err != nil {
+				s.renderError(w, r, err)
+				return
+			}
+			data.Set("To", string(toPN))
+		}
+		// NB - we purposely don't do date validation here since we filter out
+		// older messages as part of the message view.
+		if startDate := query.Get("start"); startDate != "" {
+			data.Set("DateSent>", startDate)
+		}
+		if end := query.Get("end"); end != "" {
+			data.Set("DateSent<", end)
+		}
+		page, err = s.Client.Messages.GetPage(data)
 	}
 	if err != nil {
-		rest.ServerError(w, r, err)
+		s.renderError(w, r, err)
 		return
 	}
 	duration := time.Since(start)
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := messageListTemplate.ExecuteTemplate(w, "base", &messageData{
+	data := &messageData{
 		Duration: duration,
 		Page:     page,
 		Loc:      s.Location,
-	}); err != nil {
-		rest.ServerError(w, r, err)
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
+		// TODO buffer here
+		s.renderError(w, r, err)
 	}
 }
