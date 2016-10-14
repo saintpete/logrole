@@ -30,6 +30,13 @@ func init() {
 	staticServer = &static{
 		modTime: time.Now().UTC(),
 	}
+
+	base := string(assets.MustAsset("templates/base.html"))
+	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
+
+	tindex := template.Must(templates.Clone())
+	indexTpl := string(assets.MustAsset("templates/index.html"))
+	indexTemplate = template.Must(tindex.Parse(indexTpl))
 }
 
 type static struct {
@@ -67,6 +74,21 @@ func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, r.URL.Path, s.modTime, bytes.NewReader(bits))
 }
 
+type indexServer struct{}
+
+var indexTemplate *template.Template
+
+func (i *indexServer) Title() string {
+	return "Logrole Homepage"
+}
+
+func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := indexTemplate.ExecuteTemplate(w, "base", nil); err != nil {
+		rest.ServerError(w, r, err)
+	}
+}
+
 type Settings struct {
 	// The host the user visits to get to this site.
 	PublicHost              string
@@ -98,7 +120,9 @@ func NewServer(settings *Settings) http.Handler {
 		PublicHost:              settings.PublicHost,
 		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
 	}
+	i := &indexServer{}
 	r := new(handlers.Regexp)
+	r.Handle(regexp.MustCompile(`^/$`), []string{"GET"}, i)
 	r.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
