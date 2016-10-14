@@ -12,6 +12,10 @@
 			"Rev": "100eb0c0a9c5b306ca2fb4f165df21d80ada4b82"
 		},
 		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "3571fb58c2425ca244702e8e2dfb156d95c44246"
+		},
+		{
 			"ImportPath": "github.com/inconshreveable/log15",
 			"Comment": "v2.3-82-gc997fd5",
 			"Rev": "c997fd5e5f8b12b64baf01535e128bfd8349357a"
@@ -56,24 +60,20 @@
 			"Rev": "879c5887cd475cd7864858769793b2ceb0d44feb"
 		},
 		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
-		},
-		{
-			"ImportPath": "gopkg.in/yaml.v2",
-			"Rev": "a5b47d31c556af34a302ce5d659e6fea44d90de0"
+			"ImportPath": "github.com/ttacon/builder",
+			"Rev": "7f152c3cf4714fd6318739f8f3dbcd14c2a18b39"
 		},
 		{
 			"ImportPath": "github.com/ttacon/libphonenumber",
 			"Rev": "5cb77679a4c77d45f2496c9ed8e60b5eec03bb47"
 		},
 		{
-			"ImportPath": "github.com/golang/protobuf/proto",
-			"Rev": "3571fb58c2425ca244702e8e2dfb156d95c44246"
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
 		},
 		{
-			"ImportPath": "github.com/ttacon/builder",
-			"Rev": "7f152c3cf4714fd6318739f8f3dbcd14c2a18b39"
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "a5b47d31c556af34a302ce5d659e6fea44d90de0"
 		}
 	]
 }
