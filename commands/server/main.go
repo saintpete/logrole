@@ -17,16 +17,18 @@ import (
 )
 
 const DefaultPort = "4114"
+const DefaultPageSize = 50
 
 type config struct {
-	Port       string       `yaml:"port"`
-	AccountSid string       `yaml:"twilio_account_sid"`
-	AuthToken  string       `yaml:"twilio_auth_token"`
-	User       string       `yaml:"basic_auth_user"`
-	Password   string       `yaml:"basic_auth_password"`
-	Realm      services.Rlm `yaml:"realm"`
-	Timezone   string       `yaml:"timezone"`
-	PublicHost string       `yaml:"public_host"`
+	Port             string       `yaml:"port"`
+	AccountSid       string       `yaml:"twilio_account_sid"`
+	AuthToken        string       `yaml:"twilio_auth_token"`
+	User             string       `yaml:"basic_auth_user"`
+	Password         string       `yaml:"basic_auth_password"`
+	Realm            services.Rlm `yaml:"realm"`
+	Timezone         string       `yaml:"timezone"`
+	PublicHost       string       `yaml:"public_host"`
+	MessagesPageSize uint         `yaml:"messages_page_size"`
 }
 
 func main() {
@@ -72,13 +74,17 @@ func main() {
 			os.Exit(2)
 		}
 	}
+	if c.MessagesPageSize == 0 {
+		c.MessagesPageSize = DefaultPageSize
+	}
 
 	settings := &server.Settings{
 		AllowUnencryptedTraffic: allowHTTP,
-		Users:      users,
-		Client:     client,
-		Location:   location,
-		PublicHost: c.PublicHost,
+		Users:            users,
+		Client:           client,
+		Location:         location,
+		PublicHost:       c.PublicHost,
+		MessagesPageSize: c.MessagesPageSize,
 	}
 	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()

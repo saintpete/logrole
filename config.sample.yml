@@ -1,0 +1,17 @@
+port:               4114
+twilio_account_sid: fill-in-account-sid
+twilio_auth_token:  fill-in-token
+
+# Set to "prod" in production. See bin/serve for an example.
+realm:              local
+user:               test
+password:           hymanrickover
+# What timezone should we display for dates in the UI?
+timezone:           America/Los_Angeles
+
+# What users type in their browser to reach your site
+public_host:        localhost:4114
+
+# How many messages to fetch per page. A larger number will slow down load
+# time. Defaults to 50.
+messages_page_size: 10

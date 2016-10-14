@@ -74,6 +74,7 @@ type Settings struct {
 	Users                   map[string]string
 	Client                  *twilio.Client
 	Location                *time.Location
+	MessagesPageSize        uint
 }
 
 // NewServer returns a new Handler that can serve requests. If the users map is
@@ -82,6 +83,7 @@ func NewServer(settings *Settings) http.Handler {
 	mls := &messageListServer{
 		Client:   settings.Client,
 		Location: settings.Location,
+		PageSize: settings.MessagesPageSize,
 	}
 	mis := &messageInstanceServer{
 		Client:   settings.Client,
