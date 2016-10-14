@@ -4,10 +4,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/saintpete/logrole/services"
 )
 
 func TestUnknownUsersDenied(t *testing.T) {
-	settings := &Settings{AllowUnencryptedTraffic: true, Users: map[string]string{"test": "test"}}
+	settings := &Settings{
+		AllowUnencryptedTraffic: true, Users: map[string]string{"test": "test"},
+		SecretKey: services.NewRandomKey(),
+	}
 	s := NewServer(settings)
 	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
 	req.SetBasicAuth("test", "wrongpassword")
@@ -19,7 +24,7 @@ func TestUnknownUsersDenied(t *testing.T) {
 }
 
 func TestRequestsUpgraded(t *testing.T) {
-	settings := &Settings{AllowUnencryptedTraffic: false}
+	settings := &Settings{AllowUnencryptedTraffic: false, SecretKey: services.NewRandomKey()}
 	s := NewServer(settings)
 	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
 	req.Header.Set("X-Forwarded-Proto", "http")

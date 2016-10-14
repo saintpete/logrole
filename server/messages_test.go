@@ -5,11 +5,17 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/saintpete/logrole/services"
 )
 
 func TestInvalidNext(t *testing.T) {
-	s := &messageListServer{}
-	req, _ := http.NewRequest("GET", "/messages?next=invalid", nil)
+	key := services.NewRandomKey()
+	s := &messageListServer{
+		SecretKey: key,
+	}
+	enc, _ := services.Opaque("invalid", key)
+	req, _ := http.NewRequest("GET", "/messages?next="+enc, nil)
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, req)
 	if w.Code != 400 {

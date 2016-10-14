@@ -28,7 +28,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-const Version = "0.18"
+const Version = "0.19"
 
 // All wraps h with every handler in this file.
 func All(h http.Handler, serverName string) http.Handler {
@@ -316,7 +316,6 @@ func timeSinceMs(t time.Time) int64 {
 func writeLog(r *http.Request, u url.URL, t time.Time, status int, size int) {
 	user, _, _ := r.BasicAuth()
 	args := []interface{}{
-		"user", user,
 		"method", r.Method,
 		"path", r.URL.RequestURI(),
 		"time", strconv.FormatInt(timeSinceMs(t), 10),

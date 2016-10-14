@@ -57,10 +57,10 @@
     {{- end }}
   </tbody>
 </table>
-{{- if .Page.NextPageURI.Valid }}
+{{- if .EncryptedNextPage }}
 <div class="row">
   <div class="col-md-2 col-md-offset-10">
-    <a class="btn btn-info btn-lg btn-default btn-next" href="/messages?next={{ shorturl .Page.NextPageURI.String }}">Next Page</a>
+    <a class="btn btn-info btn-lg btn-default btn-next" href="/messages?next={{ .EncryptedNextPage }}">Next Page</a>
   </div>
 </div>
 {{ end }}

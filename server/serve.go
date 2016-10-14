@@ -22,7 +22,6 @@ var year = time.Now().UTC().Year()
 var funcMap = template.FuncMap{
 	"year":          func() int { return year },
 	"friendly_date": services.FriendlyDate,
-	"shorturl":      services.Shorter,
 	"duration":      services.Duration,
 }
 
@@ -95,17 +94,36 @@ type Settings struct {
 	AllowUnencryptedTraffic bool
 	Users                   map[string]string
 	Client                  *twilio.Client
-	Location                *time.Location
-	MessagesPageSize        uint
+
+	// A string like "America/New_York". Defaults to UTC if not set.
+	Location *time.Location
+
+	// How many messages to display per page.
+	MessagesPageSize uint
+
+	// Used to encrypt next page URI's and sessions. See config.sample.yml for
+	// more information.
+	SecretKey *[32]byte
 }
 
 // NewServer returns a new Handler that can serve requests. If the users map is
 // empty, Basic Authentication is disabled.
 func NewServer(settings *Settings) http.Handler {
+	validKey := false
+	for i := 0; i < len(settings.SecretKey); i++ {
+		if settings.SecretKey[i] != 0x0 {
+			validKey = true
+			break
+		}
+	}
+	if !validKey {
+		panic("server: nil secret key in settings")
+	}
 	mls := &messageListServer{
-		Client:   settings.Client,
-		Location: settings.Location,
-		PageSize: settings.MessagesPageSize,
+		Client:    settings.Client,
+		Location:  settings.Location,
+		PageSize:  settings.MessagesPageSize,
+		SecretKey: settings.SecretKey,
 	}
 	mis := &messageInstanceServer{
 		Client:   settings.Client,

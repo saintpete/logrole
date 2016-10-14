@@ -32,8 +32,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/handlers",
-			"Comment": "0.18",
-			"Rev": "f32109bf9d54a52ce419546c81bc6c234cf72f24"
+			"Comment": "0.19",
+			"Rev": "2a226580da01751a5c11a5218ee4adaa55f2a0d8"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/rest",
@@ -66,6 +66,18 @@
 		{
 			"ImportPath": "github.com/ttacon/libphonenumber",
 			"Rev": "5cb77679a4c77d45f2496c9ed8e60b5eec03bb47"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/nacl/secretbox",
+			"Rev": "5f31782cfb2b6373211f8f9fbf31283fa234b570"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/poly1305",
+			"Rev": "5f31782cfb2b6373211f8f9fbf31283fa234b570"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/salsa20/salsa",
+			"Rev": "5f31782cfb2b6373211f8f9fbf31283fa234b570"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",

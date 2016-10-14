@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/hex"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -29,6 +31,29 @@ type config struct {
 	Timezone         string       `yaml:"timezone"`
 	PublicHost       string       `yaml:"public_host"`
 	MessagesPageSize uint         `yaml:"messages_page_size"`
+	SecretKey        string       `yaml:"secret_key"`
+}
+
+var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
+
+// getSecretKey produces a valid [32]byte secret key or returns an error. If
+// hexKey is the empty string, a valid 32 byte key will be randomly generated
+// and returned. If hexKey is invalid, an error is returned.
+func getSecretKey(hexKey string) (*[32]byte, error) {
+	if hexKey == "" {
+		return services.NewRandomKey(), nil
+	}
+
+	if len(hexKey) != 64 {
+		return nil, errWrongLength
+	}
+	secretKeyBytes, err := hex.DecodeString(hexKey)
+	if err != nil {
+		return nil, err
+	}
+	secretKey := new([32]byte)
+	copy(secretKey[:], secretKeyBytes)
+	return secretKey, nil
 }
 
 func main() {
@@ -48,6 +73,14 @@ func main() {
 		}
 		c.Port = DefaultPort
 		c.Realm = services.Local
+	}
+	if c.SecretKey == "" {
+		handlers.Logger.Warn("No secret key provided, generating random secret key. Sessions won't persist across restarts")
+	}
+	secretKey, err := getSecretKey(c.SecretKey)
+	if err != nil {
+		handlers.Logger.Error(err.Error(), "key", c.SecretKey)
+		os.Exit(2)
 	}
 	if c.Realm == services.Prod && (c.User == "" || c.Password == "") {
 		handlers.Logger.Error("Cannot run in production without Basic Auth")
@@ -85,6 +118,7 @@ func main() {
 		Location:         location,
 		PublicHost:       c.PublicHost,
 		MessagesPageSize: c.MessagesPageSize,
+		SecretKey:        secretKey,
 	}
 	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()

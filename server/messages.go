@@ -94,17 +94,19 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 }
 
 type messageListServer struct {
-	Client   *twilio.Client
-	Location *time.Location
-	PageSize uint
+	Client    *twilio.Client
+	Location  *time.Location
+	PageSize  uint
+	SecretKey *[32]byte
 }
 
 type messageData struct {
-	Duration time.Duration
-	Page     *twilio.MessagePage
-	Loc      *time.Location
-	Query    url.Values
-	Err      string
+	Duration          time.Duration
+	Page              *twilio.MessagePage
+	EncryptedNextPage string
+	Loc               *time.Location
+	Query             url.Values
+	Err               string
 }
 
 func (m *messageData) Title() string {
@@ -182,12 +184,17 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	page := new(twilio.MessagePage)
 	var err error
-	shorterNext := query.Get("next")
+	opaqueNext := query.Get("next")
 	start := time.Now()
-	if shorterNext != "" {
-		next := services.Unshorter(shorterNext)
+	if opaqueNext != "" {
+		next, err := services.Unopaque(opaqueNext, s.SecretKey)
+		if err != nil {
+			err = errors.New("Could not decrypt `next` query parameter: " + err.Error())
+			s.renderError(w, r, http.StatusBadRequest, query, err)
+			return
+		}
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
-			handlers.Logger.Warn("Invalid next page URI", "next", next, "shorter", shorterNext)
+			handlers.Logger.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
@@ -214,6 +221,15 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Loc:      s.Location,
 		Query:    query,
 	}
+	if page.NextPageURI.Valid {
+		next, err := services.Opaque(page.NextPageURI.String, s.SecretKey)
+		if err != nil {
+			s.renderError(w, r, http.StatusInternalServerError, query, err)
+			return
+		}
+		data.EncryptedNextPage = next
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		// TODO buffer here

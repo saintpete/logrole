@@ -1,11 +1,11 @@
 serve:
-	go run commands/server/*.go
+	go run commands/server/main.go
 
 test: vet
-	go test -short ./server/... ./commands/...
+	go test -short ./...
 
 vet:
-	go vet ./server/... ./commands/...
+	go vet ./assets/... ./services/... ./server/... ./commands/...
 
 deploy: 
 	git push heroku master
