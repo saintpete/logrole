@@ -21,17 +21,20 @@ import (
 const DefaultPort = "4114"
 const DefaultPageSize = 50
 
+var DefaultMaxResourceAge = time.Since(time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC))
+
 type config struct {
-	Port             string       `yaml:"port"`
-	AccountSid       string       `yaml:"twilio_account_sid"`
-	AuthToken        string       `yaml:"twilio_auth_token"`
-	User             string       `yaml:"basic_auth_user"`
-	Password         string       `yaml:"basic_auth_password"`
-	Realm            services.Rlm `yaml:"realm"`
-	Timezone         string       `yaml:"timezone"`
-	PublicHost       string       `yaml:"public_host"`
-	MessagesPageSize uint         `yaml:"messages_page_size"`
-	SecretKey        string       `yaml:"secret_key"`
+	Port             string        `yaml:"port"`
+	AccountSid       string        `yaml:"twilio_account_sid"`
+	AuthToken        string        `yaml:"twilio_auth_token"`
+	User             string        `yaml:"basic_auth_user"`
+	Password         string        `yaml:"basic_auth_password"`
+	Realm            services.Rlm  `yaml:"realm"`
+	Timezone         string        `yaml:"timezone"`
+	PublicHost       string        `yaml:"public_host"`
+	MessagesPageSize uint          `yaml:"messages_page_size"`
+	SecretKey        string        `yaml:"secret_key"`
+	MaxResourceAge   time.Duration `yaml:"max_resource_age"`
 }
 
 var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
@@ -82,8 +85,11 @@ func main() {
 		handlers.Logger.Error(err.Error(), "key", c.SecretKey)
 		os.Exit(2)
 	}
-	if c.Realm == services.Prod && (c.User == "" || c.Password == "") {
-		handlers.Logger.Error("Cannot run in production without Basic Auth")
+	if c.MaxResourceAge == 0 {
+		c.MaxResourceAge = DefaultMaxResourceAge
+	}
+	if c.User == "" || c.Password == "" {
+		handlers.Logger.Error("Cannot run without Basic Auth, set a basic_auth_user")
 		os.Exit(2)
 	}
 	allowHTTP := false
@@ -119,6 +125,7 @@ func main() {
 		PublicHost:       c.PublicHost,
 		MessagesPageSize: c.MessagesPageSize,
 		SecretKey:        secretKey,
+		MaxResourceAge:   c.MaxResourceAge,
 	}
 	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()

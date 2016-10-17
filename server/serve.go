@@ -12,7 +12,9 @@ import (
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/assets"
+	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
+	"github.com/saintpete/logrole/views"
 )
 
 const Version = "0.7"
@@ -40,6 +42,19 @@ func init() {
 
 type static struct {
 	modTime time.Time
+}
+
+func AuthUserHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r, _, err := config.AuthUser(r)
+		if err != nil {
+			rest.Forbidden(w, r, &rest.Error{
+				Title: err.Error(),
+			})
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }
 
 func UpgradeInsecureHandler(h http.Handler, allowUnencryptedTraffic bool) http.Handler {
@@ -104,7 +119,17 @@ type Settings struct {
 	// Used to encrypt next page URI's and sessions. See config.sample.yml for
 	// more information.
 	SecretKey *[32]byte
+
+	MaxResourceAge time.Duration
 }
+
+// TODO different users or pull from database
+var theUser = config.NewUser(&config.UserSettings{
+	CanViewMessages:    false,
+	CanViewNumMedia:    true,
+	CanViewMessageFrom: true,
+	CanViewMessageTo:   false,
+})
 
 // NewServer returns a new Handler that can serve requests. If the users map is
 // empty, Basic Authentication is disabled.
@@ -119,6 +144,14 @@ func NewServer(settings *Settings) http.Handler {
 	if !validKey {
 		panic("server: nil secret key in settings")
 	}
+
+	// TODO persistent storage
+	for name := range settings.Users {
+		config.AddUser(name, theUser)
+	}
+
+	permission := config.NewPermission(settings.MaxResourceAge)
+	vc := views.NewClient(handlers.Logger, settings.Client, settings.SecretKey, permission)
 	mls := &messageListServer{
 		Client:    settings.Client,
 		Location:  settings.Location,
@@ -126,9 +159,8 @@ func NewServer(settings *Settings) http.Handler {
 		SecretKey: settings.SecretKey,
 	}
 	mis := &messageInstanceServer{
-		Client:    settings.Client,
-		Location:  settings.Location,
-		SecretKey: settings.SecretKey,
+		Client:   vc,
+		Location: settings.Location,
 	}
 	if settings.Location == nil {
 		mls.Location = time.UTC
@@ -151,18 +183,18 @@ func NewServer(settings *Settings) http.Handler {
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
 	r.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
-	var h http.Handler = r
+	var h http.Handler = UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)
 	if len(settings.Users) > 0 {
-		h = handlers.BasicAuth(r, "logrole", settings.Users)
+		// TODO database, remove duplication
+		h = AuthUserHandler(h)
+		h = handlers.BasicAuth(h, "logrole", settings.Users)
 	}
 	return handlers.Duration(
 		handlers.Log(
 			handlers.Debug(
 				handlers.TrailingSlashRedirect(
 					handlers.UUID(
-						handlers.Server(
-							UpgradeInsecureHandler(h, settings.AllowUnencryptedTraffic),
-							"logrole/"+Version),
+						handlers.Server(h, "logrole/"+Version),
 					),
 				),
 			),

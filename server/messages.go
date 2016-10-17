@@ -14,7 +14,9 @@ import (
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/assets"
+	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
+	"github.com/saintpete/logrole/views"
 )
 
 var messageInstanceTemplate *template.Template
@@ -36,13 +38,12 @@ func init() {
 }
 
 type messageInstanceServer struct {
-	Client    *twilio.Client
-	Location  *time.Location
-	SecretKey *[32]byte
+	Client   *views.Client
+	Location *time.Location
 }
 
 type messageInstanceData struct {
-	Message  *twilio.Message
+	Message  *views.RedactedMessage
 	Duration time.Duration
 	Loc      *time.Location
 	Media    *mediaResp
@@ -57,50 +58,44 @@ type mediaResp struct {
 	URLs []*url.URL
 }
 
-// Just make sure we get all of the media when we make a request
-var mediaUrlsFilters = url.Values{
-	"PageSize": []string{"100"},
-}
-
 func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sid := messageInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	start := time.Now()
 	rch := make(chan *mediaResp, 1)
 	go func(sid string) {
-		defer close(rch)
-		urls, err := s.Client.Messages.GetMediaURLs(sid, mediaUrlsFilters)
-		if err != nil {
-			rch <- &mediaResp{Err: err}
-			return
-		}
-		opaqueImages := make([]*url.URL, len(urls))
-		for i, u := range urls {
-			enc, err := services.Opaque(u.String(), s.SecretKey)
-			if err != nil {
-				rch <- &mediaResp{Err: err}
-				return
-			}
-			opaqueURL, err := url.Parse("/images/" + enc)
-			if err != nil {
-				rch <- &mediaResp{Err: err}
-				return
-			}
-			opaqueImages[i] = opaqueURL
-		}
+		urls, err := s.Client.GetMediaURLs(sid)
 		rch <- &mediaResp{
-			URLs: opaqueImages,
-			Err:  nil,
+			URLs: urls,
+			Err:  err,
 		}
+		close(rch)
 	}(sid)
-	message, err := s.Client.Messages.Get(sid)
-	if err != nil {
+	u, ok := config.GetUser(r)
+	if !ok {
+		rest.ServerError(w, r, errors.New("No user available"))
+		return
+	}
+	message, err := s.Client.GetMessage(u, sid)
+	switch err {
+	case nil:
+		break
+	case config.PermissionDenied, config.ErrTooOld:
+		// TODO html error here
+		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
+		return
+	default:
 		rest.ServerError(w, r, err)
+		return
 	}
 	data := &messageInstanceData{
-		Message: message,
+		Message: views.NewRedactedMessage(message),
 		Loc:     s.Location,
 	}
-	if message.NumMedia > 0 {
+	numMedia, err := message.NumMedia()
+	switch {
+	case err != nil:
+		data.Media = &mediaResp{Err: err}
+	case numMedia > 0:
 		r := <-rch
 		data.Media = r
 	}

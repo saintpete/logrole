@@ -7,13 +7,13 @@
       <tbody>
         <tr>
           <th>Sid</th>
-          <td><code>{{ .Message.Sid }}</code></td>
+          <td><code>{{ .Message.Call "Sid" }}</code></td>
         </tr>
         <tr>
           <th>Date Created</th>
-          <td>{{ friendly_date (.Message.DateCreated.Time.In $.Loc) }}</td>
+          <td>{{ friendly_date ((.Message.Call "DateCreated").Time.In $.Loc) }}</td>
         </tr>
-        {{- if .Message.MessagingServiceSid.Valid }}
+        {{- if (.Message.Call "MessagingServiceSid").Valid }}
         <tr>
           <th>Messaging Service Sid</th>
           <td>{{ .Message.MessagingServiceSid.String }}</td>

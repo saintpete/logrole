@@ -39,3 +39,23 @@ func TestRequestsUpgraded(t *testing.T) {
 		t.Errorf("expected Location header to be %s, got %s", expected, location)
 	}
 }
+
+//type data struct{}
+
+//func (d *data) Foo() (string, error) {
+//return "", errors.New("bad")
+//}
+
+//func TestRender(t *testing.T) {
+//tpl := template.Must(template.New("t").Option("missingkey=error").Funcs(funcMap).Parse(`
+//{{ (call redacted .Foo) }}
+//`))
+//d := &data{}
+//b := new(bytes.Buffer)
+//err := tpl.Execute(b, d)
+//if err != nil {
+//t.Fatal(err)
+//}
+//fmt.Println(b.String())
+//t.Fail()
+//}
