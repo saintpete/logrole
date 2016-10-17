@@ -7,29 +7,52 @@
       <tbody>
         <tr>
           <th>Sid</th>
-          <td><code>{{ .Message.Call "Sid" }}</code></td>
+          {{- if .Message.CanViewProperty "Sid" }}
+          <td><code>{{ .Message.Sid }}</code></td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
         </tr>
         <tr>
           <th>Date Created</th>
-          <td>{{ friendly_date ((.Message.Call "DateCreated").Time.In $.Loc) }}</td>
+          {{- if .Message.CanViewProperty "DateCreated" }}
+          <td>{{ friendly_date (.Message.DateCreated.Time.In $.Loc) }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
         </tr>
-        {{- if (.Message.Call "MessagingServiceSid").Valid }}
+        {{/* need to nest these because all args are evaluated together */}}
+        {{- if .Message.CanViewProperty "MessagingServiceSid" -}}
+        {{- if .Message.MessagingServiceSid.Valid }}
         <tr>
           <th>Messaging Service Sid</th>
           <td>{{ .Message.MessagingServiceSid.String }}</td>
         </tr>
         {{- end }}
+        {{- end }}
         <tr>
           <th>From</th>
+          {{- if .Message.CanViewProperty "From" }}
           <td>{{ .Message.From.Friendly }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
         </tr>
         <tr>
           <th>To</th>
+          {{- if .Message.CanViewProperty "To" }}
           <td>{{ .Message.To.Friendly }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
         </tr>
         <tr>
           <th>Status</th>
+          {{- if .Message.CanViewProperty "Status" }}
           <td>{{ .Message.Status.Friendly }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
         </tr>
       </tbody>
     </table>
@@ -41,24 +64,41 @@
       <tbody>
         <tr>
           <th>Direction</th>
-          <td> {{ .Message.Direction.Friendly }} </td>
-        </tr>
-        <tr>
-          <th>Status</th>
-          <td> {{ .Message.Status.Friendly }} </td>
+          {{- if .Message.CanViewProperty "Direction" }}
+          <td>{{ .Message.Direction.Friendly }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
         </tr>
         <tr>
           <th>Segments</th>
-          <td> {{ .Message.NumSegments }} </td>
+          {{- if .Message.CanViewProperty "NumSegments" }}
+          <td>{{ .Message.NumSegments }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
         </tr>
         <tr>
           <th>Price</th>
-          <td> {{ .Message.FriendlyPrice }} </td>
+          {{- if and (.Message.CanViewProperty "Price") (.Message.CanViewProperty "PriceUnit") }}
+          <td>{{ .Message.FriendlyPrice }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Number of Media</th>
+          {{- if .Message.CanViewProperty "NumMedia" }}
+          <td>{{ .Message.NumMedia }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
         </tr>
       </tbody>
     </table>
   </div>
 </div>
+{{- if (.Message.CanViewProperty "Body") }}
 {{- if (gt (len .Message.Body) 0) }}
 <div class="row">
   <div class="col-md-12">
@@ -73,6 +113,8 @@
   </div>
 </div>
 {{- end }}
+{{- end }}
+{{- if .Message.CanViewMedia }}
 {{- if .Media }}
   {{- if .Media.Err }}
   <div class="row">
@@ -102,8 +144,9 @@
         </table>
       </div>
     </div>
-    {{ end }}
-  {{ end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 {{- end }}
 <div class="row">
   <div class="col-md-12">

@@ -125,10 +125,12 @@ type Settings struct {
 
 // TODO different users or pull from database
 var theUser = config.NewUser(&config.UserSettings{
-	CanViewMessages:    false,
+	CanViewMessages:    true,
 	CanViewNumMedia:    true,
 	CanViewMessageFrom: true,
-	CanViewMessageTo:   false,
+	CanViewMessageTo:   true,
+	CanViewMedia:       true,
+	CanViewMessageBody: true,
 })
 
 // NewServer returns a new Handler that can serve requests. If the users map is

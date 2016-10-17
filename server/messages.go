@@ -43,7 +43,7 @@ type messageInstanceServer struct {
 }
 
 type messageInstanceData struct {
-	Message  *views.RedactedMessage
+	Message  *views.Message
 	Duration time.Duration
 	Loc      *time.Location
 	Media    *mediaResp
@@ -87,8 +87,13 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		rest.ServerError(w, r, err)
 		return
 	}
+	if !message.CanViewProperty("Sid") {
+		// TODO html error here
+		rest.Forbidden(w, r, &rest.Error{Title: "Cannot view this message"})
+		return
+	}
 	data := &messageInstanceData{
-		Message: views.NewRedactedMessage(message),
+		Message: message,
 		Loc:     s.Location,
 	}
 	numMedia, err := message.NumMedia()

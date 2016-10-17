@@ -12,6 +12,8 @@ type User struct {
 	canViewMessages    bool
 	canViewMessageFrom bool
 	canViewMessageTo   bool
+	canViewMessageBody bool
+	canViewMedia       bool
 }
 
 type UserSettings struct {
@@ -19,6 +21,8 @@ type UserSettings struct {
 	CanViewMessages    bool
 	CanViewMessageFrom bool
 	CanViewMessageTo   bool
+	CanViewMessageBody bool
+	CanViewMedia       bool
 }
 
 // AllUserSettings returns a UserSettings value with the widest possible set of
@@ -29,6 +33,8 @@ func AllUserSettings() *UserSettings {
 		CanViewMessages:    true,
 		CanViewMessageFrom: true,
 		CanViewMessageTo:   true,
+		CanViewMessageBody: true,
+		CanViewMedia:       true,
 	}
 }
 
@@ -41,6 +47,8 @@ func NewUser(us *UserSettings) *User {
 		canViewMessages:    us.CanViewMessages,
 		canViewMessageFrom: us.CanViewMessageFrom,
 		canViewMessageTo:   us.CanViewMessageTo,
+		canViewMessageBody: us.CanViewMessageBody,
+		canViewMedia:       us.CanViewMedia,
 	}
 }
 
@@ -58,6 +66,14 @@ func (u *User) CanViewMessageFrom() bool {
 
 func (u *User) CanViewMessageTo() bool {
 	return u.CanViewMessages() && u.canViewMessageTo
+}
+
+func (u *User) CanViewMessageBody() bool {
+	return u.CanViewMessages() && u.canViewMessageBody
+}
+
+func (u *User) CanViewMedia() bool {
+	return u.CanViewMessages() && u.canViewMedia
 }
 
 type Permission struct {

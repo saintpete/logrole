@@ -113,6 +113,9 @@ func NotAllowed(w http.ResponseWriter, r *http.Request) error {
 // Forbidden returns a 403 Forbidden status code to the client, with the given
 // Error object in the response body.
 func Forbidden(w http.ResponseWriter, r *http.Request, err *Error) error {
+	if err.ID == "" {
+		err.ID = "forbidden"
+	}
 	w.WriteHeader(http.StatusForbidden)
 	return json.NewEncoder(w).Encode(err)
 }

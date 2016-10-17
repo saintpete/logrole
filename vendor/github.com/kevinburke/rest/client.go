@@ -20,7 +20,7 @@ type UploadType string
 var JSON UploadType = "application/json"
 var FormURLEncoded UploadType = "application/x-www-form-urlencoded"
 
-const Version = "0.9"
+const Version = "0.10"
 
 var defaultTimeout = 6500 * time.Millisecond
 var defaultHttpClient = &http.Client{Timeout: defaultTimeout}
