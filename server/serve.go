@@ -25,6 +25,12 @@ var funcMap = template.FuncMap{
 	"year":          func() int { return year },
 	"friendly_date": services.FriendlyDate,
 	"duration":      services.Duration,
+	"render":        render,
+}
+
+func render(start time.Time) string {
+	since := time.Since(start)
+	return services.Duration(since)
 }
 
 func init() {

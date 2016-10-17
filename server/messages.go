@@ -47,6 +47,7 @@ type messageInstanceData struct {
 	Duration time.Duration
 	Loc      *time.Location
 	Media    *mediaResp
+	Start    time.Time
 }
 
 func (m *messageInstanceData) Title() string {
@@ -106,6 +107,7 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 	data.Duration = time.Since(start)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data.Start = time.Now()
 	if err := messageInstanceTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
@@ -124,6 +126,7 @@ type messageData struct {
 	EncryptedNextPage string
 	Loc               *time.Location
 	Query             url.Values
+	Start             time.Time
 	Err               string
 }
 
@@ -139,6 +142,7 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 	data := &messageData{Err: str, Query: query, Page: new(twilio.MessagePage)}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
+	data.Start = time.Now()
 	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
@@ -249,6 +253,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data.Start = time.Now()
 	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		// TODO buffer here
 		s.renderError(w, r, http.StatusInternalServerError, query, err)
