@@ -2,7 +2,6 @@ package views
 
 import (
 	"errors"
-	"net/url"
 	"time"
 
 	types "github.com/kevinburke/go-types"
@@ -197,6 +196,8 @@ func (m *Message) CanViewMedia() bool {
 	return m.user != nil && m.user.CanViewMedia()
 }
 
+// NewMessage creates a new Message, setting fields to be hidden or shown as
+// appropriate for the given Permission and User.
 func NewMessage(msg *twilio.Message, p *config.Permission, u *config.User) (*Message, error) {
 	if msg.DateCreated.Valid == false {
 		return nil, errors.New("Invalid CreatedAt date for message")
@@ -206,9 +207,4 @@ func NewMessage(msg *twilio.Message, p *config.Permission, u *config.User) (*Mes
 		return nil, config.ErrTooOld
 	}
 	return &Message{user: u, message: msg}, nil
-}
-
-// Just make sure we get all of the media when we make a request
-var mediaUrlsFilters = url.Values{
-	"PageSize": []string{"100"},
 }

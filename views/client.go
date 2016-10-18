@@ -44,6 +44,11 @@ func (vc *Client) GetMessage(user *config.User, sid string) (*Message, error) {
 	return NewMessage(message, vc.permission, user)
 }
 
+// Just make sure we get all of the media when we make a request
+var mediaUrlsFilters = url.Values{
+	"PageSize": []string{"100"},
+}
+
 // GetMediaURLs retrieves all media URL's for a given client, but encrypts and
 // obscures them behind our image proxy first.
 func (vc *Client) GetMediaURLs(sid string) ([]*url.URL, error) {
