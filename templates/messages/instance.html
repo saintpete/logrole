@@ -148,8 +148,13 @@
             removed = true;
           }
         }, 10);
-      }
+      };
+      var logroleShowImagesClicked = false;
       var logroleShowImages = function() {
+        if (logroleShowImagesClicked === true) {
+          return
+        }
+        logroleShowImagesClicked = true;
         var links = document.getElementsByClassName("media");
         for (var i = 0; i < links.length; i++) {
           var link = links[i];
