@@ -113,10 +113,11 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 }
 
 type messageListServer struct {
-	Client    *views.Client
-	Location  *time.Location
-	PageSize  uint
-	SecretKey *[32]byte
+	Client         *views.Client
+	Location       *time.Location
+	PageSize       uint
+	SecretKey      *[32]byte
+	MaxResourceAge time.Duration
 }
 
 type messageData struct {
@@ -126,10 +127,23 @@ type messageData struct {
 	Loc               *time.Location
 	Query             url.Values
 	Err               string
+	MaxResourceAge    time.Duration
 }
 
 func (m *messageData) Title() string {
 	return "Messages"
+}
+
+// Min returns the minimum acceptable resource date, formatted for use in a
+// date HTML input field.
+func (m *messageData) Min() string {
+	return time.Now().Add(-m.MaxResourceAge).Format("2006-01-02")
+}
+
+// Max returns a the maximum acceptable resource date, formatted for use in a
+// date HTML input field.
+func (m *messageData) Max() string {
+	return time.Now().UTC().Format("2006-01-02")
 }
 
 func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
@@ -137,7 +151,12 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 		panic("called renderError with a nil error")
 	}
 	str := strings.Replace(err.Error(), "twilio: ", "", 1)
-	data := &messageData{Err: str, Query: query, Page: new(views.MessagePage)}
+	data := &messageData{
+		Err:            str,
+		Query:          query,
+		Page:           new(views.MessagePage),
+		MaxResourceAge: s.MaxResourceAge,
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
 	data.Start = time.Now()
@@ -239,12 +258,11 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r, http.StatusInternalServerError, query, err)
 		return
 	}
-	duration := time.Since(start)
 	data := &messageData{
-		baseData: baseData{Duration: duration},
-		Page:     page,
-		Loc:      s.Location,
-		Query:    query,
+		Page:           page,
+		Loc:            s.Location,
+		Query:          query,
+		MaxResourceAge: s.MaxResourceAge,
 	}
 	if uri := page.NextPageURI(); uri.Valid {
 		next, err := services.Opaque(uri.String, s.SecretKey)
@@ -256,6 +274,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data.Duration = time.Since(start)
 	data.Start = time.Now()
 	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		// TODO buffer here

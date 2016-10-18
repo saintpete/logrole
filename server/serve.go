@@ -124,6 +124,7 @@ func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Settings are used to configure a Server.
 type Settings struct {
 	// The host the user visits to get to this site.
 	PublicHost              string
@@ -131,7 +132,7 @@ type Settings struct {
 	Users                   map[string]string
 	Client                  *twilio.Client
 
-	// A string like "America/New_York". Defaults to UTC if not set.
+	// Times will be displayed in this Location.
 	Location *time.Location
 
 	// How many messages to display per page.
@@ -169,10 +170,11 @@ func NewServer(settings *Settings) http.Handler {
 	permission := config.NewPermission(settings.MaxResourceAge)
 	vc := views.NewClient(handlers.Logger, settings.Client, settings.SecretKey, permission)
 	mls := &messageListServer{
-		Client:    vc,
-		Location:  settings.Location,
-		PageSize:  settings.MessagesPageSize,
-		SecretKey: settings.SecretKey,
+		Client:         vc,
+		Location:       settings.Location,
+		PageSize:       settings.MessagesPageSize,
+		SecretKey:      settings.SecretKey,
+		MaxResourceAge: settings.MaxResourceAge,
 	}
 	mis := &messageInstanceServer{
 		Client:   vc,

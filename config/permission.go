@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -95,9 +96,12 @@ func NewPermission(maxResourceAge time.Duration) *Permission {
 
 // TODO store in database or something
 var userMap = make(map[string]*User)
+var userMu sync.Mutex
 
 // TODO fix
 func AddUser(name string, u *User) {
+	userMu.Lock()
+	defer userMu.Unlock()
 	userMap[name] = u
 }
 
@@ -112,6 +116,8 @@ func AuthUser(r *http.Request) (*http.Request, *User, error) {
 	if !ok {
 		return r, nil, errors.New("No user provided")
 	}
+	userMu.Lock()
+	defer userMu.Unlock()
 	if u, ok := userMap[user]; ok {
 		r = r.WithContext(context.WithValue(r.Context(), userKey, u))
 		return r, u, nil
