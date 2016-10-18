@@ -18,6 +18,7 @@ main() {
 	echo "messages_page_size: $MESSAGES_PAGE_SIZE" >> "$config"
 	echo "public_host: $PUBLIC_HOST" >> "$config"
 	echo "secret_key: $SECRET_KEY" >> "$config"
+	echo "max_resource_age: $MAX_RESOURCE_AGE" >> "$config"
 
 	exec envdir "$current_directory/../env" server --config="$config"
 }

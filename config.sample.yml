@@ -33,3 +33,8 @@ public_host: localhost:4114
 # How many messages to fetch per page. A larger number will slow down load
 # time. Defaults to 50.
 messages_page_size: 10
+
+# Don't show resources that are older than this age. Valid values for this
+# field are defined here: https://golang.org/pkg/time/#ParseDuration. Defaults
+# to "all resources viewable".
+max_resource_age: 720h

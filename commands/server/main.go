@@ -21,6 +21,9 @@ import (
 const DefaultPort = "4114"
 const DefaultPageSize = 50
 
+// DefaultMaxResourceAge allows all resources to be fetched. The company was
+// founded in 2008, so there should definitely be no resources created in the
+// 1980's.
 var DefaultMaxResourceAge = time.Since(time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC))
 
 type config struct {
