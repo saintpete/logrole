@@ -72,7 +72,8 @@ func (m *Message) CanViewProperty(property string) bool {
 	}
 	switch property {
 	case "Sid", "DateCreated", "DateUpdated", "MessagingServiceSid",
-		"Status", "Direction", "Price", "PriceUnit":
+		"Status", "Direction", "Price", "PriceUnit", "ErrorCode",
+		"ErrorMessage":
 		return m.user.CanViewMessages()
 	case "NumMedia":
 		return m.user.CanViewNumMedia()
@@ -188,6 +189,22 @@ func (m *Message) NumSegments() (twilio.Segments, error) {
 		return m.message.NumSegments, nil
 	} else {
 		return 0, config.PermissionDenied
+	}
+}
+
+func (m *Message) ErrorCode() (twilio.Code, error) {
+	if m.CanViewProperty("ErrorCode") {
+		return m.message.ErrorCode, nil
+	} else {
+		return 0, config.PermissionDenied
+	}
+}
+
+func (m *Message) ErrorMessage() (string, error) {
+	if m.CanViewProperty("ErrorMessage") {
+		return m.message.ErrorMessage, nil
+	} else {
+		return "", config.PermissionDenied
 	}
 }
 

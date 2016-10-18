@@ -20,7 +20,7 @@ type UploadType string
 var JSON UploadType = "application/json"
 var FormURLEncoded UploadType = "application/x-www-form-urlencoded"
 
-const Version = "0.10"
+const Version = "0.11"
 
 var defaultTimeout = 6500 * time.Millisecond
 var defaultHttpClient = &http.Client{Timeout: defaultTimeout}
@@ -101,6 +101,9 @@ func (c *Client) Do(r *http.Request, v interface{}) error {
 		if err != nil {
 			return err
 		}
+		if len(bits) > 0 && bits[len(bits)-1] != '\n' {
+			bits = append(bits, '\n')
+		}
 		b.Write(bits)
 	}
 	res, err := c.Client.Do(r)
@@ -112,6 +115,9 @@ func (c *Client) Do(r *http.Request, v interface{}) error {
 		bits, err := httputil.DumpResponse(res, true)
 		if err != nil {
 			return err
+		}
+		if len(bits) > 0 && bits[len(bits)-1] != '\n' {
+			bits = append(bits, '\n')
 		}
 		b.Write(bits)
 	}

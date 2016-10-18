@@ -37,13 +37,13 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/rest",
-			"Comment": "0.10",
-			"Rev": "b17bfc437c01a3053b474f41baf66f8da75ffaec"
+			"Comment": "0.11",
+			"Rev": "77aa76ab6bb65202bcc1afa0332dca215a15a446"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/twilio-go",
-			"Comment": "0.17",
-			"Rev": "74a2a8ee9060665dbdf966e91d78107b260c5497"
+			"Comment": "0.19",
+			"Rev": "a53491e09e24f360deb1a4eeec003204a175923b"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",

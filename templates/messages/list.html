@@ -71,7 +71,11 @@
         <td>{{ .Direction.Friendly }}</td>
         {{- end }}
         {{- if .CanViewProperty "Status" }}
-        <td>{{ .Status.Friendly }}</td>
+        <td>
+          <a href="/messages/{{ .Sid }}" title="View more details">
+          {{ .Status.Friendly }}
+          </a>
+        </td>
         {{- end }}
         {{- if .CanViewProperty "From" }}
         <td class="pn">{{ .From.Friendly }}</td>

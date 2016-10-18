@@ -59,8 +59,6 @@
   </div>
   <div class="col-md-6">
     <table class="table table-striped">
-      <thead>
-      </thead>
       <tbody>
         <tr>
           <th>Direction</th>
@@ -99,20 +97,47 @@
   </div>
 </div>
 {{- if (.Message.CanViewProperty "Body") }}
-{{- if (gt (len .Message.Body) 0) }}
-<div class="row">
-  <div class="col-md-12">
-    <table class="table">
-      <tbody>
-        <tr>
-          <th>Body</th>
-          <td><code>{{ .Message.Body }}</code></td>
-        </tr>
-      </tbody>
-    </table>
+  {{- if (gt (len .Message.Body) 0) }}
+  <div class="row">
+    <div class="col-md-4">
+      <table class="table">
+        <tbody>
+          <tr>
+            <th>Body</th>
+            <td><code>{{ .Message.Body }}</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
+  {{- end }}
 {{- end }}
+{{- if (.Message.CanViewProperty "ErrorCode") }}
+  {{- if gt .Message.ErrorCode 0 }}
+  <div class="row">
+    <div class="col-md-4">
+      <h3>Error</h3>
+      <table class="table">
+        <tbody>
+          <tr>
+            <th>Code</th>
+            <td>
+              <a title="More information about the error" href="https://twilio.com/docs/errors/{{ .Message.ErrorCode }}">{{ .Message.ErrorCode }}</a>
+            </td>
+          </tr>
+          <tr>
+            <th>Message</th>
+            {{ if .Message.CanViewProperty "ErrorMessage" }}
+            <td>{{ .Message.ErrorMessage }}</td>
+            {{ else }}
+            <td>[redacted]</td>
+            {{ end }}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {{- end }}
 {{- end }}
 {{- if .Message.CanViewMedia }}
 {{- if .Media }}
