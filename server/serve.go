@@ -25,10 +25,13 @@ var funcMap = template.FuncMap{
 	"year":          func() int { return year },
 	"friendly_date": services.FriendlyDate,
 	"duration":      services.Duration,
-	"render":        render,
+	"render":        renderTime,
 }
 
-func render(start time.Time) string {
+// renderTime returns the amount of time since we began rendering this
+// template; it's designed to approximate the amount of time spent in the
+// render phase on the server.
+func renderTime(start time.Time) string {
 	since := time.Since(start)
 	return services.Duration(since)
 }
@@ -119,7 +122,7 @@ func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Start:    time.Now(),
 		},
 	}
-	if err := indexTemplate.ExecuteTemplate(w, "base", data); err != nil {
+	if err := render(w, indexTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }

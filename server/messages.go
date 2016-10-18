@@ -107,7 +107,7 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 	data.Duration = time.Since(start)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data.Start = time.Now()
-	if err := messageInstanceTemplate.ExecuteTemplate(w, "base", data); err != nil {
+	if err := render(w, messageInstanceTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -160,7 +160,7 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
 	data.Start = time.Now()
-	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
+	if err := render(w, messageListTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -276,7 +276,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data.Duration = time.Since(start)
 	data.Start = time.Now()
-	if err := messageListTemplate.ExecuteTemplate(w, "base", data); err != nil {
+	if err := render(w, messageListTemplate, "base", data); err != nil {
 		// TODO buffer here
 		s.renderError(w, r, http.StatusInternalServerError, query, err)
 		return

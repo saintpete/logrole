@@ -16,6 +16,15 @@ By default we look for a config file in `config.yml`. The values for this
 config file can be found in commands/server/main.go. There's an example config
 file at config.sample.yml.
 
+## Run the tests
+
+Run `make test`. Run `make race-test` to run the tests with the race detector
+enabled.
+
+## View the documentation
+
+Run `make docs`
+
 ## Errata
 
 The Start/End date filters may only work in Chrome.
