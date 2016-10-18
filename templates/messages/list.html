@@ -37,23 +37,53 @@
   <thead>
     <tr>
       <th>Date</th>
+      {{- if .Page.ShowHeader "Direction" }}
       <th>Direction</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "Status" }}
       <th>Status</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "From" }}
       <th class="pn">From</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "To" }}
       <th class="pn">To</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "Body" }}
       <th>Body</th>
+      {{- end }}
     </tr>
   </thead>
   <tbody>
     {{- range .Page.Messages }}
-    <tr class="message">
-      <td><a href="/messages/{{ .Sid }}" title="View more details">{{ friendly_date (.DateCreated.Time.In $.Loc) }}</a></td>
-      <td>{{ .Direction.Friendly }}</td>
-      <td>{{ .Status.Friendly }}</td>
-      <td class="pn">{{ .From.Friendly }}</td>
-      <td class="pn">{{ .To.Friendly }}</td>
-      <td>{{ .Body }}</td>
-    </tr>
+      {{ if .CanViewProperty "Sid" }}
+      <tr class="message">
+        <td>
+          <a href="/messages/{{ .Sid }}" title="View more details">
+            {{- if .CanViewProperty "DateCreated" }}
+              {{ friendly_date (.DateCreated.Time.In $.Loc) }}
+            {{- else }}
+            View more details
+            {{- end }}
+          </a>
+        </td>
+        {{- if .CanViewProperty "Direction" }}
+        <td>{{ .Direction.Friendly }}</td>
+        {{- end }}
+        {{- if .CanViewProperty "Status" }}
+        <td>{{ .Status.Friendly }}</td>
+        {{- end }}
+        {{- if .CanViewProperty "From" }}
+        <td class="pn">{{ .From.Friendly }}</td>
+        {{- end }}
+        {{- if .CanViewProperty "To" }}
+        <td class="pn">{{ .To.Friendly }}</td>
+        {{- end }}
+        {{- if .CanViewProperty "Body" }}
+        <td>{{ .Body }}</td>
+        {{- end }}
+      </tr>
+      {{- end }}
     {{- end }}
   </tbody>
 </table>
@@ -64,11 +94,4 @@
   </div>
 </div>
 {{ end }}
-<div class="row">
-  <div class="col-md-12">
-    API request time: {{ duration .Duration }}
-    <br>
-    Render: {{ render .Start }}
-  </div>
-</div>
-{{ end }}
+{{/* end content */}}{{- end }}

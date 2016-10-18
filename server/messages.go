@@ -114,7 +114,7 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 }
 
 type messageListServer struct {
-	Client    *twilio.Client
+	Client    *views.Client
 	Location  *time.Location
 	PageSize  uint
 	SecretKey *[32]byte
@@ -122,7 +122,7 @@ type messageListServer struct {
 
 type messageData struct {
 	Duration          time.Duration
-	Page              *twilio.MessagePage
+	Page              *views.MessagePage
 	EncryptedNextPage string
 	Loc               *time.Location
 	Query             url.Values
@@ -139,7 +139,7 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 		panic("called renderError with a nil error")
 	}
 	str := strings.Replace(err.Error(), "twilio: ", "", 1)
-	data := &messageData{Err: str, Query: query, Page: new(twilio.MessagePage)}
+	data := &messageData{Err: str, Query: query, Page: new(views.MessagePage)}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
 	data.Start = time.Now()
@@ -203,8 +203,13 @@ func setPageFilters(query url.Values, pageFilters url.Values) error {
 func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// This is modified as we parse the query; specifically we add some values
 	// if they are present in the next page URI.
+	u, ok := config.GetUser(r)
+	if !ok {
+		rest.ServerError(w, r, errors.New("No user available"))
+		return
+	}
 	query := r.URL.Query()
-	page := new(twilio.MessagePage)
+	page := new(views.MessagePage)
 	var err error
 	opaqueNext := query.Get("next")
 	start := time.Now()
@@ -220,7 +225,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		err = s.Client.GetNextPage(next, page)
+		page, err = s.Client.GetNextMessagePage(u, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		// valid values: https://www.twilio.com/docs/api/rest/message#list
@@ -230,7 +235,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, err)
 			return
 		}
-		page, err = s.Client.Messages.GetPage(data)
+		page, err = s.Client.GetMessagePage(u, data)
 	}
 	if err != nil {
 		s.renderError(w, r, http.StatusInternalServerError, query, err)
@@ -243,8 +248,8 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Loc:      s.Location,
 		Query:    query,
 	}
-	if page.NextPageURI.Valid {
-		next, err := services.Opaque(page.NextPageURI.String, s.SecretKey)
+	if uri := page.NextPageURI(); uri.Valid {
+		next, err := services.Opaque(uri.String, s.SecretKey)
 		if err != nil {
 			s.renderError(w, r, http.StatusInternalServerError, query, err)
 			return

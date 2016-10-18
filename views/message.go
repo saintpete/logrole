@@ -8,12 +8,60 @@ import (
 	types "github.com/kevinburke/go-types"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/config"
-	"github.com/saintpete/logrole/services"
 )
 
 type Message struct {
 	user    *config.User
 	message *twilio.Message
+}
+
+type MessagePage struct {
+	messages    []*Message
+	nextPageURI types.NullString
+}
+
+func (mp *MessagePage) Messages() []*Message {
+	return mp.messages
+}
+
+func (mp *MessagePage) NextPageURI() types.NullString {
+	return mp.nextPageURI
+}
+
+const showAllColumnsOnEmptyPage = true
+
+// ShowHeader returns true if we should show the table header in the message
+// list view. This is true if the user is allowed to view the fieldName on any
+// message in the list, and true if there are no messages.
+func (mp *MessagePage) ShowHeader(fieldName string) bool {
+	if mp == nil {
+		return true
+	}
+	msgs := mp.Messages()
+	if len(msgs) == 0 {
+		return showAllColumnsOnEmptyPage
+	}
+	for _, message := range msgs {
+		if message.CanViewProperty(fieldName) {
+			return true
+		}
+	}
+	return false
+}
+
+func NewMessagePage(mp *twilio.MessagePage, p *config.Permission, u *config.User) (*MessagePage, error) {
+	messages := make([]*Message, 0)
+	for _, message := range mp.Messages {
+		msg, err := NewMessage(message, p, u)
+		if err == config.ErrTooOld || err == config.PermissionDenied {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+	return &MessagePage{messages: messages, nextPageURI: mp.NextPageURI}, nil
 }
 
 // CanViewProperty returns true if the caller can access the given property.
@@ -163,35 +211,4 @@ func NewMessage(msg *twilio.Message, p *config.Permission, u *config.User) (*Mes
 // Just make sure we get all of the media when we make a request
 var mediaUrlsFilters = url.Values{
 	"PageSize": []string{"100"},
-}
-
-func (vc *Client) GetMessage(user *config.User, sid string) (*Message, error) {
-	message, err := vc.client.Messages.Get(sid)
-	if err != nil {
-		return nil, err
-	}
-	return NewMessage(message, vc.permission, user)
-}
-
-// GetMediaURLs retrieves all media URL's for a given client, but encrypts and
-// obscures them behind our image proxy first.
-func (vc *Client) GetMediaURLs(sid string) ([]*url.URL, error) {
-	urls, err := vc.client.Messages.GetMediaURLs(sid, mediaUrlsFilters)
-	if err != nil {
-		return nil, err
-	}
-	opaqueImages := make([]*url.URL, len(urls))
-	for i, u := range urls {
-		enc, err := services.Opaque(u.String(), vc.secretKey)
-		if err != nil {
-			vc.Warn("Could not encrypt media URL", "raw", u.String(), "err", err)
-			return nil, errors.New("Could not encode URL as a string")
-		}
-		opaqueURL, err := url.Parse("/images/" + enc)
-		if err != nil {
-			return nil, err
-		}
-		opaqueImages[i] = opaqueURL
-	}
-	return opaqueImages, nil
 }

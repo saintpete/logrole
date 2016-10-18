@@ -1,3 +1,29 @@
+/* https://getbootstrap.com/examples/sticky-footer/sticky-footer.css */
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 100px;
+  font-family: 'PT Sans', Helvetica, Arial, sans-serif;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 100px;
+  background-color: #f5f5f5;
+  padding: 10px 40px;
+}
+
+
 a {
     text-decoration: underline;
 }
@@ -14,10 +40,6 @@ a:visited {
     text-decoration: none;
 }
 
-footer {
-    margin-top: 40px;
-}
-
 pre, code {
     font-family: Consolas, Monaco, monospace;
 }
@@ -25,7 +47,6 @@ pre, code {
 /* TODO media queries here - not as wide margins on smaller screens */
 .page {
     margin: 10px 40px 40px 40px;
-    font-family: 'PT Sans', Helvetica, Arial, sans-serif;
 }
 
 .pn {

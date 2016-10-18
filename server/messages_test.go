@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 )
 
@@ -14,8 +15,11 @@ func TestInvalidNext(t *testing.T) {
 	s := &messageListServer{
 		SecretKey: key,
 	}
+	config.AddUser("test", theUser)
 	enc, _ := services.Opaque("invalid", key)
 	req, _ := http.NewRequest("GET", "/messages?next="+enc, nil)
+	req.SetBasicAuth("test", "test")
+	req, _, _ = config.AuthUser(req)
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, req)
 	if w.Code != 400 {

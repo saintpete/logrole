@@ -9,6 +9,7 @@ import (
 )
 
 func TestUnknownUsersDenied(t *testing.T) {
+	t.Parallel()
 	settings := &Settings{
 		AllowUnencryptedTraffic: true, Users: map[string]string{"test": "test"},
 		SecretKey: services.NewRandomKey(),
@@ -24,6 +25,7 @@ func TestUnknownUsersDenied(t *testing.T) {
 }
 
 func TestRequestsUpgraded(t *testing.T) {
+	t.Parallel()
 	settings := &Settings{AllowUnencryptedTraffic: false, SecretKey: services.NewRandomKey()}
 	s := NewServer(settings)
 	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)

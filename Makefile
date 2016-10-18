@@ -1,5 +1,11 @@
+BUMP_VERSION := $(shell command -v bump_version)
+GODOCDOC := $(shell command -v godocdoc)
+
 test: vet
 	go test -short ./...
+
+race-test: vet
+	go test -race ./...
 
 serve:
 	go run commands/server/main.go
@@ -19,10 +25,14 @@ watch:
 deps:
 	godep save ./...
 
-release: test
+release: race-test
+ifndef BUMP_VERSION
 	go get github.com/Shyp/bump_version
+endif
 	bump_version minor server/serve.go
 
 docs:
+ifndef GODOCDOC
 	go get github.com/kevinburke/godocdoc
+endif
 	godocdoc

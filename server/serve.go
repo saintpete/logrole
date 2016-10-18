@@ -129,15 +129,8 @@ type Settings struct {
 	MaxResourceAge time.Duration
 }
 
-// TODO different users or pull from database
-var theUser = config.NewUser(&config.UserSettings{
-	CanViewMessages:    true,
-	CanViewNumMedia:    true,
-	CanViewMessageFrom: true,
-	CanViewMessageTo:   true,
-	CanViewMedia:       true,
-	CanViewMessageBody: true,
-})
+// TODO add different users, or pull from database
+var theUser = config.NewUser(config.AllUserSettings())
 
 // NewServer returns a new Handler that can serve requests. If the users map is
 // empty, Basic Authentication is disabled.
@@ -161,7 +154,7 @@ func NewServer(settings *Settings) http.Handler {
 	permission := config.NewPermission(settings.MaxResourceAge)
 	vc := views.NewClient(handlers.Logger, settings.Client, settings.SecretKey, permission)
 	mls := &messageListServer{
-		Client:    settings.Client,
+		Client:    vc,
 		Location:  settings.Location,
 		PageSize:  settings.MessagesPageSize,
 		SecretKey: settings.SecretKey,
