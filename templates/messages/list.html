@@ -72,7 +72,16 @@
         {{- end }}
         {{- if .CanViewProperty "Status" }}
         <td>
-          <a href="/messages/{{ .Sid }}" title="View more details">
+          <a href="/messages/{{ .Sid }}"
+            title="{{ if .CanViewProperty "ErrorCode" -}}
+              {{- if gt .ErrorCode 0 -}}
+                {{- .ErrorCode }}: {{ .ErrorMessage -}}
+              {{- else -}}
+                View more details
+              {{- end }}
+            {{- else -}}
+            View more details
+            {{- end -}}">
           {{ .Status.Friendly }}
           </a>
         </td>
