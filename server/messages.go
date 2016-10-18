@@ -43,11 +43,10 @@ type messageInstanceServer struct {
 }
 
 type messageInstanceData struct {
-	Message  *views.Message
-	Duration time.Duration
-	Loc      *time.Location
-	Media    *mediaResp
-	Start    time.Time
+	baseData
+	Message *views.Message
+	Loc     *time.Location
+	Media   *mediaResp
 }
 
 func (m *messageInstanceData) Title() string {
@@ -121,12 +120,11 @@ type messageListServer struct {
 }
 
 type messageData struct {
-	Duration          time.Duration
+	baseData
 	Page              *views.MessagePage
 	EncryptedNextPage string
 	Loc               *time.Location
 	Query             url.Values
-	Start             time.Time
 	Err               string
 }
 
@@ -243,7 +241,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	duration := time.Since(start)
 	data := &messageData{
-		Duration: duration,
+		baseData: baseData{Duration: duration},
 		Page:     page,
 		Loc:      s.Location,
 		Query:    query,

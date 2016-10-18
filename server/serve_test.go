@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/saintpete/logrole/services"
@@ -39,6 +40,25 @@ func TestRequestsUpgraded(t *testing.T) {
 	expected := "https://localhost:12345/foo"
 	if location != expected {
 		t.Errorf("expected Location header to be %s, got %s", expected, location)
+	}
+}
+
+func TestIndex(t *testing.T) {
+	t.Parallel()
+	settings := &Settings{
+		AllowUnencryptedTraffic: true, Users: map[string]string{"test": "test"},
+		SecretKey: services.NewRandomKey(),
+	}
+	s := NewServer(settings)
+	req, _ := http.NewRequest("GET", "http://localhost:12345/", nil)
+	req.SetBasicAuth("test", "test")
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Errorf("expected Code to be 200, got %d", w.Code)
+	}
+	if strings.Contains(w.Body.String(), "server error") {
+		t.Errorf("Got unexpected server error, body: %s", w.Body.String())
 	}
 }
 

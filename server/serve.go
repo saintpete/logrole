@@ -94,17 +94,32 @@ func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, r.URL.Path, s.modTime, bytes.NewReader(bits))
 }
 
+type baseData struct {
+	Duration time.Duration
+	Start    time.Time
+}
+
 type indexServer struct{}
+
+type indexData struct {
+	baseData
+}
 
 var indexTemplate *template.Template
 
-func (i *indexServer) Title() string {
+func (i *indexData) Title() string {
 	return "Logrole Homepage"
 }
 
 func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := indexTemplate.ExecuteTemplate(w, "base", nil); err != nil {
+	data := &indexData{
+		baseData: baseData{
+			Duration: 0,
+			Start:    time.Now(),
+		},
+	}
+	if err := indexTemplate.ExecuteTemplate(w, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
