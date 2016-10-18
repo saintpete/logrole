@@ -1,3 +1,8 @@
+// Package views retrieves data and controls which of it is visible.
+//
+// This is the only package that should interact directly with Twilio - all
+// other code should talk to this package to determine whether a particular
+// piece of information should be visible, or not.
 package views
 
 import (
@@ -19,6 +24,7 @@ type Client struct {
 	permission *config.Permission
 }
 
+// NewClient creates a new Client encapsulating the provided values.
 func NewClient(l log.Logger, client *twilio.Client, secretKey *[32]byte, p *config.Permission) *Client {
 	return &Client{
 		Logger:     l,
@@ -28,6 +34,8 @@ func NewClient(l log.Logger, client *twilio.Client, secretKey *[32]byte, p *conf
 	}
 }
 
+// GetMessage fetches a single Message from the Twilio API, and returns any
+// network or permission errors that occur.
 func (vc *Client) GetMessage(user *config.User, sid string) (*Message, error) {
 	message, err := vc.client.Messages.Get(sid)
 	if err != nil {

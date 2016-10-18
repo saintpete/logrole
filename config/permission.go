@@ -1,3 +1,6 @@
+// Package config maintains information about permissions.
+//
+// The format and API's in this package will probably change over time.
 package config
 
 import (

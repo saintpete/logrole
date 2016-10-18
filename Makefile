@@ -1,5 +1,6 @@
 BUMP_VERSION := $(shell command -v bump_version)
 GODOCDOC := $(shell command -v godocdoc)
+GO_BINDATA := $(shell command -v go-bindata)
 
 test: vet
 	go test -short ./...
@@ -17,6 +18,9 @@ deploy:
 	git push heroku master
 
 assets: templates/base.html templates/messages/list.html templates/messages/instance.html static/css/style.css static/css/bootstrap.min.css
+ifndef GO_BINDATA
+	go get -u github.com/jteeuwen/go-bindata/...
+endif
 	go-bindata -o=assets/bindata.go --pkg=assets templates/... static/...
 
 watch:

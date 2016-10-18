@@ -1,3 +1,7 @@
+// Package server responds to incoming HTTP requests and renders the site.
+//
+// There are a number of smaller servers in this package, each of which takes
+// only the configuration necessary to serve it.
 package server
 
 import (
@@ -156,8 +160,8 @@ type Settings struct {
 // TODO add different users, or pull from database
 var theUser = config.NewUser(config.AllUserSettings())
 
-// NewServer returns a new Handler that can serve the website. If the users map
-// is empty, Basic Authentication is disabled.
+// NewServer returns a new Handler that can serve the website. If the
+// settings.Users map is empty, Basic Authentication is disabled.
 func NewServer(settings *Settings) http.Handler {
 	validKey := false
 	for i := 0; i < len(settings.SecretKey); i++ {
