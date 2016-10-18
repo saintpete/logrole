@@ -19,8 +19,9 @@ main() {
 	echo "public_host: $PUBLIC_HOST" >> "$config"
 	echo "secret_key: $SECRET_KEY" >> "$config"
 	echo "max_resource_age: $MAX_RESOURCE_AGE" >> "$config"
+	echo "show_media_by_default: $SHOW_MEDIA_BY_DEFAULT" >> "$config"
 
-	exec envdir "$current_directory/../env" server --config="$config"
+	exec envdir "$current_directory/../env" server serve --config="$config"
 }
 
 main "$@"

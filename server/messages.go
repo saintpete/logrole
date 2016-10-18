@@ -38,15 +38,17 @@ func init() {
 }
 
 type messageInstanceServer struct {
-	Client   *views.Client
-	Location *time.Location
+	Client             *views.Client
+	Location           *time.Location
+	ShowMediaByDefault bool
 }
 
 type messageInstanceData struct {
 	baseData
-	Message *views.Message
-	Loc     *time.Location
-	Media   *mediaResp
+	Message            *views.Message
+	Loc                *time.Location
+	Media              *mediaResp
+	ShowMediaByDefault bool
 }
 
 func (m *messageInstanceData) Title() string {
@@ -93,8 +95,9 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 	data := &messageInstanceData{
-		Message: message,
-		Loc:     s.Location,
+		Message:            message,
+		Loc:                s.Location,
+		ShowMediaByDefault: s.ShowMediaByDefault,
 	}
 	numMedia, err := message.NumMedia()
 	switch {

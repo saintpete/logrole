@@ -17,6 +17,7 @@ type User struct {
 	canViewMedia       bool
 }
 
+// UserSettings are used to define which permissions a User has.
 type UserSettings struct {
 	CanViewNumMedia    bool
 	CanViewMessages    bool
@@ -39,6 +40,7 @@ func AllUserSettings() *UserSettings {
 	}
 }
 
+// NewUser creates a new User with the given settings.
 func NewUser(us *UserSettings) *User {
 	if us == nil {
 		us = &UserSettings{}
@@ -81,6 +83,7 @@ type Permission struct {
 	maxResourceAge time.Duration
 }
 
+// ErrTooOld is returned for a resource that's more than MaxResourceAge old.
 var ErrTooOld = errors.New("Cannot access this resource because its age exceeds the viewable limit")
 var PermissionDenied = errors.New("You do not have permission to access that information")
 

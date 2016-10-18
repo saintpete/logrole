@@ -78,3 +78,11 @@ pre, code {
     width: auto;
     height: auto;
 }
+
+.media-hidden {
+	display: none;
+}
+
+#hidden-images-warning {
+	min-height: 30px;
+}

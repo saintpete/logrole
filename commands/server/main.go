@@ -38,6 +38,10 @@ type config struct {
 	MessagesPageSize uint          `yaml:"messages_page_size"`
 	SecretKey        string        `yaml:"secret_key"`
 	MaxResourceAge   time.Duration `yaml:"max_resource_age"`
+
+	// Need a pointer to a boolean here since we want to be able to distinguish
+	// "false" from "omitted"
+	ShowMediaByDefault *bool `yaml:"show_media_by_default,omitempty"`
 }
 
 var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
@@ -62,9 +66,41 @@ func getSecretKey(hexKey string) (*[32]byte, error) {
 	return secretKey, nil
 }
 
+func init() {
+	flag.Usage = func() {
+		os.Stderr.WriteString(`Logrole: a faster, finer-grained Twilio log viewer
+
+Configuration should be written to a file (default config.yml in the 
+current directory) and passed to the binary via the --config flag.
+
+Usage of server:
+`)
+		flag.PrintDefaults()
+		os.Exit(2)
+	}
+}
+
 func main() {
 	cfg := flag.String("config", "config.yml", "Path to a config file")
 	flag.Parse()
+	if flag.NArg() > 2 {
+		os.Stderr.WriteString("too many arguments")
+		os.Exit(2)
+	}
+	if flag.NArg() == 1 {
+		switch flag.Arg(0) {
+		case "version":
+			fmt.Fprintf(os.Stderr, "logrole version %s (twilio-go version %s)\n", server.Version, twilio.Version)
+			os.Exit(2)
+		case "help":
+			flag.Usage()
+		case "serve":
+			break
+		default:
+			fmt.Fprintf(os.Stderr, "Unknown flag: %s\n", flag.Arg(0))
+			os.Exit(2)
+		}
+	}
 	data, err := ioutil.ReadFile(*cfg)
 	c := new(config)
 	if err == nil {
@@ -77,6 +113,7 @@ func main() {
 			handlers.Logger.Error("Couldn't find config file", "err", err)
 			os.Exit(2)
 		}
+		handlers.Logger.Warn("Couldn't find config file, defaulting to localhost:4114")
 		c.Port = DefaultPort
 		c.Realm = services.Local
 	}
@@ -119,16 +156,21 @@ func main() {
 	if c.MessagesPageSize == 0 {
 		c.MessagesPageSize = DefaultPageSize
 	}
+	if c.ShowMediaByDefault == nil {
+		b := true
+		c.ShowMediaByDefault = &b
+	}
 
 	settings := &server.Settings{
 		AllowUnencryptedTraffic: allowHTTP,
-		Users:            users,
-		Client:           client,
-		Location:         location,
-		PublicHost:       c.PublicHost,
-		MessagesPageSize: c.MessagesPageSize,
-		SecretKey:        secretKey,
-		MaxResourceAge:   c.MaxResourceAge,
+		Users:              users,
+		Client:             client,
+		Location:           location,
+		PublicHost:         c.PublicHost,
+		MessagesPageSize:   c.MessagesPageSize,
+		SecretKey:          secretKey,
+		MaxResourceAge:     c.MaxResourceAge,
+		ShowMediaByDefault: *c.ShowMediaByDefault,
 	}
 	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()

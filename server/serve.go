@@ -127,7 +127,8 @@ func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Settings are used to configure a Server.
+// Settings are used to configure a Server and apply to all of the website's
+// users.
 type Settings struct {
 	// The host the user visits to get to this site.
 	PublicHost              string
@@ -145,14 +146,18 @@ type Settings struct {
 	// more information.
 	SecretKey *[32]byte
 
+	// Don't show resources that are older than this age.
 	MaxResourceAge time.Duration
+
+	// Should a user have to click a button to view media attached to a MMS?
+	ShowMediaByDefault bool
 }
 
 // TODO add different users, or pull from database
 var theUser = config.NewUser(config.AllUserSettings())
 
-// NewServer returns a new Handler that can serve requests. If the users map is
-// empty, Basic Authentication is disabled.
+// NewServer returns a new Handler that can serve the website. If the users map
+// is empty, Basic Authentication is disabled.
 func NewServer(settings *Settings) http.Handler {
 	validKey := false
 	for i := 0; i < len(settings.SecretKey); i++ {
@@ -180,8 +185,9 @@ func NewServer(settings *Settings) http.Handler {
 		MaxResourceAge: settings.MaxResourceAge,
 	}
 	mis := &messageInstanceServer{
-		Client:   vc,
-		Location: settings.Location,
+		Client:             vc,
+		Location:           settings.Location,
+		ShowMediaByDefault: settings.ShowMediaByDefault,
 	}
 	if settings.Location == nil {
 		mls.Location = time.UTC

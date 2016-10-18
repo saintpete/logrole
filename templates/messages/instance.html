@@ -126,6 +126,50 @@
     </div>
   </div>
   {{- else }}
+    {{ $showmedia := .ShowMediaByDefault }}
+    {{ if eq $showmedia false }}
+    <script type="text/javascript">
+      var unfade = function(element, hiddenClass) {
+        var op = 0;  // initial opacity
+        element.style.display = 'block';
+        var removed = false;
+        var timer = setInterval(function() {
+          if (op >= 1) {
+            clearInterval(timer);
+          }
+          element.style.opacity = op;
+          element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+          if (op === 0) {
+            op = 0.05;
+          }
+          op += op * 0.1;
+          if (removed === false) {
+            element.classList.remove(hiddenClass)
+            removed = true;
+          }
+        }, 10);
+      }
+      var logroleShowImages = function() {
+        var links = document.getElementsByClassName("media");
+        for (var i = 0; i < links.length; i++) {
+          var link = links[i];
+          unfade(link, "media-hidden");
+        }
+        setTimeout(function() {
+          var warning = document.getElementById("hidden-images-warning-warning");
+          warning.style.display = "none";
+        }, 100);
+      };
+    </script>
+    <div id="hidden-images-warning" class="row">
+      <div class="col-md-12" id="hidden-images-warning-warning">
+        <p>
+        Images are hidden by default.
+        <a id="show-images" onclick="logroleShowImages(); return false;" href="#">Click to show all images</a>
+        </p>
+      </div>
+    </div>
+    {{ end }}
     {{- range .Media.URLs }}
     <div class="row">
       <div class="col-md-12">
@@ -135,7 +179,7 @@
               <th>Media</th>
               {{/* TODO - we should do better here about controlling the size of the image on the page. */}}
               <td>
-                <a href="{{ . }}" title="Click to view the full size image">
+                <a {{ if eq $showmedia false }}class="media media-hidden"{{ else }}class="media"{{ end }} href="{{ . }}" title="Click to view the full size image">
                   <img class="mms-image" src="{{ . }}" alt="Image associated with the message" />
                 </a>
               </td>
@@ -144,8 +188,8 @@
         </table>
       </div>
     </div>
-    {{- end }}
-  {{- end }}
+    {{- end }}{{/* end URL range */}}
+  {{- end }}{{/* end if Media.Err else block */}}
 {{- end }}
 {{- else }}
 <div class="row">
