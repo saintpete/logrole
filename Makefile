@@ -17,14 +17,19 @@ vet:
 deploy: 
 	git push heroku master
 
-assets: templates/base.html templates/messages/list.html templates/messages/instance.html static/css/style.css static/css/bootstrap.min.css
+assets: templates/base.html templates/messages/list.html templates/messages/instance.html templates/calls/list.html static/css/style.css static/css/bootstrap.min.css
 ifndef GO_BINDATA
 	go get -u github.com/jteeuwen/go-bindata/...
 endif
 	go-bindata -o=assets/bindata.go --pkg=assets templates/... static/...
 
 watch:
-	justrun -c 'make assets serve' static/css/style.css commands/server/main.go config/permission.go templates/base.html templates/messages/list.html templates/messages/instance.html server/serve.go server/messages.go server/search.go server/images.go views/message.go
+	justrun --delay=100ms -c 'make assets serve' static/css/style.css \
+		commands/server/main.go config/permission.go templates/base.html \
+		templates/messages/list.html templates/messages/instance.html \
+		templates/calls/list.html server/serve.go server/messages.go \
+		server/search.go server/images.go server/calls.go views/message.go \
+		views/client.go views/call.go
 
 deps:
 	godep save ./...

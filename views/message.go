@@ -97,7 +97,7 @@ func (m *Message) NumMedia() (twilio.NumMedia, error) {
 }
 
 func (m *Message) Sid() (string, error) {
-	if m.user.CanViewMessages() {
+	if m.CanViewProperty("Sid") {
 		return m.message.Sid, nil
 	} else {
 		return "", config.PermissionDenied
@@ -105,7 +105,7 @@ func (m *Message) Sid() (string, error) {
 }
 
 func (m *Message) DateCreated() (twilio.TwilioTime, error) {
-	if m.user.CanViewMessages() {
+	if m.CanViewProperty("DateCreated") {
 		return m.message.DateCreated, nil
 	} else {
 		return twilio.TwilioTime{}, config.PermissionDenied
@@ -113,7 +113,7 @@ func (m *Message) DateCreated() (twilio.TwilioTime, error) {
 }
 
 func (m *Message) From() (twilio.PhoneNumber, error) {
-	if m.user.CanViewMessageFrom() {
+	if m.CanViewProperty("From") {
 		return m.message.From, nil
 	} else {
 		return twilio.PhoneNumber(""), config.PermissionDenied
@@ -121,7 +121,7 @@ func (m *Message) From() (twilio.PhoneNumber, error) {
 }
 
 func (m *Message) To() (twilio.PhoneNumber, error) {
-	if m.user.CanViewMessageTo() {
+	if m.CanViewProperty("To") {
 		return m.message.To, nil
 	} else {
 		return twilio.PhoneNumber(""), config.PermissionDenied
@@ -217,7 +217,7 @@ func (m *Message) CanViewMedia() bool {
 // appropriate for the given Permission and User.
 func NewMessage(msg *twilio.Message, p *config.Permission, u *config.User) (*Message, error) {
 	if msg.DateCreated.Valid == false {
-		return nil, errors.New("Invalid CreatedAt date for message")
+		return nil, errors.New("Invalid DateCreated for message")
 	}
 	oldest := time.Now().UTC().Add(-1 * p.MaxResourceAge())
 	if msg.DateCreated.Time.Before(oldest) {

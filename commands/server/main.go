@@ -1,3 +1,5 @@
+// Command line binary for loading configuration and starting/running the
+// logrole server.
 package main
 
 import (
@@ -27,17 +29,17 @@ const DefaultPageSize = 50
 var DefaultMaxResourceAge = time.Since(time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC))
 
 type config struct {
-	Port             string        `yaml:"port"`
-	AccountSid       string        `yaml:"twilio_account_sid"`
-	AuthToken        string        `yaml:"twilio_auth_token"`
-	User             string        `yaml:"basic_auth_user"`
-	Password         string        `yaml:"basic_auth_password"`
-	Realm            services.Rlm  `yaml:"realm"`
-	Timezone         string        `yaml:"timezone"`
-	PublicHost       string        `yaml:"public_host"`
-	MessagesPageSize uint          `yaml:"messages_page_size"`
-	SecretKey        string        `yaml:"secret_key"`
-	MaxResourceAge   time.Duration `yaml:"max_resource_age"`
+	Port           string        `yaml:"port"`
+	AccountSid     string        `yaml:"twilio_account_sid"`
+	AuthToken      string        `yaml:"twilio_auth_token"`
+	User           string        `yaml:"basic_auth_user"`
+	Password       string        `yaml:"basic_auth_password"`
+	Realm          services.Rlm  `yaml:"realm"`
+	Timezone       string        `yaml:"timezone"`
+	PublicHost     string        `yaml:"public_host"`
+	PageSize       uint          `yaml:"page_size"`
+	SecretKey      string        `yaml:"secret_key"`
+	MaxResourceAge time.Duration `yaml:"max_resource_age"`
 
 	// Need a pointer to a boolean here since we want to be able to distinguish
 	// "false" from "omitted"
@@ -153,8 +155,8 @@ func main() {
 			os.Exit(2)
 		}
 	}
-	if c.MessagesPageSize == 0 {
-		c.MessagesPageSize = DefaultPageSize
+	if c.PageSize == 0 {
+		c.PageSize = DefaultPageSize
 	}
 	if c.ShowMediaByDefault == nil {
 		b := true
@@ -167,7 +169,7 @@ func main() {
 		Client:             client,
 		Location:           location,
 		PublicHost:         c.PublicHost,
-		MessagesPageSize:   c.MessagesPageSize,
+		PageSize:           c.PageSize,
 		SecretKey:          secretKey,
 		MaxResourceAge:     c.MaxResourceAge,
 		ShowMediaByDefault: *c.ShowMediaByDefault,
@@ -187,7 +189,7 @@ func main() {
 	}
 	go func(p string) {
 		time.Sleep(30 * time.Millisecond)
-		handlers.Logger.Info("Started server", "port", p)
+		handlers.Logger.Info("Started server", "port", p, "public_host", settings.PublicHost)
 	}(c.Port)
 	publicServer.Serve(listener)
 }

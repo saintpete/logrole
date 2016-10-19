@@ -3,26 +3,28 @@
 /* Sticky footer styles
 -------------------------------------------------- */
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  /* Margin bottom by footer height */
-  margin-bottom: 140px;
-  font-family: 'PT Sans', Helvetica, Arial, sans-serif;
+    /* Margin bottom by footer height */
+    margin-bottom: 140px;
+    font-family: 'PT Sans', Helvetica, Arial, sans-serif;
+
+    background-color: #fafafa;
 }
 
 .footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  /* Set the fixed height of the footer here */
-  height: 100px;
-  background-color: #f5f5f5;
-  padding: 10px 40px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 100px;
+    background-color: #f5f5f5;
+    padding: 10px 40px;
 }
-
+/* end sticky footer */
 
 a {
     text-decoration: underline;
@@ -63,12 +65,16 @@ pre, code {
     margin-bottom: 20px;
 }
 
-.form-messages-search label {
+.form-search label {
     margin-right: 10px;
 }
 
-.form-messages-search input {
+.form-search input {
     margin-right: 20px;
+}
+
+.number-input {
+    max-width: 150px;
 }
 
 /* http://stackoverflow.com/a/17183996/329700 */
@@ -80,9 +86,9 @@ pre, code {
 }
 
 .media-hidden {
-	display: none;
+    display: none;
 }
 
 #hidden-images-warning {
-	min-height: 30px;
+    min-height: 30px;
 }

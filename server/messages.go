@@ -168,66 +168,14 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
-// setNextPageValsOnQuery takes query values that have been sent to the Twilio
-// API, and sets them on the provided query object. We use this to populate the
-// search fields on the search page.
-func setNextPageValsOnQuery(nextpageuri string, query url.Values) {
-	u, err := url.Parse(nextpageuri)
-	if err != nil {
-		return
-	}
-	nq := u.Query()
-	if start := nq.Get("DateSent>"); start != "" {
-		query.Set("start", start)
-	}
-	if end := nq.Get("DateSent<"); end != "" {
-		query.Set("end", end)
-	}
-	if from := nq.Get("From"); from != "" {
-		query.Set("from", from)
-	}
-	if to := nq.Get("To"); to != "" {
-		query.Set("to", to)
-	}
-}
-
-// Reverse of the function above, with validation
-func setPageFilters(query url.Values, pageFilters url.Values) error {
-	if from := query.Get("from"); from != "" {
-		fromPN, err := twilio.NewPhoneNumber(from)
-		if err != nil {
-			query.Del("from")
-			return err
-		}
-		pageFilters.Set("From", string(fromPN))
-	}
-	if to := query.Get("to"); to != "" {
-		toPN, err := twilio.NewPhoneNumber(to)
-		if err != nil {
-			query.Del("to")
-			return err
-		}
-		pageFilters.Set("To", string(toPN))
-	}
-	// NB - we purposely don't do date validation here since we filter out
-	// older messages as part of the message view.
-	if startDate := query.Get("start"); startDate != "" {
-		pageFilters.Set("DateSent>", startDate)
-	}
-	if end := query.Get("end"); end != "" {
-		pageFilters.Set("DateSent<", end)
-	}
-	return nil
-}
-
 func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// This is modified as we parse the query; specifically we add some values
-	// if they are present in the next page URI.
 	u, ok := config.GetUser(r)
 	if !ok {
 		rest.ServerError(w, r, errors.New("No user available"))
 		return
 	}
+	// This is modified as we parse the query; specifically we add some values
+	// if they are present in the next page URI.
 	query := r.URL.Query()
 	page := new(views.MessagePage)
 	var err error
@@ -267,20 +215,16 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Query:          query,
 		MaxResourceAge: s.MaxResourceAge,
 	}
-	if uri := page.NextPageURI(); uri.Valid {
-		next, err := services.Opaque(uri.String, s.SecretKey)
-		if err != nil {
-			s.renderError(w, r, http.StatusInternalServerError, query, err)
-			return
-		}
-		data.EncryptedNextPage = next
+	data.Duration = time.Since(start)
+	data.EncryptedNextPage, err = getEncryptedNextPage(page.NextPageURI(), s.SecretKey)
+	if err != nil {
+		s.renderError(w, r, http.StatusInternalServerError, query, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data.Duration = time.Since(start)
 	data.Start = time.Now()
 	if err := render(w, messageListTemplate, "base", data); err != nil {
-		// TODO buffer here
 		s.renderError(w, r, http.StatusInternalServerError, query, err)
 		return
 	}

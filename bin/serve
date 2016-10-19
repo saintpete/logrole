@@ -4,7 +4,6 @@ set -eo pipefail
 
 # Drop some environment variables by writing them to a config file, and then
 # start the server.
-
 main() {
 	local current_directory="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 	local config="$current_directory/../config.yml"
@@ -15,7 +14,7 @@ main() {
 	echo "twilio_auth_token: $TWILIO_AUTH_TOKEN" >> "$config"
 	echo "realm: $REALM" >> "$config"
 	echo "timezone: $TZ" >> "$config"
-	echo "messages_page_size: $MESSAGES_PAGE_SIZE" >> "$config"
+	echo "page_size: $PAGE_SIZE" >> "$config"
 	echo "public_host: $PUBLIC_HOST" >> "$config"
 	echo "secret_key: $SECRET_KEY" >> "$config"
 	echo "max_resource_age: $MAX_RESOURCE_AGE" >> "$config"

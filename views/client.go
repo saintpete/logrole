@@ -88,3 +88,20 @@ func (vc *Client) GetNextMessagePage(user *config.User, nextPage string) (*Messa
 	}
 	return NewMessagePage(page, vc.permission, user)
 }
+
+func (vc *Client) GetCallPage(user *config.User, data url.Values) (*CallPage, error) {
+	page, err := vc.client.Calls.GetPage(data)
+	if err != nil {
+		return nil, err
+	}
+	return NewCallPage(page, vc.permission, user)
+}
+
+func (vc *Client) GetNextCallPage(user *config.User, nextPage string) (*CallPage, error) {
+	page := new(twilio.CallPage)
+	err := vc.client.GetNextPage(nextPage, page)
+	if err != nil {
+		return nil, err
+	}
+	return NewCallPage(page, vc.permission, user)
+}

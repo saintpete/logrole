@@ -18,6 +18,9 @@ type User struct {
 	canViewMessageTo   bool
 	canViewMessageBody bool
 	canViewMedia       bool
+	canViewCalls       bool
+	canViewCallFrom    bool
+	canViewCallTo      bool
 }
 
 // UserSettings are used to define which permissions a User has.
@@ -28,6 +31,9 @@ type UserSettings struct {
 	CanViewMessageTo   bool
 	CanViewMessageBody bool
 	CanViewMedia       bool
+	CanViewCalls       bool
+	CanViewCallFrom    bool
+	CanViewCallTo      bool
 }
 
 // AllUserSettings returns a UserSettings value with the widest possible set of
@@ -40,6 +46,9 @@ func AllUserSettings() *UserSettings {
 		CanViewMessageTo:   true,
 		CanViewMessageBody: true,
 		CanViewMedia:       true,
+		CanViewCalls:       true,
+		CanViewCallFrom:    true,
+		CanViewCallTo:      true,
 	}
 }
 
@@ -55,6 +64,9 @@ func NewUser(us *UserSettings) *User {
 		canViewMessageTo:   us.CanViewMessageTo,
 		canViewMessageBody: us.CanViewMessageBody,
 		canViewMedia:       us.CanViewMedia,
+		canViewCalls:       us.CanViewCalls,
+		canViewCallFrom:    us.CanViewCallFrom,
+		canViewCallTo:      us.CanViewCallTo,
 	}
 }
 
@@ -80,6 +92,18 @@ func (u *User) CanViewMessageBody() bool {
 
 func (u *User) CanViewMedia() bool {
 	return u.CanViewMessages() && u.canViewMedia
+}
+
+func (u *User) CanViewCalls() bool {
+	return u.canViewCalls
+}
+
+func (u *User) CanViewCallFrom() bool {
+	return u.canViewCalls && u.canViewCallFrom
+}
+
+func (u *User) CanViewCallTo() bool {
+	return u.canViewCalls && u.canViewCallTo
 }
 
 type Permission struct {

@@ -185,3 +185,67 @@ func price(unit string, amount string) string {
 		return unit + " " + amount
 	}
 }
+
+type TwilioDuration time.Duration
+
+func (td *TwilioDuration) UnmarshalJSON(b []byte) error {
+	s := new(string)
+	if err := json.Unmarshal(b, s); err != nil {
+		return err
+	}
+	i, err := strconv.ParseInt(*s, 10, 64)
+	if err != nil {
+		return err
+	}
+	*td = TwilioDuration(i) * TwilioDuration(time.Second)
+	return nil
+}
+
+func (td TwilioDuration) String() string {
+	return time.Duration(td).String()
+}
+
+type AnsweredBy string
+
+const AnsweredByHuman = AnsweredBy("human")
+const AnsweredByMachine = AnsweredBy("machine")
+
+type NullAnsweredBy struct {
+	Valid      bool
+	AnsweredBy AnsweredBy
+}
+
+// The status of the message (accepted, queued, etc).
+// For more information , see https://www.twilio.com/docs/api/rest/message
+type Status string
+
+func (s Status) Friendly() string {
+	switch s {
+	case StatusInProgress:
+		return "In Progress"
+	case StatusNoAnswer:
+		return "No Answer"
+	default:
+		return strings.Title(string(s))
+	}
+}
+
+const StatusAccepted = Status("accepted")
+const StatusDelivered = Status("delivered")
+const StatusReceiving = Status("receiving")
+const StatusReceived = Status("received")
+const StatusSending = Status("sending")
+const StatusSent = Status("sent")
+const StatusUndelivered = Status("undelivered")
+
+// Call statuses
+const StatusBusy = Status("busy")
+const StatusCanceled = Status("canceled")
+const StatusCompleted = Status("completed")
+const StatusInProgress = Status("in-progress")
+const StatusNoAnswer = Status("no-answer")
+const StatusRinging = Status("ringing")
+
+// Shared
+const StatusFailed = Status("failed")
+const StatusQueued = Status("queued")

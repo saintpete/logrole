@@ -1,17 +1,15 @@
 package types
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 )
 
-const VERSION = "0.16"
+const Version = "0.18"
 
 // A NullString is a String that may be null. It can be encoded or decoded from
 // JSON or the database.
 type NullString struct {
-	sql.NullString
 	Valid  bool
 	String string
 }
@@ -52,7 +50,7 @@ func (ns *NullString) Scan(value interface{}) error {
 	return nil
 }
 
-// Value implements the driver.Valuer interface.
+// Value implements the driver Valuer interface.
 func (ns NullString) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil

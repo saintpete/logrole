@@ -144,7 +144,7 @@ type Settings struct {
 	Location *time.Location
 
 	// How many messages to display per page.
-	MessagesPageSize uint
+	PageSize uint
 
 	// Used to encrypt next page URI's and sessions. See config.sample.yml for
 	// more information.
@@ -184,7 +184,7 @@ func NewServer(settings *Settings) http.Handler {
 	mls := &messageListServer{
 		Client:         vc,
 		Location:       settings.Location,
-		PageSize:       settings.MessagesPageSize,
+		PageSize:       settings.PageSize,
 		SecretKey:      settings.SecretKey,
 		MaxResourceAge: settings.MaxResourceAge,
 	}
@@ -193,9 +193,12 @@ func NewServer(settings *Settings) http.Handler {
 		Location:           settings.Location,
 		ShowMediaByDefault: settings.ShowMediaByDefault,
 	}
-	if settings.Location == nil {
-		mls.Location = time.UTC
-		mis.Location = time.UTC
+	cls := &callListServer{
+		Client:         vc,
+		Location:       settings.Location,
+		SecretKey:      settings.SecretKey,
+		PageSize:       settings.PageSize,
+		MaxResourceAge: settings.MaxResourceAge,
 	}
 	ss := &searchServer{}
 	o := &openSearchXMLServer{
@@ -212,6 +215,7 @@ func NewServer(settings *Settings) http.Handler {
 	r.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
+	r.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
 	r.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
 	var h http.Handler = UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)
