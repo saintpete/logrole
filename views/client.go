@@ -61,7 +61,10 @@ var mediaUrlsFilters = url.Values{
 
 // GetMediaURLs retrieves all media URL's for a given client, but encrypts and
 // obscures them behind our image proxy first.
-func (vc *Client) GetMediaURLs(sid string) ([]*url.URL, error) {
+func (vc *Client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
+	if u.CanViewMedia() == false {
+		return nil, config.PermissionDenied
+	}
 	urls, err := vc.client.Messages.GetMediaURLs(sid, mediaUrlsFilters)
 	if err != nil {
 		return nil, err
@@ -114,4 +117,21 @@ func (vc *Client) GetNextCallPage(user *config.User, nextPage string) (*CallPage
 		return nil, err
 	}
 	return NewCallPage(page, vc.permission, user)
+}
+
+func (vc *Client) GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error) {
+	page := new(twilio.RecordingPage)
+	err := vc.client.GetNextPage(nextPage, page)
+	if err != nil {
+		return nil, err
+	}
+	return NewRecordingPage(page, vc.permission, user)
+}
+
+func (vc *Client) GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error) {
+	page, err := vc.client.Calls.GetRecordings(callSid, data)
+	if err != nil {
+		return nil, err
+	}
+	return NewRecordingPage(page, vc.permission, user)
 }

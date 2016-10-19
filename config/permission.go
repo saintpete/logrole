@@ -12,15 +12,17 @@ import (
 )
 
 type User struct {
-	canViewNumMedia    bool
-	canViewMessages    bool
-	canViewMessageFrom bool
-	canViewMessageTo   bool
-	canViewMessageBody bool
-	canViewMedia       bool
-	canViewCalls       bool
-	canViewCallFrom    bool
-	canViewCallTo      bool
+	canViewNumMedia      bool
+	canViewMessages      bool
+	canViewMessageFrom   bool
+	canViewMessageTo     bool
+	canViewMessageBody   bool
+	canViewMedia         bool
+	canViewCalls         bool
+	canViewCallFrom      bool
+	canViewCallTo        bool
+	canViewNumRecordings bool
+	canPlayRecordings    bool
 }
 
 // UserSettings are used to define which permissions a User has.
@@ -34,21 +36,27 @@ type UserSettings struct {
 	CanViewCalls       bool
 	CanViewCallFrom    bool
 	CanViewCallTo      bool
+	// Can the user see whether a call has recordings attached?
+	CanViewNumRecordings bool
+	// Can the user listen to recordings?
+	CanPlayRecordings bool
 }
 
 // AllUserSettings returns a UserSettings value with the widest possible set of
 // permissions.
 func AllUserSettings() *UserSettings {
 	return &UserSettings{
-		CanViewNumMedia:    true,
-		CanViewMessages:    true,
-		CanViewMessageFrom: true,
-		CanViewMessageTo:   true,
-		CanViewMessageBody: true,
-		CanViewMedia:       true,
-		CanViewCalls:       true,
-		CanViewCallFrom:    true,
-		CanViewCallTo:      true,
+		CanViewNumMedia:      true,
+		CanViewMessages:      true,
+		CanViewMessageFrom:   true,
+		CanViewMessageTo:     true,
+		CanViewMessageBody:   true,
+		CanViewMedia:         true,
+		CanViewCalls:         true,
+		CanViewCallFrom:      true,
+		CanViewCallTo:        true,
+		CanViewNumRecordings: true,
+		CanPlayRecordings:    true,
 	}
 }
 
@@ -58,15 +66,17 @@ func NewUser(us *UserSettings) *User {
 		us = &UserSettings{}
 	}
 	return &User{
-		canViewNumMedia:    us.CanViewNumMedia,
-		canViewMessages:    us.CanViewMessages,
-		canViewMessageFrom: us.CanViewMessageFrom,
-		canViewMessageTo:   us.CanViewMessageTo,
-		canViewMessageBody: us.CanViewMessageBody,
-		canViewMedia:       us.CanViewMedia,
-		canViewCalls:       us.CanViewCalls,
-		canViewCallFrom:    us.CanViewCallFrom,
-		canViewCallTo:      us.CanViewCallTo,
+		canViewNumMedia:      us.CanViewNumMedia,
+		canViewMessages:      us.CanViewMessages,
+		canViewMessageFrom:   us.CanViewMessageFrom,
+		canViewMessageTo:     us.CanViewMessageTo,
+		canViewMessageBody:   us.CanViewMessageBody,
+		canViewMedia:         us.CanViewMedia,
+		canViewCalls:         us.CanViewCalls,
+		canViewCallFrom:      us.CanViewCallFrom,
+		canViewCallTo:        us.CanViewCallTo,
+		canViewNumRecordings: us.CanViewNumRecordings,
+		canPlayRecordings:    us.CanPlayRecordings,
 	}
 }
 
@@ -104,6 +114,14 @@ func (u *User) CanViewCallFrom() bool {
 
 func (u *User) CanViewCallTo() bool {
 	return u.canViewCalls && u.canViewCallTo
+}
+
+func (u *User) CanViewNumRecordings() bool {
+	return u.canViewNumRecordings
+}
+
+func (u *User) CanPlayRecordings() bool {
+	return u.canViewNumRecordings && u.canPlayRecordings
 }
 
 type Permission struct {

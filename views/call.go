@@ -119,17 +119,21 @@ func (c *Call) FriendlyPrice() (string, error) {
 	}
 }
 
+func (c *Call) CanViewNumRecordings() bool {
+	return c.user.CanViewNumRecordings()
+}
+
 func NewCallPage(cp *twilio.CallPage, p *config.Permission, u *config.User) (*CallPage, error) {
 	calls := make([]*Call, 0)
-	for _, message := range cp.Calls {
-		msg, err := NewCall(message, p, u)
+	for _, call := range cp.Calls {
+		cl, err := NewCall(call, p, u)
 		if err == config.ErrTooOld || err == config.PermissionDenied {
 			continue
 		}
 		if err != nil {
 			return nil, err
 		}
-		calls = append(calls, msg)
+		calls = append(calls, cl)
 	}
 	return &CallPage{calls: calls, nextPageURI: cp.NextPageURI}, nil
 }

@@ -63,22 +63,22 @@ type mediaResp struct {
 }
 
 func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	u, ok := config.GetUser(r)
+	if !ok {
+		rest.ServerError(w, r, errors.New("No user available"))
+		return
+	}
 	sid := messageInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	start := time.Now()
 	rch := make(chan *mediaResp, 1)
 	go func(sid string) {
-		urls, err := s.Client.GetMediaURLs(sid)
+		urls, err := s.Client.GetMediaURLs(u, sid)
 		rch <- &mediaResp{
 			URLs: urls,
 			Err:  err,
 		}
 		close(rch)
 	}(sid)
-	u, ok := config.GetUser(r)
-	if !ok {
-		rest.ServerError(w, r, errors.New("No user available"))
-		return
-	}
 	message, err := s.Client.GetMessage(u, sid)
 	switch err {
 	case nil:

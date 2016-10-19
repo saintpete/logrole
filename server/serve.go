@@ -160,6 +160,20 @@ type Settings struct {
 // TODO add different users, or pull from database
 var theUser = config.NewUser(config.AllUserSettings())
 
+//var theUser = config.NewUser(&config.UserSettings{
+//CanViewNumMedia:      true,
+//CanViewMessages:      true,
+//CanViewMessageFrom:   true,
+//CanViewMessageTo:     true,
+//CanViewMessageBody:   true,
+//CanViewMedia:         true,
+//CanViewCalls:         true,
+//CanViewCallFrom:      true,
+//CanViewCallTo:        true,
+//CanViewNumRecordings: true,
+//CanPlayRecordings:    false,
+//})
+
 // NewServer returns a new Handler that can serve the website. If the
 // settings.Users map is empty, Basic Authentication is disabled.
 func NewServer(settings *Settings) http.Handler {

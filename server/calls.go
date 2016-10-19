@@ -54,8 +54,9 @@ type callInstanceServer struct {
 
 type callInstanceData struct {
 	baseData
-	Call *views.Call
-	Loc  *time.Location
+	Call       *views.Call
+	Loc        *time.Location
+	Recordings *recordingResp
 }
 
 type callListData struct {
@@ -169,6 +170,46 @@ func (c *callInstanceData) Title() string {
 	return "Call Details"
 }
 
+type recordingResp struct {
+	Err              error
+	Recordings       []*views.Recording
+	CanPlayRecording bool
+}
+
+func (c *callInstanceServer) fetchRecordings(sid string, u *config.User, rch chan<- *recordingResp) {
+	defer close(rch)
+	if u.CanViewNumRecordings() == false {
+		rch <- &recordingResp{Err: config.PermissionDenied}
+		return
+	}
+	rp, err := c.Client.GetCallRecordings(u, sid, nil)
+	if err != nil {
+		rch <- &recordingResp{Err: err}
+		return
+	}
+	rs := rp.Recordings()
+	uri := rp.NextPageURI()
+	for uri.Valid {
+		rp, err := c.Client.GetNextRecordingPage(u, uri.String)
+		if err == twilio.NoMoreResults {
+			break
+		}
+		if err != nil {
+			rch <- &recordingResp{Err: err}
+			return
+		}
+		rs = append(rs, rp.Recordings()...)
+	}
+	canPlayRecording := false
+	for _, recording := range rs {
+		if recording.CanPlay() {
+			canPlayRecording = true
+			break
+		}
+	}
+	rch <- &recordingResp{Recordings: rs, CanPlayRecording: canPlayRecording}
+}
+
 func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, ok := config.GetUser(r)
 	if !ok {
@@ -177,6 +218,8 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	sid := callInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	start := time.Now()
+	rch := make(chan *recordingResp, 1)
+	go c.fetchRecordings(sid, u, rch)
 	call, err := c.Client.GetCall(u, sid)
 	switch err {
 	case nil:
@@ -195,6 +238,10 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Duration = time.Since(start)
 	data.Start = time.Now()
+	if u.CanViewNumRecordings() {
+		r := <-rch
+		data.Recordings = r
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := render(w, callInstanceTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
