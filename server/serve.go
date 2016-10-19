@@ -30,6 +30,7 @@ var funcMap = template.FuncMap{
 	"friendly_date": services.FriendlyDate,
 	"duration":      services.Duration,
 	"render":        renderTime,
+	"truncate_sid":  services.TruncateSid,
 }
 
 // renderTime returns the amount of time since we began rendering this
@@ -158,21 +159,24 @@ type Settings struct {
 }
 
 // TODO add different users, or pull from database
-var theUser = config.NewUser(config.AllUserSettings())
+//var theUser = config.NewUser(config.AllUserSettings())
 
-//var theUser = config.NewUser(&config.UserSettings{
-//CanViewNumMedia:      true,
-//CanViewMessages:      true,
-//CanViewMessageFrom:   true,
-//CanViewMessageTo:     true,
-//CanViewMessageBody:   true,
-//CanViewMedia:         true,
-//CanViewCalls:         true,
-//CanViewCallFrom:      true,
-//CanViewCallTo:        true,
-//CanViewNumRecordings: true,
-//CanPlayRecordings:    false,
-//})
+var theUser = config.NewUser(&config.UserSettings{
+	CanViewNumMedia:       true,
+	CanViewMessages:       true,
+	CanViewMessageFrom:    true,
+	CanViewMessageTo:      true,
+	CanViewMessageBody:    true,
+	CanViewMessagePrice:   false,
+	CanViewMedia:          true,
+	CanViewCalls:          true,
+	CanViewCallFrom:       true,
+	CanViewCallTo:         true,
+	CanViewCallPrice:      false,
+	CanViewNumRecordings:  true,
+	CanPlayRecordings:     true,
+	CanViewRecordingPrice: false,
+})
 
 // NewServer returns a new Handler that can serve the website. If the
 // settings.Users map is empty, Basic Authentication is disabled.

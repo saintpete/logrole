@@ -31,6 +31,8 @@ func (r *Recording) CanViewProperty(property string) bool {
 	switch property {
 	case "Sid", "DateCreated", "DateUpdated", "Duration":
 		return r.user.CanPlayRecordings()
+	case "Price", "PriceUnit":
+		return r.user.CanViewRecordingPrice()
 	default:
 		panic("Unknown property " + property)
 	}
@@ -57,6 +59,30 @@ func (r *Recording) DateCreated() (twilio.TwilioTime, error) {
 		return r.recording.DateCreated, nil
 	} else {
 		return twilio.TwilioTime{}, config.PermissionDenied
+	}
+}
+
+func (r *Recording) Price() (string, error) {
+	if r.CanViewProperty("Price") {
+		return r.recording.Price, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (r *Recording) PriceUnit() (string, error) {
+	if r.CanViewProperty("PriceUnit") {
+		return r.recording.PriceUnit, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (r *Recording) FriendlyPrice() (string, error) {
+	if r.CanViewProperty("Price") && r.CanViewProperty("PriceUnit") {
+		return r.recording.FriendlyPrice(), nil
+	} else {
+		return "", config.PermissionDenied
 	}
 }
 

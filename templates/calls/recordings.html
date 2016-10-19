@@ -1,12 +1,12 @@
 {{ define "recordings" }}
-{{/* An array of recordings with a recordingResp */}}
+{{/* An array of recordings. Template value is a recordingResp */}}
 <h3>Recordings</h3>
 {{- if .CanViewNumRecordings }}
   {{- if .Err }}
   <div class="row">
     <div class="col-md-12">
       <p>
-      Error retrieving recordings for this call: {{ .Recordings.Err }}.
+      Error retrieving recordings for this call: {{ .Err }}.
       Refresh the page to try again.
       </p>
     </div>
@@ -15,9 +15,37 @@
     {{- if .CanPlayRecording }}
       {{- range .Recordings }}
         <div class="row">
-          <div class="col-md-12">
+          <div class="col-md-6">
+            <h4>Recording {{ truncate_sid .Sid }}</h4>
+            <table class="table table-striped">
+              <tbody>
+                <tr>
+                  <th>Sid</th>
+                  {{- if .CanViewProperty "Sid" }}
+                  <td><code>{{ .Sid }}</code></td>
+                  {{- else }}
+                  <td>[redacted]</td>
+                  {{- end }}
+                </tr>
+                <tr>
+                  <th>Price</th>
+                  {{- if .CanViewProperty "Price" }}
+                  <td>{{ .FriendlyPrice }}</td>
+                  {{- else }}
+                  <td>[redacted]</td>
+                  {{- end }}
+                </tr>
+                <tr>
+                  <th>Duration</th>
+                  {{- if .CanViewProperty "Duration" }}
+                  <td>{{ .Duration.String }}</td>
+                  {{- else }}
+                  <td>[redacted]</td>
+                  {{- end }}
+                </tr>
+              </tbody>
+            </table>
             {{- if .CanPlay }}
-            <h5>Recording {{ .Sid }} ({{ .Duration.String }})</h5>
             <p>
               <audio controls="true" preload="metadata">
                 Your browser does not support the <code>audio</code> element.
@@ -26,7 +54,6 @@
               </audio>
             </p>
             {{- else }}
-            <h5>Recording</h5>
             <p>Cannot play this recording.</p>
             {{- end }}
           </div>

@@ -25,3 +25,15 @@ func TestOpaque(t *testing.T) {
 		t.Fatalf("expected Unopaque(Opaque(%v)) to be the same, got %v", npurl, exp)
 	}
 }
+
+func TestTruncateSid(t *testing.T) {
+	if TruncateSid("MM1234567") != "MM123456" {
+		t.Errorf("wrong answer")
+	}
+	if TruncateSid("MM123456") != "MM123456" {
+		t.Errorf("wrong answer")
+	}
+	if TruncateSid("MM12345") != "MM12345" {
+		t.Errorf("wrong answer")
+	}
+}

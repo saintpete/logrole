@@ -64,3 +64,12 @@ func Duration(d time.Duration) string {
 	d2 := (d / (100 * time.Microsecond)) * (100 * time.Microsecond)
 	return d2.String()
 }
+
+// TruncateSid truncates the Sid to the first 6 characters of the ID (16
+// million possibilities).
+func TruncateSid(sid string) string {
+	if len(sid) > 8 {
+		return sid[:8]
+	}
+	return sid
+}

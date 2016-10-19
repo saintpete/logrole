@@ -72,9 +72,11 @@ func (m *Message) CanViewProperty(property string) bool {
 	}
 	switch property {
 	case "Sid", "DateCreated", "DateUpdated", "MessagingServiceSid",
-		"Status", "Direction", "Price", "PriceUnit", "ErrorCode",
+		"Status", "Direction", "ErrorCode",
 		"ErrorMessage":
 		return m.user.CanViewMessages()
+	case "Price", "PriceUnit":
+		return m.user.CanViewMessagePrice()
 	case "NumMedia":
 		return m.user.CanViewNumMedia()
 	case "From":

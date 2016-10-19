@@ -36,8 +36,10 @@ func (c *Call) CanViewProperty(property string) bool {
 	}
 	switch property {
 	case "Sid", "Direction", "Status", "DateCreated", "DateUpdated",
-		"Duration", "StartTime", "EndTime", "Price", "PriceUnit":
+		"Duration", "StartTime", "EndTime":
 		return c.user.CanViewCalls()
+	case "Price", "PriceUnit":
+		return c.user.CanViewCallPrice()
 	case "From":
 		return c.user.CanViewCallFrom()
 	case "To":
