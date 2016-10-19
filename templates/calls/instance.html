@@ -87,57 +87,5 @@
     </table>
   </div>
 </div>
-<h3>Recordings</h3>
-{{- if .Call.CanViewNumRecordings }}
-  {{- if .Recordings.Err }}
-  <div class="row">
-    <div class="col-md-12">
-      <p>
-      Error retrieving recordings for this call: {{ .Recordings.Err }}.
-      Refresh the page to try again.
-      </p>
-    </div>
-  </div>
-  {{- else }}
-    {{- if .Recordings.CanPlayRecording }}
-      {{- range .Recordings.Recordings }}
-        <div class="row">
-          <div class="col-md-12">
-            {{- if .CanPlay }}
-            <h5>Recording {{ .Sid }} ({{ .Duration.String }})</h5>
-            <p>
-              <audio controls="true" preload="metadata">
-                Your browser does not support the <code>audio</code> element.
-                <source src="{{ .URL ".wav" }}" type="audio/x-wav">
-                <source src="{{ .URL ".mp3" }}" type="audio/mpeg">
-              </audio>
-            </p>
-            {{- else }}
-            <h5>Recording</h5>
-            <p>Cannot play this recording.</p>
-            {{- end }}
-          </div>
-        </div>
-      {{- end }}
-    {{- else }}
-    <div class="row">
-      <div class="col-md-12">
-        <p>
-        {{- $len := len .Recordings.Recordings }}
-        {{- if eq $len 0 }}
-        There were no recordings
-        {{- else if eq $len 1 }}
-        There was one recording
-        {{- else }}
-        There were {{ $len }} recordings
-        {{- end }}
-        attached to this call.
-        </p>
-      </div>
-    </div>
-    {{- end }}
-  {{- end }}
-{{- else }}
-<p>You do not have permission to see whether any recordings were made.</p>
-{{- end }}
+{{ template "recordings" .Recordings }}
 {{- end }}{{/* end content */}}

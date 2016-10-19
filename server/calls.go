@@ -37,6 +37,9 @@ func init() {
 	tinstance := template.Must(templates.Clone())
 	instanceTpl := string(assets.MustAsset("templates/calls/instance.html"))
 	callInstanceTemplate = template.Must(tinstance.Parse(instanceTpl))
+	// this is ugly, would be nice to chain Parse's somehow.
+	recordingTpl := string(assets.MustAsset("templates/calls/recordings.html"))
+	callInstanceTemplate = template.Must(callInstanceTemplate.Parse(recordingTpl))
 }
 
 type callListServer struct {
@@ -171,15 +174,19 @@ func (c *callInstanceData) Title() string {
 }
 
 type recordingResp struct {
-	Err              error
-	Recordings       []*views.Recording
-	CanPlayRecording bool
+	Err                  error
+	Recordings           []*views.Recording
+	CanPlayRecording     bool
+	CanViewNumRecordings bool
 }
 
 func (c *callInstanceServer) fetchRecordings(sid string, u *config.User, rch chan<- *recordingResp) {
 	defer close(rch)
 	if u.CanViewNumRecordings() == false {
-		rch <- &recordingResp{Err: config.PermissionDenied}
+		rch <- &recordingResp{
+			Err:                  config.PermissionDenied,
+			CanViewNumRecordings: false,
+		}
 		return
 	}
 	rp, err := c.Client.GetCallRecordings(u, sid, nil)
@@ -207,7 +214,11 @@ func (c *callInstanceServer) fetchRecordings(sid string, u *config.User, rch cha
 			break
 		}
 	}
-	rch <- &recordingResp{Recordings: rs, CanPlayRecording: canPlayRecording}
+	rch <- &recordingResp{
+		Recordings:           rs,
+		CanPlayRecording:     canPlayRecording,
+		CanViewNumRecordings: u.CanViewNumRecordings(),
+	}
 }
 
 func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {

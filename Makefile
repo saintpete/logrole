@@ -7,14 +7,14 @@ WATCH_TARGETS = static/css/style.css \
 	config/permission.go \
 	templates/base.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
-	templates/calls/instance.html \
+	templates/calls/instance.html templates/calls/recordings.html \
 	server/serve.go server/messages.go server/search.go server/images.go \
 	server/calls.go server/page.go \
 	views/message.go views/client.go views/call.go views/recording.go
 
 ASSET_TARGETS = templates/base.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
-	templates/calls/instance.html \
+	templates/calls/instance.html templates/calls/recordings.html \
 	static/css/style.css static/css/bootstrap.min.css
 
 test: vet
