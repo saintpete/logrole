@@ -54,7 +54,9 @@ func setPageFilters(query url.Values, pageFilters url.Values) error {
 			query.Del("from")
 			return err
 		}
-		pageFilters.Set("From", string(fromPN))
+		s := string(fromPN)
+		pageFilters.Set("From", s)
+		query.Set("from", s)
 	}
 	if to := query.Get("to"); to != "" {
 		toPN, err := twilio.NewPhoneNumber(to)
@@ -62,7 +64,9 @@ func setPageFilters(query url.Values, pageFilters url.Values) error {
 			query.Del("to")
 			return err
 		}
-		pageFilters.Set("To", string(toPN))
+		s := string(toPN)
+		pageFilters.Set("To", s)
+		query.Set("to", s)
 	}
 	// NB - we purposely don't do date validation here since we filter out
 	// older messages as part of the message view.
