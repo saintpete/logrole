@@ -49,8 +49,7 @@
             <p>
               <audio controls="true" preload="metadata">
                 Your browser does not support the <code>audio</code> element.
-                <source src="{{ .URL ".wav" }}" type="audio/x-wav">
-                <source src="{{ .URL ".mp3" }}" type="audio/mpeg">
+                <source src="{{ .URL }}" type="{{ .MediaType }}">
               </audio>
             </p>
             {{- else }}

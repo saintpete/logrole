@@ -7,6 +7,7 @@ package views
 
 import (
 	"errors"
+	"net/http"
 	"net/url"
 
 	log "github.com/inconshreveable/log15"
@@ -32,6 +33,11 @@ func NewClient(l log.Logger, client *twilio.Client, secretKey *[32]byte, p *conf
 		secretKey:  secretKey,
 		permission: p,
 	}
+}
+
+// SetBasicAuth sets the Twilio AccountSid and AuthToken on the given request.
+func (vc *Client) SetBasicAuth(r *http.Request) {
+	r.SetBasicAuth(vc.client.AccountSid, vc.client.AuthToken)
 }
 
 // GetMessage fetches a single Message from the Twilio API, and returns any
@@ -125,7 +131,7 @@ func (vc *Client) GetNextRecordingPage(user *config.User, nextPage string) (*Rec
 	if err != nil {
 		return nil, err
 	}
-	return NewRecordingPage(page, vc.permission, user)
+	return NewRecordingPage(page, vc.permission, user, vc.secretKey)
 }
 
 func (vc *Client) GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error) {
@@ -133,5 +139,5 @@ func (vc *Client) GetCallRecordings(user *config.User, callSid string, data url.
 	if err != nil {
 		return nil, err
 	}
-	return NewRecordingPage(page, vc.permission, user)
+	return NewRecordingPage(page, vc.permission, user, vc.secretKey)
 }

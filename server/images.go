@@ -20,6 +20,25 @@ type imageServer struct {
 
 var imageRoute = regexp.MustCompile("^/images/(?P<encrypted>([-_a-zA-Z0-9=]+))$")
 
+func decryptURL(w http.ResponseWriter, r *http.Request, encoded string, secretKey *[32]byte) (*url.URL, bool) {
+	urlStr, err := services.Unopaque(encoded, secretKey)
+	if err != nil {
+		rest.BadRequest(w, r, &rest.Error{
+			Title: err.Error(),
+		})
+		return nil, true
+	}
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		handlers.Logger.Warn("Could not parse decrypted string as URL", "str", urlStr)
+		rest.BadRequest(w, r, &rest.Error{
+			Title: "Could not parse decrypted string as a URL",
+		})
+		return nil, true
+	}
+	return u, false
+}
+
 // GET /images/<encrypted URL>
 //
 // Decode the encrypted URL, then make a request to retrieve the resource in
@@ -28,19 +47,8 @@ var imageRoute = regexp.MustCompile("^/images/(?P<encrypted>([-_a-zA-Z0-9=]+))$"
 // TODO: add some sort of caching layer, since the images are not changing.
 func (i *imageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	encoded := imageRoute.FindStringSubmatch(r.URL.Path)[1]
-	urlStr, err := services.Unopaque(encoded, i.SecretKey)
-	if err != nil {
-		rest.BadRequest(w, r, &rest.Error{
-			Title: err.Error(),
-		})
-		return
-	}
-	u, err := url.Parse(urlStr)
-	if err != nil {
-		handlers.Logger.Warn("Could not parse decrypted string as URL", "str", urlStr)
-		rest.BadRequest(w, r, &rest.Error{
-			Title: "Could not parse decrypted string as a URL",
-		})
+	u, wroteError := decryptURL(w, r, encoded, i.SecretKey)
+	if wroteError {
 		return
 	}
 	// TODO: only allow images to a defined set of hosts. I'm not sure of all

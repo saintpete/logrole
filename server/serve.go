@@ -231,9 +231,19 @@ func NewServer(settings *Settings) http.Handler {
 	image := &imageServer{
 		SecretKey: settings.SecretKey,
 	}
+	proxy, err := newAudioReverseProxy()
+	if err != nil {
+		panic(err)
+	}
+	audio := &audioServer{
+		Client:    vc,
+		SecretKey: settings.SecretKey,
+		Proxy:     proxy,
+	}
 	r := new(handlers.Regexp)
 	r.Handle(regexp.MustCompile(`^/$`), []string{"GET"}, index)
 	r.Handle(imageRoute, []string{"GET"}, image)
+	r.Handle(audioRoute, []string{"GET"}, audio)
 	r.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)

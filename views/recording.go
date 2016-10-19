@@ -7,6 +7,7 @@ import (
 	types "github.com/kevinburke/go-types"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/config"
+	"github.com/saintpete/logrole/services"
 )
 
 type RecordingPage struct {
@@ -25,6 +26,9 @@ func (r *RecordingPage) NextPageURI() types.NullString {
 type Recording struct {
 	user      *config.User
 	recording *twilio.Recording
+	// The recording URL, encrypted with the secret key. This must be set in
+	// NewRecording.
+	url string
 }
 
 func (r *Recording) CanViewProperty(property string) bool {
@@ -90,15 +94,23 @@ func (r *Recording) CanPlay() bool {
 	return r.user.CanPlayRecordings()
 }
 
-func (r *Recording) URL(extension string) (string, error) {
+// URL returns the encrypted URL of the recording.
+func (r *Recording) URL() (string, error) {
 	if r.user.CanPlayRecordings() {
-		return r.recording.URL(extension), nil
+		return r.url, nil
 	} else {
 		return "", config.PermissionDenied
 	}
 }
 
-func NewRecording(r *twilio.Recording, p *config.Permission, u *config.User) (*Recording, error) {
+const defaultMediaType = "audio/x-wav"
+
+// MediaType returns the Content-Type for the encrypted recording's URL.
+func (r *Recording) MediaType() string {
+	return defaultMediaType
+}
+
+func NewRecording(r *twilio.Recording, p *config.Permission, u *config.User, key *[32]byte) (*Recording, error) {
 	if r.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for recording")
 	}
@@ -106,13 +118,21 @@ func NewRecording(r *twilio.Recording, p *config.Permission, u *config.User) (*R
 	if r.DateCreated.Time.Before(oldest) {
 		return nil, config.ErrTooOld
 	}
-	return &Recording{user: u, recording: r}, nil
+	url, err := services.Opaque(r.URL(".wav"), key)
+	if err != nil {
+		return nil, err
+	}
+	return &Recording{
+		user:      u,
+		recording: r,
+		url:       "/audio/" + url,
+	}, nil
 }
 
-func NewRecordingPage(rp *twilio.RecordingPage, p *config.Permission, u *config.User) (*RecordingPage, error) {
+func NewRecordingPage(rp *twilio.RecordingPage, p *config.Permission, u *config.User, key *[32]byte) (*RecordingPage, error) {
 	recordings := make([]*Recording, 0)
 	for _, trecording := range rp.Recordings {
-		recording, err := NewRecording(trecording, p, u)
+		recording, err := NewRecording(trecording, p, u, key)
 		if err == config.ErrTooOld || err == config.PermissionDenied {
 			continue
 		}
