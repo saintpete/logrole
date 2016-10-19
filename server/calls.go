@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +20,11 @@ import (
 )
 
 var callListTemplate *template.Template
+var callInstanceTemplate *template.Template
+
+const callPattern = `(?P<sid>CA[a-f0-9]{32})`
+
+var callInstanceRoute = regexp.MustCompile("^/calls/" + callPattern + "$")
 
 func init() {
 	base := string(assets.MustAsset("templates/base.html"))
@@ -27,6 +33,10 @@ func init() {
 	tlist := template.Must(templates.Clone())
 	listTpl := string(assets.MustAsset("templates/calls/list.html"))
 	callListTemplate = template.Must(tlist.Parse(listTpl))
+
+	tinstance := template.Must(templates.Clone())
+	instanceTpl := string(assets.MustAsset("templates/calls/instance.html"))
+	callInstanceTemplate = template.Must(tinstance.Parse(instanceTpl))
 }
 
 type callListServer struct {
@@ -35,6 +45,17 @@ type callListServer struct {
 	PageSize       uint
 	SecretKey      *[32]byte
 	MaxResourceAge time.Duration
+}
+
+type callInstanceServer struct {
+	Client   *views.Client
+	Location *time.Location
+}
+
+type callInstanceData struct {
+	baseData
+	Call *views.Call
+	Loc  *time.Location
 }
 
 type callListData struct {
@@ -49,6 +70,19 @@ type callListData struct {
 
 func (c *callListData) Title() string {
 	return "Calls"
+}
+
+// Min returns the minimum acceptable resource date, formatted for use in a
+// date HTML input field.
+func (c *callListData) Min() string {
+	// TODO combine with the Message implementation
+	return time.Now().Add(-c.MaxResourceAge).Format("2006-01-02")
+}
+
+// Max returns a the maximum acceptable resource date, formatted for use in a
+// date HTML input field.
+func (c *callListData) Max() string {
+	return time.Now().UTC().Format("2006-01-02")
 }
 
 func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -127,18 +161,36 @@ func (c *callListServer) renderError(w http.ResponseWriter, r *http.Request, cod
 	data.Start = time.Now()
 	if err := render(w, callListTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
+		return
 	}
 }
 
-// Min returns the minimum acceptable resource date, formatted for use in a
-// date HTML input field.
-func (c *callListData) Min() string {
-	// TODO combine with the Message implementation
-	return time.Now().Add(-c.MaxResourceAge).Format("2006-01-02")
+func (c *callInstanceData) Title() string {
+	return "Call Details"
 }
 
-// Max returns a the maximum acceptable resource date, formatted for use in a
-// date HTML input field.
-func (c *callListData) Max() string {
-	return time.Now().UTC().Format("2006-01-02")
+func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	u, ok := config.GetUser(r)
+	if !ok {
+		rest.ServerError(w, r, errors.New("No user available"))
+		return
+	}
+	sid := callInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
+	start := time.Now()
+	call, err := c.Client.GetCall(u, sid)
+	if err != nil {
+		rest.ServerError(w, r, err)
+		return
+	}
+	data := &callInstanceData{
+		Call: call,
+		Loc:  c.Location,
+	}
+	data.Duration = time.Since(start)
+	data.Start = time.Now()
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := render(w, callInstanceTemplate, "base", data); err != nil {
+		rest.ServerError(w, r, err)
+		return
+	}
 }

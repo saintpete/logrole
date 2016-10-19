@@ -7,6 +7,7 @@ import (
 )
 
 const mms = "MM89a8c4a6891c53054e9cd604922bfb61"
+const call = "CA89a8c4a6891c53054e9cd604922bfb61"
 
 var searchTests = []struct {
 	in       string
@@ -14,6 +15,7 @@ var searchTests = []struct {
 	location string
 }{
 	{"/search?q=" + mms, 301, "/messages/" + mms},
+	{"/search?q=" + call, 301, "/calls/" + call},
 	{"/search?", 302, "/"},
 	{"/search?q=unknown", 302, "/"},
 }

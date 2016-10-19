@@ -200,6 +200,10 @@ func NewServer(settings *Settings) http.Handler {
 		PageSize:       settings.PageSize,
 		MaxResourceAge: settings.MaxResourceAge,
 	}
+	cis := &callInstanceServer{
+		Client:   vc,
+		Location: settings.Location,
+	}
 	ss := &searchServer{}
 	o := &openSearchXMLServer{
 		PublicHost:              settings.PublicHost,
@@ -216,6 +220,7 @@ func NewServer(settings *Settings) http.Handler {
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
 	r.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
+	r.Handle(callInstanceRoute, []string{"GET"}, cis)
 	r.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
 	var h http.Handler = UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)

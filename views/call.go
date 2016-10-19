@@ -35,7 +35,8 @@ func (c *Call) CanViewProperty(property string) bool {
 		return false
 	}
 	switch property {
-	case "Sid", "Direction", "Status", "DateCreated", "DateUpdated", "Duration":
+	case "Sid", "Direction", "Status", "DateCreated", "DateUpdated",
+		"Duration", "StartTime", "EndTime", "Price", "PriceUnit":
 		return c.user.CanViewCalls()
 	case "From":
 		return c.user.CanViewCallFrom()
@@ -99,6 +100,22 @@ func (c *Call) Duration() (twilio.TwilioDuration, error) {
 		return c.call.Duration, nil
 	} else {
 		return twilio.TwilioDuration(0), config.PermissionDenied
+	}
+}
+
+func (c *Call) StartTime() (twilio.TwilioTime, error) {
+	if c.CanViewProperty("StartTime") {
+		return c.call.StartTime, nil
+	} else {
+		return twilio.TwilioTime{}, config.PermissionDenied
+	}
+}
+
+func (c *Call) FriendlyPrice() (string, error) {
+	if c.CanViewProperty("Price") && c.CanViewProperty("PriceUnit") {
+		return c.call.FriendlyPrice(), nil
+	} else {
+		return "", config.PermissionDenied
 	}
 }
 

@@ -16,7 +16,8 @@ func init() {
 
 type searchServer struct{}
 
-var smsSid = regexp.MustCompile(messagePattern)
+var smsSid = regexp.MustCompile("^" + messagePattern + "$")
+var callSid = regexp.MustCompile("^" + callPattern + "$")
 
 func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -27,6 +28,10 @@ func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if smsSid.MatchString(q) {
 		http.Redirect(w, r, "/messages/"+q, http.StatusMovedPermanently)
+		return
+	}
+	if callSid.MatchString(q) {
+		http.Redirect(w, r, "/calls/"+q, http.StatusMovedPermanently)
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusFound)

@@ -44,6 +44,16 @@ func (vc *Client) GetMessage(user *config.User, sid string) (*Message, error) {
 	return NewMessage(message, vc.permission, user)
 }
 
+// GetCall fetches a single Call from the Twilio API, and returns any
+// network or permission errors that occur.
+func (vc *Client) GetCall(user *config.User, sid string) (*Call, error) {
+	call, err := vc.client.Calls.Get(sid)
+	if err != nil {
+		return nil, err
+	}
+	return NewCall(call, vc.permission, user)
+}
+
 // Just make sure we get all of the media when we make a request
 var mediaUrlsFilters = url.Values{
 	"PageSize": []string{"100"},

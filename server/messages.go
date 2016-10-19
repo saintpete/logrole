@@ -21,7 +21,9 @@ import (
 
 var messageInstanceTemplate *template.Template
 var messageListTemplate *template.Template
-var messagePattern = `(?P<sid>(MM|SM)[a-f0-9]{32})`
+
+const messagePattern = `(?P<sid>(MM|SM)[a-f0-9]{32})`
+
 var messageInstanceRoute = regexp.MustCompile("^/messages/" + messagePattern + "$")
 
 func init() {

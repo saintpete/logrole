@@ -1,0 +1,90 @@
+{{ define "content" }}
+<div class="row">
+  <div class="col-md-6">
+    <table class="table table-striped">
+      <thead>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Sid</th>
+          {{- if .Call.CanViewProperty "Sid" }}
+          <td><code>{{ .Call.Sid }}</code></td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Date Created</th>
+          {{- if .Call.CanViewProperty "DateCreated" }}
+          <td>{{ friendly_date (.Call.DateCreated.Time.In $.Loc) }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Start Time</th>
+          {{- if .Call.CanViewProperty "StartTime" }}
+          <td>{{ friendly_date (.Call.StartTime.Time.In $.Loc) }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Duration</th>
+          {{- if .Call.CanViewProperty "Duration" }}
+          <td>{{ .Call.Duration.String }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Price</th>
+          {{- if and (.Call.CanViewProperty "Price") (.Call.CanViewProperty "PriceUnit") }}
+          <td>{{ .Call.FriendlyPrice }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col-md-6">
+    <table class="table table-striped">
+      <tbody>
+        <tr>
+          <th>From</th>
+          {{- if .Call.CanViewProperty "From" }}
+          <td>{{ .Call.From.Friendly }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>To</th>
+          {{- if .Call.CanViewProperty "To" }}
+          <td>{{ .Call.To.Friendly }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Direction</th>
+          {{- if .Call.CanViewProperty "Direction" }}
+          <td>{{ .Call.Direction.Friendly }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Status</th>
+          {{- if .Call.CanViewProperty "Status" }}
+          <td>{{ .Call.Status.Friendly }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{{- end }}{{/* end content */}}
