@@ -178,7 +178,14 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sid := callInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	start := time.Now()
 	call, err := c.Client.GetCall(u, sid)
-	if err != nil {
+	switch err {
+	case nil:
+		break
+	case config.PermissionDenied, config.ErrTooOld:
+		// TODO html error here
+		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
+		return
+	default:
 		rest.ServerError(w, r, err)
 		return
 	}
