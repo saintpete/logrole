@@ -54,7 +54,7 @@ func (e *errorServer) Serve401(w http.ResponseWriter, r *http.Request) {
 func (e *errorServer) Serve403(w http.ResponseWriter, r *http.Request) {
 	data := &errorData{
 		Title:       "Forbidden",
-		Description: "You don't have permission to access this page",
+		Description: "You don't have permission to access this page. If you think something is broken, please report a problem.",
 		Mailto:      e.Mailto,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -68,7 +68,7 @@ func (e *errorServer) Serve403(w http.ResponseWriter, r *http.Request) {
 func (e *errorServer) Serve404(w http.ResponseWriter, r *http.Request) {
 	data := &errorData{
 		Title:       "Page Not Found",
-		Description: "We couldn't find what you were looking for. Sorry about that.",
+		Description: "Oops, the page you're looking for does not exist. You may want to head back to the homepage. If you think something is broken, report a problem.",
 		Mailto:      e.Mailto,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -96,7 +96,7 @@ func (e *errorServer) Serve405(w http.ResponseWriter, r *http.Request) {
 func (e *errorServer) Serve500(w http.ResponseWriter, r *http.Request) {
 	data := &errorData{
 		Title:       "Server Error",
-		Description: "Unexpected server error when serving your request. Please refresh the page and try again.",
+		Description: "Unexpected server error when serving your request. Please refresh the page and try again. If you think something is broken, report a problem.",
 		Mailto:      e.Mailto,
 	}
 	err := rest.CtxErr(r)
