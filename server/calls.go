@@ -239,7 +239,17 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
 		return
 	default:
-		rest.ServerError(w, r, err)
+		switch terr := err.(type) {
+		case *rest.Error:
+			switch terr.StatusCode {
+			case 404:
+				rest.NotFound(w, r)
+			default:
+				rest.ServerError(w, r, terr)
+			}
+		default:
+			rest.ServerError(w, r, err)
+		}
 		return
 	}
 	data := &callInstanceData{

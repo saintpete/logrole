@@ -87,7 +87,17 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
 		return
 	default:
-		rest.ServerError(w, r, err)
+		switch terr := err.(type) {
+		case *rest.Error:
+			switch terr.StatusCode {
+			case 404:
+				rest.NotFound(w, r)
+			default:
+				rest.ServerError(w, r, terr)
+			}
+		default:
+			rest.ServerError(w, r, err)
+		}
 		return
 	}
 	if !message.CanViewProperty("Sid") {
@@ -206,7 +216,19 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		page, err = s.Client.GetMessagePage(u, data)
 	}
 	if err != nil {
-		s.renderError(w, r, http.StatusInternalServerError, query, err)
+		switch terr := err.(type) {
+		case *rest.Error:
+			switch terr.StatusCode {
+			case 400:
+				s.renderError(w, r, http.StatusBadRequest, query, err)
+			case 404:
+				rest.NotFound(w, r)
+			default:
+				rest.ServerError(w, r, terr)
+			}
+		default:
+			rest.ServerError(w, r, err)
+		}
 		return
 	}
 	data := &messageData{

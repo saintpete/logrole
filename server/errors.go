@@ -98,7 +98,7 @@ func (e *errorServer) Serve405(w http.ResponseWriter, r *http.Request) {
 func (e *errorServer) Serve500(w http.ResponseWriter, r *http.Request) {
 	data := &errorData{
 		Title:       "Server Error",
-		Description: "Unexpected server error when serving your request. Please refresh the page and try again. If you think something is broken, report a problem.",
+		Description: "We got an unexpected error when serving your request. Please refresh the page and try again. If you think something is broken, report a problem.",
 		Mailto:      e.Mailto,
 	}
 	err := rest.CtxErr(r)

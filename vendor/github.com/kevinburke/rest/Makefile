@@ -7,5 +7,5 @@ test: vet
 race-test: vet
 	go test -race ./...
 
-release: test
+release: race-test
 	bump_version minor client.go

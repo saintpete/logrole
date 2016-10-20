@@ -20,18 +20,23 @@ type UploadType string
 var JSON UploadType = "application/json"
 var FormURLEncoded UploadType = "application/x-www-form-urlencoded"
 
-const Version = "0.14"
+const Version = "0.15"
 
 var defaultTimeout = 6500 * time.Millisecond
 var defaultHttpClient = &http.Client{Timeout: defaultTimeout}
 
 // Client is a generic Rest client for making HTTP requests.
 type Client struct {
-	ID         string
-	Token      string
-	Client     *http.Client
-	Base       string
+	ID     string
+	Token  string
+	Client *http.Client
+	Base   string
+	// Set UploadType to JSON or FormURLEncoded to control how data is sent to
+	// the server.
 	UploadType UploadType
+	// ErrorParser is invoked when the client gets a 400-or-higher status code
+	// from the server.
+	ErrorParser func(*http.Response) error
 }
 
 // NewClient returns a new Client with the given user and password. Base is the
@@ -39,11 +44,12 @@ type Client struct {
 // set to 6.5 seconds.
 func NewClient(user, pass, base string) *Client {
 	return &Client{
-		ID:         user,
-		Token:      pass,
-		Client:     defaultHttpClient,
-		Base:       base,
-		UploadType: JSON,
+		ID:          user,
+		Token:       pass,
+		Client:      defaultHttpClient,
+		Base:        base,
+		UploadType:  JSON,
+		ErrorParser: DefaultErrorParser,
 	}
 }
 
@@ -127,43 +133,39 @@ func (c *Client) Do(r *http.Request, v interface{}) error {
 			return err
 		}
 	}
+	if res.StatusCode >= 400 {
+		err := c.ErrorParser(res)
+		return err
+	}
+
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-	if res.StatusCode >= 400 {
-		var errMap map[string]interface{}
-		err = json.Unmarshal(resBody, &errMap)
-		if err != nil {
-			return fmt.Errorf("invalid response body: %s", string(resBody))
-		}
-
-		if e, ok := errMap["title"]; ok {
-			err := &Error{
-				Title:      e.(string),
-				StatusCode: res.StatusCode,
-			}
-			if detail, ok := errMap["detail"]; ok {
-				err.Detail = detail.(string)
-			}
-			if id, ok := errMap["id"]; ok {
-				err.ID = id.(string)
-			}
-			if instance, ok := errMap["instance"]; ok {
-				err.Instance = instance.(string)
-			}
-			if t, ok := errMap["type"]; ok {
-				err.Type = t.(string)
-			}
-			return err
-		} else {
-			return fmt.Errorf("invalid response body: %s", string(resBody))
-		}
-	}
-
 	if v == nil || res.StatusCode == http.StatusNoContent {
 		return nil
 	} else {
 		return json.Unmarshal(resBody, v)
+	}
+}
+
+// DefaultErrorParser attempts to parse the response body as a rest.Error. If
+// it cannot do so, return an error containing the entire response body.
+func DefaultErrorParser(resp *http.Response) error {
+	resBody, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return err
+	}
+	rerr := new(Error)
+	err = json.Unmarshal(resBody, rerr)
+	if err != nil {
+		return fmt.Errorf("invalid response body: %s", string(resBody))
+	}
+	if rerr.Title == "" {
+		return fmt.Errorf("invalid response body: %s", string(resBody))
+	} else {
+		rerr.StatusCode = resp.StatusCode
+		return rerr
 	}
 }
