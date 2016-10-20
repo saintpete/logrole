@@ -18,6 +18,7 @@ import (
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/config"
+	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
 )
 
@@ -136,6 +137,10 @@ type Settings struct {
 
 	// Email address for server errors / "contact me" on error pages.
 	Mailto *mail.Address
+
+	// Error reporter. This must not be nil; set to NoopErrorReporter to ignore
+	// errors.
+	Reporter services.ErrorReporter
 }
 
 // TODO add different users, or pull from database
@@ -161,6 +166,9 @@ var theUser = config.NewUser(&config.UserSettings{
 // NewServer returns a new Handler that can serve the website. If the
 // settings.Users map is empty, Basic Authentication is disabled.
 func NewServer(settings *Settings) http.Handler {
+	if settings.Reporter == nil {
+		settings.Reporter = services.GetReporter("noop", "")
+	}
 	validKey := false
 	for i := 0; i < len(settings.SecretKey); i++ {
 		if settings.SecretKey[i] != 0x0 {
@@ -225,7 +233,8 @@ func NewServer(settings *Settings) http.Handler {
 	}
 
 	e := &errorServer{
-		Mailto: settings.Mailto,
+		Mailto:   settings.Mailto,
+		Reporter: settings.Reporter,
 	}
 	registerErrorHandlers(e)
 
@@ -248,11 +257,13 @@ func NewServer(settings *Settings) http.Handler {
 		h = handlers.BasicAuth(h, "logrole", settings.Users)
 	}
 	return handlers.Duration(
-		handlers.Log(
-			handlers.Debug(
-				handlers.TrailingSlashRedirect(
-					handlers.UUID(
-						handlers.Server(h, "logrole/"+Version),
+		settings.Reporter.ReportPanics(
+			handlers.Log(
+				handlers.Debug(
+					handlers.TrailingSlashRedirect(
+						handlers.UUID(
+							handlers.Server(h, "logrole/"+Version),
+						),
 					),
 				),
 			),

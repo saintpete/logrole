@@ -10,6 +10,7 @@ import (
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
 	"github.com/saintpete/logrole/assets"
+	"github.com/saintpete/logrole/services"
 )
 
 var errorTemplate *template.Template
@@ -31,7 +32,8 @@ type errorData struct {
 }
 
 type errorServer struct {
-	Mailto *mail.Address
+	Mailto   *mail.Address
+	Reporter services.ErrorReporter
 }
 
 func (e *errorServer) Serve401(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +103,9 @@ func (e *errorServer) Serve500(w http.ResponseWriter, r *http.Request) {
 	}
 	err := rest.CtxErr(r)
 	handlers.Logger.Error("Server error", "code", 500, "method", r.Method, "path", r.URL.Path, "err", err)
+	if e.Reporter != nil {
+		e.Reporter.ReportError(err, false)
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(500)
 	data.Start = time.Now()

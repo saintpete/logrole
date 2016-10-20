@@ -7,6 +7,15 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/certifi/gocertifi",
+			"Comment": "2016.09.26",
+			"Rev": "a61bf5eafa3aee233ec8043e9da052447e5463dd"
+		},
+		{
+			"ImportPath": "github.com/getsentry/raven-go",
+			"Rev": "b8684db99b339af19aa6f067df3be9de6e995f89"
+		},
+		{
 			"ImportPath": "github.com/go-stack/stack",
 			"Comment": "v1.5.2",
 			"Rev": "100eb0c0a9c5b306ca2fb4f165df21d80ada4b82"

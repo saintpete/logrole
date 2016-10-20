@@ -21,6 +21,9 @@ main() {
 	echo "show_media_by_default: $SHOW_MEDIA_BY_DEFAULT" >> "$config"
 	echo "email_address: $EMAIL_ADDRESS" >> "$config"
 
+	echo "error_reporter: $ERROR_REPORTER" >> "$config"
+	echo "error_reporter_token: $ERROR_REPORTER_TOKEN" >> "$config"
+
 	exec envdir "$current_directory/../env" server serve --config="$config"
 }
 

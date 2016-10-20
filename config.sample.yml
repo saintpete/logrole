@@ -45,3 +45,10 @@ show_media_by_default: true
 
 # This is shown as a "Contact Me" message on error pages.
 email_address: test@example.com
+
+# Configure an error reporter. The only currently supported reporter is Sentry;
+# leave empty or omit to disable error handling.
+#
+# 500 server errors and panics are always logged to stderr.
+error_reporter: sentry
+error_reporter_token: your_sentry_dsn

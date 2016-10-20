@@ -47,6 +47,9 @@ type config struct {
 	ShowMediaByDefault *bool `yaml:"show_media_by_default,omitempty"`
 
 	EmailAddress string `yaml:"email_address"`
+
+	ErrorReporter      string `yaml:"error_reporter,omitempty"`
+	ErrorReporterToken string `yaml:"error_reporter_token,omitempty"`
 }
 
 var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
@@ -141,6 +144,12 @@ func main() {
 			os.Exit(2)
 		}
 	}
+	if c.ErrorReporter != "" {
+		if !services.IsRegistered(c.ErrorReporter) {
+			handlers.Logger.Warn("Unknown error reporter, using the noop reporter", "name", c.ErrorReporter)
+		}
+	}
+	reporter := services.GetReporter(c.ErrorReporter, c.ErrorReporterToken)
 	if c.User == "" || c.Password == "" {
 		handlers.Logger.Error("Cannot run without Basic Auth, set a basic_auth_user")
 		os.Exit(2)
@@ -185,6 +194,7 @@ func main() {
 		MaxResourceAge:     c.MaxResourceAge,
 		ShowMediaByDefault: *c.ShowMediaByDefault,
 		Mailto:             address,
+		Reporter:           reporter,
 	}
 	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()
