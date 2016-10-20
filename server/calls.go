@@ -148,6 +148,7 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data.Start = time.Now()
+	data.Path = r.URL.Path
 	if err := render(w, callListTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
@@ -167,6 +168,7 @@ func (c *callListServer) renderError(w http.ResponseWriter, r *http.Request, cod
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
 	data.Start = time.Now()
+	data.Path = r.URL.Path
 	if err := render(w, callListTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 		return

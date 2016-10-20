@@ -15,6 +15,24 @@
     <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;subset=latin-ext" rel="stylesheet">
   </head>
   <body>
+    <nav class="navbar navbar-static-top">
+      <div class="container-fluid">
+        <div id="navbar">
+          <ul class="nav navbar-nav">
+            <li class="{{ if eq .Path "/" }}active{{ end }}">
+              <a class="home-link navbar-brand" href="/">Logrole</a>
+            </li>
+            <li {{ if eq .Path "/calls" }}class="active"{{ end }}>
+              <a href="/calls">Calls</a>
+            </li>
+            <li {{ if eq .Path "/messages" }}class="active"{{ end }}>
+              <a href="/messages">Messages</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
     <!--[if lte IE 9]>
     <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
     <![endif]-->

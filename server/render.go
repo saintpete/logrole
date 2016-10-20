@@ -31,9 +31,17 @@ var templatePool = sync.Pool{
 	New: func() interface{} { return new(bytes.Buffer) },
 }
 
+type baseData struct {
+	Duration time.Duration
+	Start    time.Time
+	Path     string
+}
+
 // Render renders the given template to a bytes.Buffer. If the template renders
 // successfully, we write it to the ResponseWriter, otherwise we return the
 // error.
+//
+// data should inherit from baseData
 func render(w io.Writer, tpl *template.Template, name string, data interface{}) error {
 	b := templatePool.Get().(*bytes.Buffer)
 	defer templatePool.Put(b)

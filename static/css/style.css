@@ -26,15 +26,15 @@ body {
 }
 /* end sticky footer */
 
-a {
+.page a {
     text-decoration: underline;
 }
 
-a:hover {
+.page a:hover {
     text-decoration: none;
 }
 
-a:visited {
+.page a:visited {
     color: purple;
 }
 
@@ -48,7 +48,32 @@ pre, code {
 
 /* TODO media queries here - not as wide margins on smaller screens */
 .page {
-    margin: 10px 40px 40px 40px;
+    margin: 0px 40px 40px 40px;
+}
+
+/* keep width in line with above - 40px margin plus 15px container-fluid
+ * padding */
+.navbar {
+    padding: 0 55px;
+    background-color: #8C2318;
+}
+
+.navbar, .navbar a {
+    color: #ccc;
+}
+
+.navbar .active, .navbar .active a {
+    color: #fff;
+    background-color: #72190e;
+}
+
+.navbar .nav li a:hover, .navbar .nav li:hover {
+    color: #fff;
+    background-color: #BD4336;
+}
+
+.home-link {
+    padding-right: 20px;
 }
 
 .pn {

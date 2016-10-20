@@ -82,11 +82,6 @@ func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, r.URL.Path, s.modTime, bytes.NewReader(bits))
 }
 
-type baseData struct {
-	Duration time.Duration
-	Start    time.Time
-}
-
 type indexServer struct{}
 
 type indexData struct {
@@ -103,6 +98,7 @@ func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		baseData: baseData{
 			Duration: 0,
 			Start:    time.Now(),
+			Path:     "/",
 		},
 	}
 	if err := render(w, indexTemplate, "base", data); err != nil {

@@ -119,6 +119,7 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 	data.Duration = time.Since(start)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data.Path = r.URL.Path
 	data.Start = time.Now()
 	if err := render(w, messageInstanceTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
@@ -172,6 +173,7 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
+	data.Path = r.URL.Path
 	data.Start = time.Now()
 	if err := render(w, messageListTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
@@ -249,6 +251,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data.Path = r.URL.Path
 	data.Start = time.Now()
 	if err := render(w, messageListTemplate, "base", data); err != nil {
 		s.renderError(w, r, http.StatusInternalServerError, query, err)
