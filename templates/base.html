@@ -29,9 +29,11 @@
     <footer class="footer">
       <div class="container-fluid">
         <div class="row timings">
+          {{- if gt .Duration 0 }}
           <div class="col-md-2">
             API request time: {{ duration .Duration }}
           </div>
+          {{- end }}
           <div class="col-md-2">
             Render: {{ render .Start }}
           </div>

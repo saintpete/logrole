@@ -184,6 +184,10 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rest.ServerError(w, r, errors.New("No user available"))
 		return
 	}
+	if !u.CanViewMessages() {
+		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
+		return
+	}
 	// This is modified as we parse the query; specifically we add some values
 	// if they are present in the next page URI.
 	query := r.URL.Query()
