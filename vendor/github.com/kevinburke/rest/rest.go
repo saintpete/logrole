@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	log "github.com/inconshreveable/log15"
 )
+
+const jsonContentType = "application/json; charset=utf-8"
 
 // Logger logs information about incoming requests.
 var Logger log.Logger = log.New()
@@ -45,21 +48,51 @@ func (e *Error) String() string {
 	}
 }
 
+var handlerMap = make(map[int]http.Handler)
+var handlerMu sync.RWMutex
+
+// RegisterHandler registers the given HandlerFunc to serve HTTP requests for
+// the given status code. Use CtxErr and CtxDomain to retrieve extra values set
+// on the request in f (if any).
+//
+// Despite registering the handler for the code, f is responsible for calling
+// WriteHeader(code) since it may want to set response headers first.
+func RegisterHandler(code int, f http.HandlerFunc) {
+	handlerMu.Lock()
+	defer handlerMu.Unlock()
+	handlerMap[code] = f
+}
+
+// ServerError logs the error to the Logger, and then responds to the request
+// with a generic 500 server error message. ServerError panics if err is nil.
+func ServerError(w http.ResponseWriter, r *http.Request, err error) {
+	handlerMu.RLock()
+	f, ok := handlerMap[http.StatusInternalServerError]
+	handlerMu.RUnlock()
+	if ok {
+		r = ctxSetErr(r, err)
+		f.ServeHTTP(w, r)
+	} else {
+		defaultServerError(w, r, err)
+	}
+}
+
 var serverError = Error{
 	StatusCode: http.StatusInternalServerError,
 	ID:         "server_error",
 	Title:      "Unexpected server error. Please try again",
 }
 
-// ServerError logs the error to the Logger, and then responds to the request
-// with a generic 500 server error message. ServerError panics if err is nil.
-func ServerError(w http.ResponseWriter, r *http.Request, err error) error {
+func defaultServerError(w http.ResponseWriter, r *http.Request, err error) {
 	if err == nil {
 		panic("rest: no error to log")
 	}
-	Logger.Info(fmt.Sprintf("500: %s %s: %s", r.Method, r.URL.Path, err))
+	Logger.Info("Server error", "code", 500, "method", r.Method, "path", r.URL.Path, "err", err)
+	w.Header().Set("Content-Type", jsonContentType)
 	w.WriteHeader(http.StatusInternalServerError)
-	return json.NewEncoder(w).Encode(serverError)
+	if err := json.NewEncoder(w).Encode(serverError); err != nil {
+		Logger.Info("Couldn't write error", "path", r.URL.Path, "code", 500, "err", err)
+	}
 }
 
 var notFound = Error{
@@ -69,24 +102,53 @@ var notFound = Error{
 }
 
 // NotFound returns a 404 Not Found error to the client.
-func NotFound(w http.ResponseWriter, r *http.Request) error {
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	handlerMu.RLock()
+	f, ok := handlerMap[http.StatusNotFound]
+	handlerMu.RUnlock()
+	if ok {
+		f.ServeHTTP(w, r)
+	} else {
+		defaultNotFound(w, r)
+	}
+}
+
+func defaultNotFound(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", jsonContentType)
 	w.WriteHeader(http.StatusNotFound)
 	nf := notFound
 	nf.Instance = r.URL.Path
-	return json.NewEncoder(w).Encode(nf)
+	if err := json.NewEncoder(w).Encode(nf); err != nil {
+		Logger.Info("Couldn't write error", "path", r.URL.Path, "code", 404, "err", err)
+	}
 }
 
 // BadRequest logs a 400 error and then returns a 400 response to the client.
-func BadRequest(w http.ResponseWriter, r *http.Request, err *Error) error {
+func BadRequest(w http.ResponseWriter, r *http.Request, err *Error) {
+	handlerMu.RLock()
+	f, ok := handlerMap[http.StatusBadRequest]
+	handlerMu.RUnlock()
+	if ok {
+		r = ctxSetErr(r, err)
+		f.ServeHTTP(w, r)
+	} else {
+		defaultBadRequest(w, r, err)
+	}
+}
+
+func defaultBadRequest(w http.ResponseWriter, r *http.Request, err *Error) {
 	if err == nil {
 		panic("rest: no error to write")
 	}
 	if err.StatusCode == 0 {
 		err.StatusCode = http.StatusBadRequest
 	}
-	Logger.Info(fmt.Sprintf("400: %s", err.Error()), "method", r.Method, "path", r.URL.Path)
+	Logger.Info("Bad request", "code", 400, "method", r.Method, "path", r.URL.Path, "err", err)
+	w.Header().Set("Content-Type", jsonContentType)
 	w.WriteHeader(http.StatusBadRequest)
-	return json.NewEncoder(w).Encode(err)
+	if err := json.NewEncoder(w).Encode(err); err != nil {
+		Logger.Info("Couldn't write error", "path", r.URL.Path, "code", 400, "err", err)
+	}
 }
 
 var notAllowed = Error{
@@ -103,33 +165,79 @@ var authenticate = Error{
 
 // NotAllowed returns a generic HTTP 405 Not Allowed status and response body
 // to the client.
-func NotAllowed(w http.ResponseWriter, r *http.Request) error {
+func NotAllowed(w http.ResponseWriter, r *http.Request) {
+	handlerMu.RLock()
+	f, ok := handlerMap[http.StatusMethodNotAllowed]
+	handlerMu.RUnlock()
+	if ok {
+		f.ServeHTTP(w, r)
+	} else {
+		defaultNotAllowed(w, r)
+	}
+}
+
+func defaultNotAllowed(w http.ResponseWriter, r *http.Request) {
 	e := notAllowed
 	e.Instance = r.URL.Path
+	w.Header().Set("Content-Type", jsonContentType)
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	return json.NewEncoder(w).Encode(e)
+	if err := json.NewEncoder(w).Encode(e); err != nil {
+		Logger.Info("Couldn't write error", "path", r.URL.Path, "code", 405, "err", err)
+	}
 }
 
 // Forbidden returns a 403 Forbidden status code to the client, with the given
 // Error object in the response body.
-func Forbidden(w http.ResponseWriter, r *http.Request, err *Error) error {
+func Forbidden(w http.ResponseWriter, r *http.Request, err *Error) {
+	handlerMu.RLock()
+	f, ok := handlerMap[http.StatusForbidden]
+	handlerMu.RUnlock()
+	if ok {
+		r = ctxSetErr(r, err)
+		f.ServeHTTP(w, r)
+	} else {
+		defaultForbidden(w, r, err)
+	}
+}
+
+func defaultForbidden(w http.ResponseWriter, r *http.Request, err *Error) {
 	if err.ID == "" {
 		err.ID = "forbidden"
 	}
+	w.Header().Set("Content-Type", jsonContentType)
 	w.WriteHeader(http.StatusForbidden)
-	return json.NewEncoder(w).Encode(err)
+	if err := json.NewEncoder(w).Encode(err); err != nil {
+		Logger.Info("Couldn't write error", "path", r.URL.Path, "code", 403, "err", err)
+	}
 }
 
 // NoContent returns a 204 No Content message.
 func NoContent(w http.ResponseWriter) {
+	// No custom handler since there's no custom behavior.
 	w.Header().Del("Content-Type")
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func Unauthorized(w http.ResponseWriter, r *http.Request, domain string) error {
+// Unauthorized sets the Domain in the request context
+func Unauthorized(w http.ResponseWriter, r *http.Request, domain string) {
+	handlerMu.RLock()
+	f, ok := handlerMap[http.StatusForbidden]
+	handlerMu.RUnlock()
+	if ok {
+		r = ctxSetDomain(r, domain)
+		f.ServeHTTP(w, r)
+	} else {
+		defaultUnauthorized(w, r, domain)
+	}
+}
+
+func defaultUnauthorized(w http.ResponseWriter, r *http.Request, domain string) {
 	err := authenticate
 	err.Instance = r.URL.Path
 	w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, domain))
+	w.Header().Set("Content-Type", jsonContentType)
 	w.WriteHeader(http.StatusUnauthorized)
-	return json.NewEncoder(w).Encode(err)
+	if err := json.NewEncoder(w).Encode(err); err != nil {
+		Logger.Info("Couldn't write error", "path", r.URL.Path, "code", 401, "err", err)
+	}
 }
