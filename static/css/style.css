@@ -51,10 +51,9 @@ pre, code {
     margin: 0px 40px 40px 40px;
 }
 
-/* keep width in line with above - 40px margin plus 15px container-fluid
- * padding */
+/* keep width in line with above - 40px left right margin */
 .navbar {
-    padding: 0 55px;
+    padding: 0 40px;
     background-color: #8C2318;
 }
 
@@ -62,7 +61,7 @@ pre, code {
     color: #ccc;
 }
 
-.navbar .active, .navbar .active a {
+.navbar .active, .navbar .active a, .navbar .active a:active, .navbar .active a:focus {
     color: #fff;
     background-color: #72190e;
 }
