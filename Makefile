@@ -8,8 +8,9 @@ WATCH_TARGETS = static/css/style.css \
 	templates/base.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
 	templates/calls/instance.html templates/calls/recordings.html \
+	templates/errors.html \
 	server/serve.go server/messages.go server/search.go server/images.go \
-	server/calls.go server/page.go server/audio.go \
+	server/calls.go server/page.go server/audio.go server/errors.go \
 	views/message.go views/client.go views/call.go views/recording.go
 
 ASSET_TARGETS = templates/base.html templates/messages/list.html \

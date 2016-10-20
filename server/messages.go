@@ -84,7 +84,6 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 	case nil:
 		break
 	case config.PermissionDenied, config.ErrTooOld:
-		// TODO html error here
 		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
 		return
 	default:
@@ -92,7 +91,6 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if !message.CanViewProperty("Sid") {
-		// TODO html error here
 		rest.Forbidden(w, r, &rest.Error{Title: "Cannot view this message"})
 		return
 	}

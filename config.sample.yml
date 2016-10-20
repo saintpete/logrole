@@ -39,4 +39,9 @@ messages_page_size: 100
 # to "all resources viewable".
 max_resource_age: 720h
 
+# Set this to false and users will see a "Click to view MMS" button on message
+# instance pages, instead of seeing the photo on page load.
 show_media_by_default: true
+
+# This is shown as a "Contact Me" message on error pages.
+email_address: test@example.com

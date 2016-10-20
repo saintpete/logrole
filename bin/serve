@@ -19,6 +19,7 @@ main() {
 	echo "secret_key: $SECRET_KEY" >> "$config"
 	echo "max_resource_age: $MAX_RESOURCE_AGE" >> "$config"
 	echo "show_media_by_default: $SHOW_MEDIA_BY_DEFAULT" >> "$config"
+	echo "email_address: $EMAIL_ADDRESS" >> "$config"
 
 	exec envdir "$current_directory/../env" server serve --config="$config"
 }

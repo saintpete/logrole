@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/mail"
 	"os"
 	"time"
 
@@ -44,6 +45,8 @@ type config struct {
 	// Need a pointer to a boolean here since we want to be able to distinguish
 	// "false" from "omitted"
 	ShowMediaByDefault *bool `yaml:"show_media_by_default,omitempty"`
+
+	EmailAddress string `yaml:"email_address"`
 }
 
 var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
@@ -130,6 +133,14 @@ func main() {
 	if c.MaxResourceAge == 0 {
 		c.MaxResourceAge = DefaultMaxResourceAge
 	}
+	var address *mail.Address
+	if c.EmailAddress != "" {
+		address, err = mail.ParseAddress(c.EmailAddress)
+		if err != nil {
+			handlers.Logger.Error("Couldn't parse email address", "err", err)
+			os.Exit(2)
+		}
+	}
 	if c.User == "" || c.Password == "" {
 		handlers.Logger.Error("Cannot run without Basic Auth, set a basic_auth_user")
 		os.Exit(2)
@@ -173,6 +184,7 @@ func main() {
 		SecretKey:          secretKey,
 		MaxResourceAge:     c.MaxResourceAge,
 		ShowMediaByDefault: *c.ShowMediaByDefault,
+		Mailto:             address,
 	}
 	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()

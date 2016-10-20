@@ -236,7 +236,6 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		break
 	case config.PermissionDenied, config.ErrTooOld:
-		// TODO html error here
 		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
 		return
 	default:

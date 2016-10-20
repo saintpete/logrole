@@ -37,8 +37,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/rest",
-			"Comment": "0.12",
-			"Rev": "7b8fc611e04f42dce7f0d831a2d5871b0e33a37e"
+			"Comment": "0.14",
+			"Rev": "e27ef40241db58d1d33ac46d8fd34d07c3abe3dd"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/twilio-go",

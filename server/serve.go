@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"html/template"
 	"net/http"
+	"net/mail"
 	"regexp"
 	"strings"
 	"time"
@@ -17,45 +18,20 @@ import (
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/config"
-	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
 )
 
 const Version = "0.16"
 
-var year = time.Now().UTC().Year()
-
-var funcMap = template.FuncMap{
-	"year":          func() int { return year },
-	"friendly_date": services.FriendlyDate,
-	"duration":      services.Duration,
-	"render":        renderTime,
-	"truncate_sid":  services.TruncateSid,
-}
-
-// renderTime returns the amount of time since we began rendering this
-// template; it's designed to approximate the amount of time spent in the
-// render phase on the server.
-func renderTime(start time.Time) string {
-	since := time.Since(start)
-	return services.Duration(since)
-}
+var indexTemplate *template.Template
 
 func init() {
-	staticServer = &static{
-		modTime: time.Now().UTC(),
-	}
-
 	base := string(assets.MustAsset("templates/base.html"))
 	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
 
 	tindex := template.Must(templates.Clone())
 	indexTpl := string(assets.MustAsset("templates/index.html"))
 	indexTemplate = template.Must(tindex.Parse(indexTpl))
-}
-
-type static struct {
-	modTime time.Time
 }
 
 func AuthUserHandler(h http.Handler) http.Handler {
@@ -90,12 +66,15 @@ func UpgradeInsecureHandler(h http.Handler, allowUnencryptedTraffic bool) http.H
 	})
 }
 
-var staticServer http.Handler
+// Static file HTTP server; all assets are packaged up in the assets directory
+// with go-bindata.
+type static struct {
+	modTime time.Time
+}
 
 func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bits, err := assets.Asset(strings.TrimPrefix(r.URL.Path, "/"))
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		rest.NotFound(w, r)
 		return
 	}
@@ -112,8 +91,6 @@ type indexServer struct{}
 type indexData struct {
 	baseData
 }
-
-var indexTemplate *template.Template
 
 func (i *indexData) Title() string {
 	return "Logrole Homepage"
@@ -156,6 +133,9 @@ type Settings struct {
 
 	// Should a user have to click a button to view media attached to a MMS?
 	ShowMediaByDefault bool
+
+	// Email address for server errors / "contact me" on error pages.
+	Mailto *mail.Address
 }
 
 // TODO add different users, or pull from database
@@ -240,6 +220,15 @@ func NewServer(settings *Settings) http.Handler {
 		SecretKey: settings.SecretKey,
 		Proxy:     proxy,
 	}
+	staticServer := &static{
+		modTime: time.Now().UTC(),
+	}
+
+	e := &errorServer{
+		Mailto: settings.Mailto,
+	}
+	registerErrorHandlers(e)
+
 	r := new(handlers.Regexp)
 	r.Handle(regexp.MustCompile(`^/$`), []string{"GET"}, index)
 	r.Handle(imageRoute, []string{"GET"}, image)
@@ -250,6 +239,7 @@ func NewServer(settings *Settings) http.Handler {
 	r.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
 	r.Handle(callInstanceRoute, []string{"GET"}, cis)
 	r.Handle(messageInstanceRoute, []string{"GET"}, mis)
+	// TODO - don't protect static routes with basic auth
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
 	var h http.Handler = UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)
 	if len(settings.Users) > 0 {

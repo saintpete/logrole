@@ -57,10 +57,17 @@ var handlerMu sync.RWMutex
 //
 // Despite registering the handler for the code, f is responsible for calling
 // WriteHeader(code) since it may want to set response headers first.
+//
+// To delete a Handler, call RegisterHandler with nil for the second argument.
 func RegisterHandler(code int, f http.HandlerFunc) {
 	handlerMu.Lock()
 	defer handlerMu.Unlock()
-	handlerMap[code] = f
+	switch f {
+	case nil:
+		delete(handlerMap, code)
+	default:
+		handlerMap[code] = f
+	}
 }
 
 // ServerError logs the error to the Logger, and then responds to the request
@@ -87,7 +94,7 @@ func defaultServerError(w http.ResponseWriter, r *http.Request, err error) {
 	if err == nil {
 		panic("rest: no error to log")
 	}
-	Logger.Info("Server error", "code", 500, "method", r.Method, "path", r.URL.Path, "err", err)
+	Logger.Error("Server error", "code", 500, "method", r.Method, "path", r.URL.Path, "err", err)
 	w.Header().Set("Content-Type", jsonContentType)
 	w.WriteHeader(http.StatusInternalServerError)
 	if err := json.NewEncoder(w).Encode(serverError); err != nil {
@@ -221,7 +228,7 @@ func NoContent(w http.ResponseWriter) {
 // Unauthorized sets the Domain in the request context
 func Unauthorized(w http.ResponseWriter, r *http.Request, domain string) {
 	handlerMu.RLock()
-	f, ok := handlerMap[http.StatusForbidden]
+	f, ok := handlerMap[http.StatusUnauthorized]
 	handlerMu.RUnlock()
 	if ok {
 		r = ctxSetDomain(r, domain)
