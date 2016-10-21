@@ -141,11 +141,7 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxResourceAge: c.MaxResourceAge,
 	}
 	data.Duration = time.Since(start)
-	data.EncryptedNextPage, err = getEncryptedNextPage(page.NextPageURI(), c.SecretKey)
-	if err != nil {
-		c.renderError(w, r, http.StatusInternalServerError, query, err)
-		return
-	}
+	data.EncryptedNextPage = getEncryptedNextPage(page.NextPageURI(), c.SecretKey)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data.Start = time.Now()
 	data.Path = r.URL.Path

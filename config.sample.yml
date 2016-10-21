@@ -22,8 +22,6 @@ secret_key: fill-in-key
 
 # Set to "prod" in production. See bin/serve for an example.
 realm:    local
-user:     test
-password: hymanrickover
 # What timezone should we display for dates in the UI?
 timezone: America/Los_Angeles
 
@@ -52,3 +50,12 @@ email_address: test@example.com
 # 500 server errors and panics are always logged to stderr.
 error_reporter: sentry
 error_reporter_token: your_sentry_dsn
+
+# Uncomment these fields to use basic auth with a single user and password.
+#auth_scheme: basic
+#basic_auth_user:     test
+#basic_auth_password: hymanrickover
+
+auth_scheme: google
+google_client_id:     customdomain.apps.googleusercontent.com
+google_client_secret: W-secretkey

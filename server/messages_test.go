@@ -18,7 +18,7 @@ func TestInvalidNext(t *testing.T) {
 		SecretKey: key,
 	}
 	config.AddUser("test", theUser)
-	enc, _ := services.Opaque("invalid", key)
+	enc := services.Opaque("invalid", key)
 	req, _ := http.NewRequest("GET", "/messages?next="+enc, nil)
 	req.SetBasicAuth("test", "test")
 	req, _, _ = config.AuthUser(req)

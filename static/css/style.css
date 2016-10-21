@@ -3,116 +3,120 @@
 /* Sticky footer styles
 -------------------------------------------------- */
 html {
-    position: relative;
-    min-height: 100%;
+	position: relative;
+	min-height: 100%;
 }
 
 body {
-    /* Margin bottom by footer height */
-    margin-bottom: 140px;
-    font-family: 'PT Sans', Helvetica, Arial, sans-serif;
+	/* Margin bottom by footer height */
+	margin-bottom: 140px;
+	font-family: 'PT Sans', Helvetica, Arial, sans-serif;
 
-    background-color: #fafafa;
+	background-color: #fafafa;
 }
 
 .footer {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    /* Set the fixed height of the footer here */
-    height: 100px;
-    background-color: #f5f5f5;
-    padding: 10px 40px;
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	/* Set the fixed height of the footer here */
+	height: 100px;
+	background-color: #f5f5f5;
+	padding: 10px 40px;
 }
 /* end sticky footer */
 
 .page a {
-    text-decoration: underline;
+	text-decoration: underline;
 }
 
 .page a:hover {
-    text-decoration: none;
+	text-decoration: none;
 }
 
 .page a:visited {
-    color: purple;
+	color: purple;
+}
+
+a.btn:visited {
+	color: #fff;
 }
 
 .btn a, a.btn {
-    text-decoration: none;
+	text-decoration: none;
 }
 
 pre, code {
-    font-family: Consolas, Monaco, monospace;
+	font-family: Consolas, Monaco, monospace;
 }
 
 /* TODO media queries here - not as wide margins on smaller screens */
 .page {
-    margin: 0px 40px 40px 40px;
+	margin: 0px 40px 40px 40px;
 }
 
 /* keep width in line with above - 40px left right margin */
 .navbar {
-    padding: 0 40px;
-    background-color: #8C2318;
+	padding: 0 40px;
+	background-color: #8C2318;
 }
 
 .navbar, .navbar a {
-    color: #ccc;
+	color: #ccc;
 }
 
 .navbar .active, .navbar .active a, .navbar .active a:active, .navbar .active a:focus {
-    color: #fff;
-    background-color: #72190e;
+	color: #fff;
+	background-color: #72190e;
 }
 
 .navbar .nav li a:hover, .navbar .nav li:hover {
-    color: #fff;
-    background-color: #BD4336;
+	color: #fff;
+	background-color: #BD4336;
 }
 
 .home-link {
-    padding-right: 20px;
+	padding-right: 20px;
 }
 
 .pn {
-    min-width: 125px;
+	min-width: 125px;
 }
 
 .btn-next, .btn-search {
-    min-width: 135px;
-    float: right;
+	min-width: 135px;
+	float: right;
 }
 
 .row-search {
-    margin-top: 20px;
-    margin-bottom: 20px;
+	margin-top: 20px;
+	margin-bottom: 20px;
 }
 
 .form-search label {
-    margin-right: 10px;
+	margin-right: 10px;
 }
 
 .form-search input {
-    margin-right: 20px;
+	margin-right: 20px;
 }
 
 .number-input {
-    max-width: 150px;
+	max-width: 150px;
 }
 
 /* http://stackoverflow.com/a/17183996/329700 */
 .mms-image {
-    display: block;
-    max-height: 300px;
-    width: auto;
-    height: auto;
+	display: block;
+	max-height: 300px;
+	width: auto;
+	height: auto;
 }
 
 .media-hidden {
-    display: none;
+	display: none;
 }
 
 #hidden-images-warning {
-    min-height: 30px;
+	min-height: 30px;
 }

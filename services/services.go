@@ -30,10 +30,14 @@ func NewNonce() *[24]byte {
 
 // Opaque encrypts s with secretKey and returns the encrypted string encoded
 // with base64, or an error.
-func Opaque(s string, secretKey *[32]byte) (string, error) {
+func Opaque(s string, secretKey *[32]byte) string {
+	return OpaqueByte([]byte(s), secretKey)
+}
+
+func OpaqueByte(b []byte, secretKey *[32]byte) string {
 	nonce := NewNonce()
-	encrypted := secretbox.Seal(nonce[:], []byte(s), nonce, secretKey)
-	return base64.URLEncoding.EncodeToString(encrypted), nil
+	encrypted := secretbox.Seal(nonce[:], b, nonce, secretKey)
+	return base64.URLEncoding.EncodeToString(encrypted)
 }
 
 var errTooShort = errors.New("services: Encrypted string is too short")
@@ -42,20 +46,28 @@ var errInvalidInput = errors.New("services: Could not decrypt invalid input")
 // Unopaque decodes compressed using base64, then decrypts the decoded byte
 // array using the secretKey.
 func Unopaque(compressed string, secretKey *[32]byte) (string, error) {
-	encrypted, err := base64.URLEncoding.DecodeString(compressed)
+	b, err := UnopaqueByte(compressed, secretKey)
 	if err != nil {
 		return "", err
 	}
+	return string(b), nil
+}
+
+func UnopaqueByte(compressed string, secretKey *[32]byte) ([]byte, error) {
+	encrypted, err := base64.URLEncoding.DecodeString(compressed)
+	if err != nil {
+		return nil, err
+	}
 	if len(encrypted) < 24 {
-		return "", errTooShort
+		return nil, errTooShort
 	}
 	decryptNonce := new([24]byte)
 	copy(decryptNonce[:], encrypted[:24])
 	decrypted, ok := secretbox.Open([]byte{}, encrypted[24:], decryptNonce, secretKey)
 	if !ok {
-		return "", errInvalidInput
+		return nil, errInvalidInput
 	}
-	return string(decrypted), nil
+	return decrypted, nil
 }
 
 // Duration returns a friendly duration (with the insignificant bits rounded

@@ -1,11 +1,26 @@
 # logrole
 
-LogRole for Twilio - Create User Roles for Limited Access to Twilio Logs
+Logrole is a faster, usable, fine-grained client for exploring your Twilio
+logs. It's pretty fast - there are hardly any dependencies and the main
+bottleneck for every request is making an API request.
+
+- Customizable permissions for each user browsing the site - limit access to
+SMS/MMS bodies, resources older than a certain age, recordings, calls, call
+from, etc. etc.
+
+- Your Account Sid is obscured from end users at all times.
+
+- Easy site search - tab complete and search for a sid to go straight to the
+  instance view for that resource.
+
+- MMS messages are always fetched over HTTPS. The default Twilio API/libraries
+hand back insecure image links, but we rewrite URLs before fetching them.
 
 ## Local Development
 
-You'll need a working Go environment. Follow the instructions here to set one
-up: https://golang.org/doc/install
+Logrole is written in Go; you'll need a working Go environment
+running at least Go 1.7. Follow the instructions here to set one up:
+https://golang.org/doc/install
 
 To check out the project, run `go get github.com/saintpete/logrole/...`.
 
@@ -18,12 +33,12 @@ file at config.sample.yml.
 
 ## Run the tests
 
-Run `make test`. Run `make race-test` to run the tests with the race detector
-enabled.
+Please run the tests before submitting any changes. Run `make test` to run the
+tests, or run `make race-test` to run the tests with the race detector enabled.
 
 ## View the documentation
 
-Run `make docs`
+Run `make docs`.
 
 ## Errata
 

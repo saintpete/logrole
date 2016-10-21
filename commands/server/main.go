@@ -16,25 +16,16 @@ import (
 
 	"github.com/kevinburke/handlers"
 	twilio "github.com/kevinburke/twilio-go"
+	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/server"
 	"github.com/saintpete/logrole/services"
 	yaml "gopkg.in/yaml.v2"
 )
 
-const DefaultPort = "4114"
-const DefaultPageSize = 50
-
-// DefaultMaxResourceAge allows all resources to be fetched. The company was
-// founded in 2008, so there should definitely be no resources created in the
-// 1980's.
-var DefaultMaxResourceAge = time.Since(time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC))
-
-type config struct {
+type fileConfig struct {
 	Port           string        `yaml:"port"`
 	AccountSid     string        `yaml:"twilio_account_sid"`
 	AuthToken      string        `yaml:"twilio_auth_token"`
-	User           string        `yaml:"basic_auth_user"`
-	Password       string        `yaml:"basic_auth_password"`
 	Realm          services.Rlm  `yaml:"realm"`
 	Timezone       string        `yaml:"timezone"`
 	PublicHost     string        `yaml:"public_host"`
@@ -50,6 +41,13 @@ type config struct {
 
 	ErrorReporter      string `yaml:"error_reporter,omitempty"`
 	ErrorReporterToken string `yaml:"error_reporter_token,omitempty"`
+
+	AuthScheme string `yaml:"auth_scheme"`
+	User       string `yaml:"basic_auth_user"`
+	Password   string `yaml:"basic_auth_password"`
+
+	GoogleClientID     string `yaml:"google_client_id"`
+	GoogleClientSecret string `yaml:"google_client_secret"`
 }
 
 var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
@@ -110,7 +108,7 @@ func main() {
 		}
 	}
 	data, err := ioutil.ReadFile(*cfg)
-	c := new(config)
+	c := new(fileConfig)
 	if err == nil {
 		if err := yaml.Unmarshal(data, c); err != nil {
 			handlers.Logger.Error("Couldn't parse config file", "err", err)
@@ -122,8 +120,12 @@ func main() {
 			os.Exit(2)
 		}
 		handlers.Logger.Warn("Couldn't find config file, defaulting to localhost:4114")
-		c.Port = DefaultPort
+		c.Port = config.DefaultPort
 		c.Realm = services.Local
+	}
+	allowHTTP := false
+	if c.Realm == services.Local {
+		allowHTTP = true
 	}
 	if c.SecretKey == "" {
 		handlers.Logger.Warn("No secret key provided, generating random secret key. Sessions won't persist across restarts")
@@ -134,7 +136,7 @@ func main() {
 		os.Exit(2)
 	}
 	if c.MaxResourceAge == 0 {
-		c.MaxResourceAge = DefaultMaxResourceAge
+		c.MaxResourceAge = config.DefaultMaxResourceAge
 	}
 	var address *mail.Address
 	if c.EmailAddress != "" {
@@ -150,19 +152,36 @@ func main() {
 		}
 	}
 	reporter := services.GetReporter(c.ErrorReporter, c.ErrorReporterToken)
-	if c.User == "" || c.Password == "" {
-		handlers.Logger.Error("Cannot run without Basic Auth, set a basic_auth_user")
+	var authenticator server.Authenticator
+	switch c.AuthScheme {
+	case "":
+		handlers.Logger.Warn("Disabling basic authentication")
+		authenticator = &server.NoopAuthenticator{}
+	case "basic":
+		if c.User == "" || c.Password == "" {
+			handlers.Logger.Error("Cannot run without Basic Auth, set a basic_auth_user")
+			os.Exit(2)
+		}
+		users := make(map[string]string)
+		if c.User != "" {
+			users[c.User] = c.Password
+		}
+		authenticator = server.NewBasicAuthAuthenticator("logrole", users)
+	case "google":
+		var baseURL string
+		if allowHTTP {
+			baseURL = "http://" + c.PublicHost
+		} else {
+			baseURL = "https://" + c.PublicHost
+		}
+		gauthenticator := server.NewGoogleAuthenticator(c.GoogleClientID, c.GoogleClientSecret, baseURL, secretKey)
+		gauthenticator.AllowUnencryptedTraffic = allowHTTP
+		authenticator = gauthenticator
+	default:
+		handlers.Logger.Error("Unknown auth scheme", "scheme", c.AuthScheme)
 		os.Exit(2)
 	}
-	allowHTTP := false
-	if c.Realm == services.Local {
-		allowHTTP = true
-	}
 	client := twilio.NewClient(c.AccountSid, c.AuthToken, nil)
-	users := make(map[string]string)
-	if c.User != "" {
-		users[c.User] = c.Password
-	}
 	var location *time.Location
 	if c.Timezone == "" {
 		handlers.Logger.Info("No timezone provided, defaulting to UTC")
@@ -176,7 +195,7 @@ func main() {
 		}
 	}
 	if c.PageSize == 0 {
-		c.PageSize = DefaultPageSize
+		c.PageSize = config.DefaultPageSize
 	}
 	if c.ShowMediaByDefault == nil {
 		b := true
@@ -185,16 +204,16 @@ func main() {
 
 	settings := &server.Settings{
 		AllowUnencryptedTraffic: allowHTTP,
-		Users:              users,
-		Client:             client,
-		Location:           location,
-		PublicHost:         c.PublicHost,
-		PageSize:           c.PageSize,
-		SecretKey:          secretKey,
-		MaxResourceAge:     c.MaxResourceAge,
-		ShowMediaByDefault: *c.ShowMediaByDefault,
-		Mailto:             address,
-		Reporter:           reporter,
+		Client:                  client,
+		Location:                location,
+		PublicHost:              c.PublicHost,
+		PageSize:                c.PageSize,
+		SecretKey:               secretKey,
+		MaxResourceAge:          c.MaxResourceAge,
+		ShowMediaByDefault:      *c.ShowMediaByDefault,
+		Mailto:                  address,
+		Reporter:                reporter,
+		Authenticator:           authenticator,
 	}
 	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()

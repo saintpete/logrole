@@ -6,7 +6,6 @@
 package views
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 
@@ -77,11 +76,7 @@ func (vc *Client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
 	}
 	opaqueImages := make([]*url.URL, len(urls))
 	for i, u := range urls {
-		enc, err := services.Opaque(u.String(), vc.secretKey)
-		if err != nil {
-			vc.Warn("Could not encrypt media URL", "raw", u.String(), "err", err)
-			return nil, errors.New("Could not encode URL as a string")
-		}
+		enc := services.Opaque(u.String(), vc.secretKey)
 		opaqueURL, err := url.Parse("/images/" + enc)
 		if err != nil {
 			return nil, err

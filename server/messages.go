@@ -244,12 +244,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxResourceAge: s.MaxResourceAge,
 	}
 	data.Duration = time.Since(start)
-	data.EncryptedNextPage, err = getEncryptedNextPage(page.NextPageURI(), s.SecretKey)
-	if err != nil {
-		s.renderError(w, r, http.StatusInternalServerError, query, err)
-		return
-	}
-
+	data.EncryptedNextPage = getEncryptedNextPage(page.NextPageURI(), s.SecretKey)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data.Path = r.URL.Path
 	data.Start = time.Now()

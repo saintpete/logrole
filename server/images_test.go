@@ -22,10 +22,7 @@ func TestGetImages(t *testing.T) {
 		w.Write([]byte("hello world"))
 	}))
 	key := services.NewRandomKey()
-	u, err := services.Opaque(s.URL+imagepath, key)
-	if err != nil {
-		t.Fatal(err)
-	}
+	u := services.Opaque(s.URL+imagepath, key)
 	i := &imageServer{
 		SecretKey: key,
 	}

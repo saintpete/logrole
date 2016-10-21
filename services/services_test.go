@@ -10,10 +10,7 @@ var npurl = "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.js
 // This test doesn't really do anything
 func TestOpaque(t *testing.T) {
 	key := NewRandomKey()
-	out, err := Opaque(npurl, key)
-	if err != nil {
-		t.Fatal(err)
-	}
+	out := Opaque(npurl, key)
 	if strings.Contains(out, npurl) {
 		t.Fatal("encrypted value should not contain the input")
 	}

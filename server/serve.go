@@ -112,7 +112,6 @@ type Settings struct {
 	// The host the user visits to get to this site.
 	PublicHost              string
 	AllowUnencryptedTraffic bool
-	Users                   map[string]string
 	Client                  *twilio.Client
 
 	// Times will be displayed in this Location.
@@ -137,30 +136,12 @@ type Settings struct {
 	// Error reporter. This must not be nil; set to NoopErrorReporter to ignore
 	// errors.
 	Reporter services.ErrorReporter
+
+	// The authentication scheme.
+	Authenticator Authenticator
 }
 
-// TODO add different users, or pull from database
-//var theUser = config.NewUser(config.AllUserSettings())
-
-var theUser = config.NewUser(&config.UserSettings{
-	CanViewNumMedia:       true,
-	CanViewMessages:       true,
-	CanViewMessageFrom:    true,
-	CanViewMessageTo:      true,
-	CanViewMessageBody:    true,
-	CanViewMessagePrice:   false,
-	CanViewMedia:          true,
-	CanViewCalls:          true,
-	CanViewCallFrom:       true,
-	CanViewCallTo:         true,
-	CanViewCallPrice:      false,
-	CanViewNumRecordings:  true,
-	CanPlayRecordings:     true,
-	CanViewRecordingPrice: false,
-})
-
-// NewServer returns a new Handler that can serve the website. If the
-// settings.Users map is empty, Basic Authentication is disabled.
+// NewServer returns a new Handler that can serve the website.
 func NewServer(settings *Settings) http.Handler {
 	if settings.Reporter == nil {
 		settings.Reporter = services.GetReporter("noop", "")
@@ -175,10 +156,8 @@ func NewServer(settings *Settings) http.Handler {
 	if !validKey {
 		panic("server: nil secret key in settings")
 	}
-
-	// TODO persistent storage
-	for name := range settings.Users {
-		config.AddUser(name, theUser)
+	if settings.Authenticator == nil {
+		settings.Authenticator = &NoopAuthenticator{}
 	}
 
 	permission := config.NewPermission(settings.MaxResourceAge)
@@ -234,24 +213,29 @@ func NewServer(settings *Settings) http.Handler {
 	}
 	registerErrorHandlers(e)
 
+	authR := new(handlers.Regexp)
+	authR.Handle(regexp.MustCompile(`^/$`), []string{"GET"}, index)
+	authR.Handle(imageRoute, []string{"GET"}, image)
+	authR.Handle(audioRoute, []string{"GET"}, audio)
+	authR.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
+	authR.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
+	authR.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
+	authR.Handle(callInstanceRoute, []string{"GET"}, cis)
+	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)
+	authH := AddAuthenticator(authR, settings.Authenticator)
+
 	r := new(handlers.Regexp)
-	r.Handle(regexp.MustCompile(`^/$`), []string{"GET"}, index)
-	r.Handle(imageRoute, []string{"GET"}, image)
-	r.Handle(audioRoute, []string{"GET"}, audio)
-	r.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
-	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
-	r.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
-	r.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
-	r.Handle(callInstanceRoute, []string{"GET"}, cis)
-	r.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	// TODO - don't protect static routes with basic auth
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
+	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
+	// todo awkward using HTTP methods here
+	r.Handle(regexp.MustCompile(`^/`), []string{"GET", "POST", "PUT", "DELETE"}, authH)
 	var h http.Handler = UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)
-	if len(settings.Users) > 0 {
-		// TODO database, remove duplication
-		h = AuthUserHandler(h)
-		h = handlers.BasicAuth(h, "logrole", settings.Users)
-	}
+	//if len(settings.Users) > 0 {
+	//// TODO database, remove duplication
+	//h = AuthUserHandler(h)
+	//h = handlers.BasicAuth(h, "logrole", settings.Users)
+	//}
 	return handlers.Duration(
 		settings.Reporter.ReportPanics(
 			handlers.Log(

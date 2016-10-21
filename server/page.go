@@ -10,9 +10,9 @@ import (
 
 // Code that's shared across list views
 
-func getEncryptedNextPage(npuri types.NullString, secretKey *[32]byte) (string, error) {
+func getEncryptedNextPage(npuri types.NullString, secretKey *[32]byte) string {
 	if !npuri.Valid {
-		return "", nil
+		return ""
 	}
 	return services.Opaque(npuri.String, secretKey)
 }

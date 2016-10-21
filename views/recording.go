@@ -118,10 +118,7 @@ func NewRecording(r *twilio.Recording, p *config.Permission, u *config.User, key
 	if r.DateCreated.Time.Before(oldest) {
 		return nil, config.ErrTooOld
 	}
-	url, err := services.Opaque(r.URL(".wav"), key)
-	if err != nil {
-		return nil, err
-	}
+	url := services.Opaque(r.URL(".wav"), key)
 	return &Recording{
 		user:      u,
 		recording: r,
