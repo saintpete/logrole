@@ -206,6 +206,9 @@ func NewServer(settings *Settings) http.Handler {
 	staticServer := &static{
 		modTime: time.Now().UTC(),
 	}
+	logout := &logoutServer{
+		Authenticator: settings.Authenticator,
+	}
 
 	e := &errorServer{
 		Mailto:   settings.Mailto,
@@ -228,6 +231,7 @@ func NewServer(settings *Settings) http.Handler {
 	// TODO - don't protect static routes with basic auth
 	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
+	r.Handle(regexp.MustCompile(`^/auth/logout$`), []string{"POST"}, logout)
 	// todo awkward using HTTP methods here
 	r.Handle(regexp.MustCompile(`^/`), []string{"GET", "POST", "PUT", "DELETE"}, authH)
 	var h http.Handler = UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)

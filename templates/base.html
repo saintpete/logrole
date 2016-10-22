@@ -17,7 +17,7 @@
   <body>
     <nav class="navbar navbar-static-top">
       <div class="container-fluid">
-        <div id="navbar">
+        <div id="navbar" class="row">
           <ul class="nav navbar-nav">
             <li class="{{ if eq .Path "/" }}active{{ end }}">
               <a class="home-link navbar-brand" href="/">Logrole</a>
@@ -29,8 +29,16 @@
               <a href="/messages">Messages</a>
             </li>
           </ul>
+          {{- if eq .LoggedOut false }}
+          <ul class="nav navbar-nav pull-right">
+            <li>
+              <form method="post" action="/auth/logout">
+                <input class="btn btn-link logout" name="Logout" value="Logout" type="submit" />
+              </form>
+            </li>
+          </ul>
+          {{- end }}
         </div>
-      </div>
     </nav>
 
     <!--[if lte IE 9]>

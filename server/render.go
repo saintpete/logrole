@@ -32,9 +32,10 @@ var templatePool = sync.Pool{
 }
 
 type baseData struct {
-	Duration time.Duration
-	Start    time.Time
-	Path     string
+	Duration  time.Duration
+	Start     time.Time
+	Path      string
+	LoggedOut bool
 }
 
 // Render renders the given template to a bytes.Buffer. If the template renders

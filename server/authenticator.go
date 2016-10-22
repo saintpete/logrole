@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
 	"github.com/saintpete/logrole/assets"
@@ -35,6 +36,7 @@ type Authenticator interface {
 	// authenticated, or authentication returns an error, Authenticate will
 	// write a response and return a non-nil error.
 	Authenticate(w http.ResponseWriter, r *http.Request) (*config.User, error)
+	Logout(w http.ResponseWriter, r *http.Request)
 }
 
 type NoopAuthenticator struct{}
@@ -43,6 +45,8 @@ func (n *NoopAuthenticator) Authenticate(w http.ResponseWriter, r *http.Request)
 	// TODO
 	return theUser, nil
 }
+
+func (n *NoopAuthenticator) Logout(w http.ResponseWriter, r *http.Request) {}
 
 // AddAuthenticator adds the Authenticator as a HTTP middleware. If
 // authentication is successful, we set the User in the request context and
@@ -101,6 +105,10 @@ func (b *BasicAuthAuthenticator) Authenticate(w http.ResponseWriter, r *http.Req
 	}
 	return LookupUser(user)
 }
+func (b *BasicAuthAuthenticator) Logout(w http.ResponseWriter, r *http.Request) {
+	// There's apparently no good way to do this.
+	// http://stackoverflow.com/a/449914/329700
+}
 
 func LookupUser(name string) (*config.User, error) {
 	// TODO user lookup
@@ -132,10 +140,8 @@ func NewGoogleAuthenticator(clientID string, clientSecret string, baseURL string
 }
 
 type loginData struct {
-	Start    time.Time
-	Duration time.Duration
-	Path     string
-	URL      string
+	baseData
+	URL string
 }
 
 type state struct {
@@ -159,9 +165,12 @@ func (g *GoogleAuthenticator) renderLoginPage(w http.ResponseWriter, r *http.Req
 	}
 	encoded := services.OpaqueByte(bits, g.secretKey)
 	data := &loginData{
-		Start: time.Now(),
-		Path:  r.URL.Path,
-		URL:   g.Conf.AuthCodeURL(encoded),
+		baseData: baseData{
+			Start:     time.Now(),
+			Path:      r.URL.Path,
+			LoggedOut: true,
+		},
+		URL: g.Conf.AuthCodeURL(encoded),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(401)
@@ -283,6 +292,26 @@ func (g *GoogleAuthenticator) Authenticate(w http.ResponseWriter, r *http.Reques
 	}
 	// TODO return different users
 	return LookupUser(t.ID)
+}
+
+type logoutServer struct {
+	log.Logger
+	Authenticator Authenticator
+}
+
+func (l *logoutServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	l.Authenticator.Logout(w, r)
+}
+
+func (g *GoogleAuthenticator) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Secure:   g.AllowUnencryptedTraffic == false,
+		HttpOnly: true,
+		MaxAge:   -1,
+		Path:     "/",
+	})
+	http.Redirect(w, r, "/", 302)
 }
 
 // TODO add different users, or pull from database

@@ -42,7 +42,7 @@ a.btn:visited {
 	color: #fff;
 }
 
-.btn a, a.btn {
+.btn a, a.btn, input.btn {
 	text-decoration: none;
 }
 
@@ -59,20 +59,35 @@ pre, code {
 .navbar {
 	padding: 0 40px;
 	background-color: #8C2318;
+    display: block;
 }
 
-.navbar, .navbar a {
+.nav, .navbar-nav {
+    display: block;
+}
+
+.navbar, .navbar a, .navbar .btn-link {
 	color: #ccc;
 }
 
-.navbar .active, .navbar .active a, .navbar .active a:active, .navbar .active a:focus {
+.navbar .active, .navbar .active a, .navbar .active a:active, .navbar .active a:focus, {
 	color: #fff;
 	background-color: #72190e;
 }
 
-.navbar .nav li a:hover, .navbar .nav li:hover {
+.navbar .nav li a:hover, .navbar .nav li:hover, .navbar .btn-link:hover {
 	color: #fff;
 	background-color: #BD4336;
+    text-decoration: none;
+}
+
+.logout {
+    display: block;
+    position: relative;
+    border: 0;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    line-height: 20px;
 }
 
 .home-link {
