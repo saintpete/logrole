@@ -31,6 +31,14 @@
 			"Rev": "100eb0c0a9c5b306ca2fb4f165df21d80ada4b82"
 		},
 		{
+			"ImportPath": "github.com/golang/groupcache/lru",
+			"Rev": "a6b377e3400b08991b80d6805d627f347f983866"
+		},
+		{
+			"ImportPath": "github.com/golang/groupcache/singleflight",
+			"Rev": "a6b377e3400b08991b80d6805d627f347f983866"
+		},
+		{
 			"ImportPath": "github.com/golang/protobuf/proto",
 			"Rev": "3571fb58c2425ca244702e8e2dfb156d95c44246"
 		},

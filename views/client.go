@@ -6,11 +6,14 @@
 package views
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 
+	"github.com/golang/groupcache/singleflight"
 	log "github.com/inconshreveable/log15"
 	twilio "github.com/kevinburke/twilio-go"
+	"github.com/saintpete/logrole/cache"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 )
@@ -19,6 +22,8 @@ import (
 // shouldn't be seen before returning them to the caller.
 type Client struct {
 	log.Logger
+	group      singleflight.Group
+	cache      *cache.Cache
 	client     *twilio.Client
 	secretKey  *[32]byte
 	permission *config.Permission
@@ -27,7 +32,11 @@ type Client struct {
 // NewClient creates a new Client encapsulating the provided values.
 func NewClient(l log.Logger, client *twilio.Client, secretKey *[32]byte, p *config.Permission) *Client {
 	return &Client{
-		Logger:     l,
+		Logger: l,
+		group:  singleflight.Group{},
+		// a message page is about 24k bytes compressed, 1000 entries is about
+		// 25 MB. We can toggle this
+		cache:      cache.NewCache(1000),
 		client:     client,
 		secretKey:  secretKey,
 		permission: p,
@@ -95,10 +104,26 @@ func (vc *Client) GetMessagePage(user *config.User, data url.Values) (*MessagePa
 }
 
 func (vc *Client) GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error) {
-	page := new(twilio.MessagePage)
-	err := vc.client.GetNextPage(nextPage, page)
+	val, err := vc.group.Do("messages."+nextPage, func() (interface{}, error) {
+		if page, ok := vc.cache.GetMessagePage(nextPage); ok {
+			return page, nil
+		}
+		page := new(twilio.MessagePage)
+		if err := vc.client.GetNextPage(nextPage, page); err != nil {
+			return nil, err
+		}
+		if page == nil {
+			panic("nil page")
+		}
+		vc.cache.AddMessagePage(nextPage, page)
+		return page, nil
+	})
 	if err != nil {
 		return nil, err
+	}
+	page, ok := val.(*twilio.MessagePage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a MessagePage")
 	}
 	return NewMessagePage(page, vc.permission, user)
 }
@@ -112,10 +137,26 @@ func (vc *Client) GetCallPage(user *config.User, data url.Values) (*CallPage, er
 }
 
 func (vc *Client) GetNextCallPage(user *config.User, nextPage string) (*CallPage, error) {
-	page := new(twilio.CallPage)
-	err := vc.client.GetNextPage(nextPage, page)
+	val, err := vc.group.Do("calls."+nextPage, func() (interface{}, error) {
+		if page, ok := vc.cache.GetCallPage(nextPage); ok {
+			return page, nil
+		}
+		page := new(twilio.CallPage)
+		if err := vc.client.GetNextPage(nextPage, page); err != nil {
+			return nil, err
+		}
+		if page == nil {
+			panic("nil page")
+		}
+		vc.cache.AddCallPage(nextPage, page)
+		return page, nil
+	})
 	if err != nil {
 		return nil, err
+	}
+	page, ok := val.(*twilio.CallPage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a CallPage")
 	}
 	return NewCallPage(page, vc.permission, user)
 }

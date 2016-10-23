@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
@@ -134,6 +135,13 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		c.renderError(w, r, http.StatusInternalServerError, query, err)
 		return
 	}
+	// Fetch the next page into the cache
+	go func(u *config.User, n types.NullString) {
+		if n.Valid {
+			// Ignore errors here, nothing we can do.
+			c.Client.GetNextCallPage(u, n.String)
+		}
+	}(u, page.NextPageURI())
 	data := &callListData{
 		Page:           page,
 		Loc:            c.Location,

@@ -93,4 +93,11 @@
     {{- end }}
   </tbody>
 </table>
+{{- if .EncryptedNextPage }}
+<div class="row">
+  <div class="col-md-2 col-md-offset-10">
+    <a class="btn btn-info btn-lg btn-default btn-next" href="/calls?next={{ .EncryptedNextPage }}">Next Page</a>
+  </div>
+</div>
+{{ end }}
 {{/* end content */}}{{- end }}

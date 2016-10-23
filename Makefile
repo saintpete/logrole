@@ -3,6 +3,7 @@ GODOCDOC := $(shell command -v godocdoc)
 GO_BINDATA := $(shell command -v go-bindata)
 
 WATCH_TARGETS = static/css/style.css \
+	cache/cache.go \
 	commands/server/main.go \
 	config/permission.go \
 	templates/base.html templates/messages/list.html \

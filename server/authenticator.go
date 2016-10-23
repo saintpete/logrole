@@ -273,7 +273,6 @@ func (g *GoogleAuthenticator) Authenticate(w http.ResponseWriter, r *http.Reques
 		g.renderLoginPage(w, r)
 		return nil, err
 	}
-	fmt.Printf("cookie: %#v\n", cookie)
 	val, err := services.UnopaqueByte(cookie.Value, g.secretKey)
 	if err != nil {
 		// need a 400 bad request here

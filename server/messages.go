@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
@@ -237,6 +238,13 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	// Fetch the next page into the cache
+	go func(u *config.User, n types.NullString) {
+		if n.Valid {
+			// Ignore errors here, nothing we can do.
+			s.Client.GetNextMessagePage(u, n.String)
+		}
+	}(u, page.NextPageURI())
 	data := &messageData{
 		Page:           page,
 		Loc:            s.Location,
