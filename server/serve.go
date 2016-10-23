@@ -22,7 +22,7 @@ import (
 	"github.com/saintpete/logrole/views"
 )
 
-const Version = "0.25"
+const Version = "0.26"
 
 var indexTemplate *template.Template
 
