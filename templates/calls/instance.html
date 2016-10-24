@@ -54,7 +54,7 @@
         <tr>
           <th>From</th>
           {{- if .Call.CanViewProperty "From" }}
-          <td>{{ .Call.From.Friendly }}</td>
+            {{- template "phonenumber" .Call.From }}
           {{- else }}
           <td>[redacted]</td>
           {{- end }}
@@ -62,7 +62,7 @@
         <tr>
           <th>To</th>
           {{- if .Call.CanViewProperty "To" }}
-          <td>{{ .Call.To.Friendly }}</td>
+            {{- template "phonenumber" .Call.To }}
           {{- else }}
           <td>[redacted]</td>
           {{- end }}
@@ -87,5 +87,6 @@
     </table>
   </div>
 </div>
-{{ template "recordings" .Recordings }}
+{{- template "recordings" .Recordings }}
+{{- template "copy-phonenumber" }}
 {{- end }}{{/* end content */}}

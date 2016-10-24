@@ -30,14 +30,16 @@ var messageInstanceRoute = regexp.MustCompile("^/messages/" + messagePattern + "
 func init() {
 	base := string(assets.MustAsset("templates/base.html"))
 	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
+	phoneTpl := string(assets.MustAsset("templates/snippets/phonenumber.html"))
 
 	tlist := template.Must(templates.Clone())
 	listTpl := string(assets.MustAsset("templates/messages/list.html"))
-	messageListTemplate = template.Must(tlist.Parse(listTpl))
+	copyScript := string(assets.MustAsset("templates/snippets/copy-phonenumber.js"))
+	messageListTemplate = template.Must(tlist.Parse(listTpl + phoneTpl + copyScript))
 
 	tinstance := template.Must(templates.Clone())
 	instanceTpl := string(assets.MustAsset("templates/messages/instance.html"))
-	messageInstanceTemplate = template.Must(tinstance.Parse(instanceTpl))
+	messageInstanceTemplate = template.Must(tinstance.Parse(instanceTpl + phoneTpl + copyScript))
 }
 
 type messageInstanceServer struct {

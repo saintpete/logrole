@@ -33,7 +33,7 @@
         <tr>
           <th>From</th>
           {{- if .Message.CanViewProperty "From" }}
-          <td>{{ .Message.From.Friendly }}</td>
+            {{- template "phonenumber" .Message.From }}
           {{- else }}
           <td>[redacted]</td>
           {{- end }}
@@ -41,7 +41,7 @@
         <tr>
           <th>To</th>
           {{- if .Message.CanViewProperty "To" }}
-          <td>{{ .Message.To.Friendly }}</td>
+            {{- template "phonenumber" .Message.To }}
           {{- else }}
           <td>[redacted]</td>
           {{- end }}
@@ -228,4 +228,5 @@
   </div>
 </div>
 {{- end }}
+{{- template "copy-phonenumber" }}
 {{ end }}

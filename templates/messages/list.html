@@ -87,10 +87,10 @@
         </td>
         {{- end }}
         {{- if .CanViewProperty "From" }}
-        <td class="pn">{{ .From.Friendly }}</td>
+          {{- template "phonenumber" .From }}
         {{- end }}
         {{- if .CanViewProperty "To" }}
-        <td class="pn">{{ .To.Friendly }}</td>
+          {{- template "phonenumber" .To }}
         {{- end }}
         {{- if .CanViewProperty "Body" }}
         <td>{{ .Body }}</td>
@@ -104,6 +104,8 @@
   {{/* Don't need if/else with range .Page.Messages, that will always be empty
        if this is non-empty and vice versa */}}
   No messages match the search criteria
+{{- else }}
+  {{- template "copy-phonenumber" }}
 {{- end }}
 {{- if .EncryptedNextPage }}
 <div class="row">

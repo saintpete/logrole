@@ -33,14 +33,15 @@ func init() {
 
 	tlist := template.Must(templates.Clone())
 	listTpl := string(assets.MustAsset("templates/calls/list.html"))
-	callListTemplate = template.Must(tlist.Parse(listTpl))
+	phoneTpl := string(assets.MustAsset("templates/snippets/phonenumber.html"))
+	copyScript := string(assets.MustAsset("templates/snippets/copy-phonenumber.js"))
+	callListTemplate = template.Must(tlist.Parse(listTpl + phoneTpl + copyScript))
 
 	tinstance := template.Must(templates.Clone())
 	instanceTpl := string(assets.MustAsset("templates/calls/instance.html"))
-	callInstanceTemplate = template.Must(tinstance.Parse(instanceTpl))
-	// this is ugly, would be nice to chain Parse's somehow.
 	recordingTpl := string(assets.MustAsset("templates/calls/recordings.html"))
-	callInstanceTemplate = template.Must(callInstanceTemplate.Parse(recordingTpl))
+	callInstanceTemplate = template.Must(tinstance.Parse(
+		instanceTpl + recordingTpl + phoneTpl + copyScript))
 }
 
 type callListServer struct {

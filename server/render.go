@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"html/template"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -25,6 +26,13 @@ var funcMap = template.FuncMap{
 	"duration":      services.Duration,
 	"render":        renderTime,
 	"truncate_sid":  services.TruncateSid,
+	"prefix_strip":  stripPrefix("+1 "),
+}
+
+func stripPrefix(pfx string) func(string) string {
+	return func(val string) string {
+		return strings.TrimPrefix(val, pfx)
+	}
 }
 
 var templatePool = sync.Pool{
