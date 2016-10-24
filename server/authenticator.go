@@ -154,6 +154,10 @@ func (l *loginData) Title() string {
 }
 
 func (g *GoogleAuthenticator) renderLoginPage(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/login" {
+		http.Redirect(w, r, "/login", 302)
+		return
+	}
 	st := state{
 		CurrentURL: r.URL.RequestURI(),
 		Time:       time.Now().UTC(),

@@ -84,6 +84,7 @@ var uris = []string{
 }
 
 func TestNoResultsIfAllResultsOld(t *testing.T) {
+	t.Parallel()
 	server := newServerWithResponse(200, oldResults)
 	defer server.Close()
 	// date_created above
