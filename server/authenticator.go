@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"time"
 
 	log "github.com/inconshreveable/log15"
@@ -155,11 +156,23 @@ func (l *loginData) Title() string {
 
 func (g *GoogleAuthenticator) renderLoginPage(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/login" {
-		http.Redirect(w, r, "/login", 302)
+		http.Redirect(w, r, "/login?g="+r.URL.Path, 302)
 		return
 	}
+	var uri string
+	if g := r.URL.Query().Get("g"); g != "" {
+		// prevent open redirect by only using the Path part
+		u, err := url.Parse(g)
+		if err == nil {
+			uri = u.Path
+		} else {
+			uri = r.URL.RequestURI()
+		}
+	} else {
+		uri = r.URL.RequestURI()
+	}
 	st := state{
-		CurrentURL: r.URL.RequestURI(),
+		CurrentURL: uri,
 		Time:       time.Now().UTC(),
 	}
 	bits, err := json.Marshal(st)

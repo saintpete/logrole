@@ -17,7 +17,7 @@ func TestLoginRedirect(t *testing.T) {
 	if w.Code != 302 {
 		t.Errorf("expected Code to be 302, got %d", w.Code)
 	}
-	if loc := w.Header().Get("Location"); loc != "/login" {
-		t.Errorf("expected redirect to /login, got %s", loc)
+	if loc := w.Header().Get("Location"); loc != "/login?g=/" {
+		t.Errorf("expected redirect to /login?g=/, got %s", loc)
 	}
 }

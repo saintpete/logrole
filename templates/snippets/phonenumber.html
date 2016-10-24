@@ -1,6 +1,8 @@
 {{- define "phonenumber" }}
 <td class="pn"><span class="copyable">{{ prefix_strip .Friendly }}</span>
-  <a title="Click to copy" class="clipboard">&#x1f4cb;</a>
+  {{- if .Friendly }}
+    <a title="Click to copy" class="clipboard">&#x1f4cb;</a>
+  {{- end }}
   <form class="pn-copy-form"><input class="pn-copy" type="text" value="{{ . }}" /></form>
 </td>
 {{- end }}
