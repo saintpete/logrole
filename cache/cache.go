@@ -10,7 +10,7 @@ import (
 	twilio "github.com/kevinburke/twilio-go"
 )
 
-const debug = true
+const debug = false
 
 type Cache struct {
 	log.Logger
