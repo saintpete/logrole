@@ -23,7 +23,7 @@ import (
 )
 
 // Server version, run "make release" to increase this value
-const Version = "0.27"
+const Version = "0.28"
 
 var indexTemplate *template.Template
 
