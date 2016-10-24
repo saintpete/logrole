@@ -28,9 +28,9 @@ timezone: America/Los_Angeles
 # What users type in their browser to reach your site
 public_host: localhost:4114
 
-# How many messages to fetch per page. A larger number will slow down load
-# time. Defaults to 50.
-messages_page_size: 100
+# How many messages/calls to fetch per page. The larger the number, the slower
+# the response. Maximum 1000. Defaults to 50.
+page_size: 100
 
 # Don't show resources that are older than this age. Valid values for this
 # field are defined here: https://golang.org/pkg/time/#ParseDuration. Defaults

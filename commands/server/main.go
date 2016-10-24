@@ -197,6 +197,10 @@ func main() {
 	if c.PageSize == 0 {
 		c.PageSize = config.DefaultPageSize
 	}
+	if c.PageSize > 1000 {
+		handlers.Logger.Error("Maximum allowable page size is 1000")
+		os.Exit(2)
+	}
 	if c.ShowMediaByDefault == nil {
 		b := true
 		c.ShowMediaByDefault = &b

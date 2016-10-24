@@ -60,7 +60,11 @@ func NewMessagePage(mp *twilio.MessagePage, p *config.Permission, u *config.User
 		}
 		messages = append(messages, msg)
 	}
-	return &MessagePage{messages: messages, nextPageURI: mp.NextPageURI}, nil
+	var npuri types.NullString
+	if len(messages) > 0 {
+		npuri = mp.NextPageURI
+	}
+	return &MessagePage{messages: messages, nextPageURI: npuri}, nil
 }
 
 // CanViewProperty returns true if the caller can access the given property.

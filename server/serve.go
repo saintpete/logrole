@@ -22,6 +22,7 @@ import (
 	"github.com/saintpete/logrole/views"
 )
 
+// Server version, run "make release" to increase this value
 const Version = "0.26"
 
 var indexTemplate *template.Template
@@ -35,7 +36,7 @@ func init() {
 	indexTemplate = template.Must(tindex.Parse(indexTpl))
 }
 
-func AuthUserHandler(h http.Handler) http.Handler {
+func authUserHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r, _, err := config.AuthUser(r)
 		if err != nil {
@@ -163,6 +164,7 @@ func NewServer(settings *Settings) http.Handler {
 	permission := config.NewPermission(settings.MaxResourceAge)
 	vc := views.NewClient(handlers.Logger, settings.Client, settings.SecretKey, permission)
 	mls := &messageListServer{
+		Logger:         handlers.Logger,
 		Client:         vc,
 		Location:       settings.Location,
 		PageSize:       settings.PageSize,
@@ -170,11 +172,13 @@ func NewServer(settings *Settings) http.Handler {
 		MaxResourceAge: settings.MaxResourceAge,
 	}
 	mis := &messageInstanceServer{
+		Logger:             handlers.Logger,
 		Client:             vc,
 		Location:           settings.Location,
 		ShowMediaByDefault: settings.ShowMediaByDefault,
 	}
 	cls := &callListServer{
+		Logger:         handlers.Logger,
 		Client:         vc,
 		Location:       settings.Location,
 		SecretKey:      settings.SecretKey,
@@ -182,6 +186,7 @@ func NewServer(settings *Settings) http.Handler {
 		MaxResourceAge: settings.MaxResourceAge,
 	}
 	cis := &callInstanceServer{
+		Logger:   handlers.Logger,
 		Client:   vc,
 		Location: settings.Location,
 	}
@@ -234,7 +239,7 @@ func NewServer(settings *Settings) http.Handler {
 	r.Handle(regexp.MustCompile(`^/auth/logout$`), []string{"POST"}, logout)
 	// todo awkward using HTTP methods here
 	r.Handle(regexp.MustCompile(`^/`), []string{"GET", "POST", "PUT", "DELETE"}, authH)
-	var h http.Handler = UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)
+	h := UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)
 	//if len(settings.Users) > 0 {
 	//// TODO database, remove duplication
 	//h = AuthUserHandler(h)

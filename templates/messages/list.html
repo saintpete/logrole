@@ -100,6 +100,11 @@
     {{- end }}
   </tbody>
 </table>
+{{- if eq 0 (len .Page.Messages) }}
+  {{/* Don't need if/else with range .Page.Messages, that will always be empty
+       if this is non-empty and vice versa */}}
+  No messages match the search criteria
+{{- end }}
 {{- if .EncryptedNextPage }}
 <div class="row">
   <div class="col-md-2 col-md-offset-10">

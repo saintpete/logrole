@@ -27,7 +27,7 @@ import (
 
 func TestRequestsUpgraded(t *testing.T) {
 	t.Parallel()
-	settings := &Settings{AllowUnencryptedTraffic: false, SecretKey: services.NewRandomKey()}
+	settings := &Settings{AllowUnencryptedTraffic: false, SecretKey: key}
 	s := NewServer(settings)
 	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
 	req.Header.Set("X-Forwarded-Proto", "http")

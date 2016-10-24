@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/inconshreveable/log15"
 	types "github.com/kevinburke/go-types"
-	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/assets"
@@ -41,7 +41,8 @@ func init() {
 }
 
 type messageInstanceServer struct {
-	Client             *views.Client
+	log.Logger
+	Client             views.Client
 	Location           *time.Location
 	ShowMediaByDefault bool
 }
@@ -128,7 +129,8 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 }
 
 type messageListServer struct {
-	Client         *views.Client
+	log.Logger
+	Client         views.Client
 	Location       *time.Location
 	PageSize       uint
 	SecretKey      *[32]byte
@@ -199,14 +201,14 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	opaqueNext := query.Get("next")
 	start := time.Now()
 	if opaqueNext != "" {
-		next, err := services.Unopaque(opaqueNext, s.SecretKey)
-		if err != nil {
-			err = errors.New("Could not decrypt `next` query parameter: " + err.Error())
+		next, nextErr := services.Unopaque(opaqueNext, s.SecretKey)
+		if nextErr != nil {
+			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
 			s.renderError(w, r, http.StatusBadRequest, query, err)
 			return
 		}
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
-			handlers.Logger.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
+			s.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
@@ -216,8 +218,8 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// valid values: https://www.twilio.com/docs/api/rest/message#list
 		data := url.Values{}
 		data.Set("PageSize", strconv.FormatUint(uint64(s.PageSize), 10))
-		if err := setPageFilters(query, data); err != nil {
-			s.renderError(w, r, http.StatusBadRequest, query, err)
+		if filterErr := setPageFilters(query, data); filterErr != nil {
+			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
 		page, err = s.Client.GetMessagePage(u, data)
@@ -241,8 +243,9 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString) {
 		if n.Valid {
-			// Ignore errors here, nothing we can do.
-			s.Client.GetNextMessagePage(u, n.String)
+			if _, err := s.Client.GetNextMessagePage(u, n.String); err != nil {
+				s.Debug("Error fetching next page", "err", err)
+			}
 		}
 	}(u, page.NextPageURI())
 	data := &messageData{

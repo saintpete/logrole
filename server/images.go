@@ -70,12 +70,12 @@ func (i *imageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	if ctype := resp.Header.Get("Content-Type"); ctype == "" {
+	ctype := resp.Header.Get("Content-Type")
+	if ctype == "" {
 		rest.ServerError(w, r, errors.New("Proxied request had no content-type header"))
 		return
-	} else {
-		w.Header().Set("Content-Type", ctype)
 	}
+	w.Header().Set("Content-Type", ctype)
 	w.WriteHeader(http.StatusOK)
 	if _, err := io.Copy(w, resp.Body); err != nil {
 		rest.ServerError(w, r, err)

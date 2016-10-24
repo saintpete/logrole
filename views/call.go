@@ -137,7 +137,11 @@ func NewCallPage(cp *twilio.CallPage, p *config.Permission, u *config.User) (*Ca
 		}
 		calls = append(calls, cl)
 	}
-	return &CallPage{calls: calls, nextPageURI: cp.NextPageURI}, nil
+	var npuri types.NullString
+	if len(calls) > 0 {
+		npuri = cp.NextPageURI
+	}
+	return &CallPage{calls: calls, nextPageURI: npuri}, nil
 }
 
 func (cp *CallPage) Calls() []*Call {

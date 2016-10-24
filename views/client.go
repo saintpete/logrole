@@ -18,9 +18,22 @@ import (
 	"github.com/saintpete/logrole/services"
 )
 
-// A Client retrieves resources from the Twilio API, and hides information that
+// A Client retrieves resources from a backend API, and hides information that
 // shouldn't be seen before returning them to the caller.
-type Client struct {
+type Client interface {
+	SetBasicAuth(r *http.Request)
+	GetMessage(user *config.User, sid string) (*Message, error)
+	GetCall(user *config.User, sid string) (*Call, error)
+	GetMediaURLs(u *config.User, sid string) ([]*url.URL, error)
+	GetMessagePage(user *config.User, data url.Values) (*MessagePage, error)
+	GetCallPage(user *config.User, data url.Values) (*CallPage, error)
+	GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error)
+	GetNextCallPage(user *config.User, nextPage string) (*CallPage, error)
+	GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error)
+	GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error)
+}
+
+type client struct {
 	log.Logger
 	group      singleflight.Group
 	cache      *cache.Cache
@@ -30,27 +43,27 @@ type Client struct {
 }
 
 // NewClient creates a new Client encapsulating the provided values.
-func NewClient(l log.Logger, client *twilio.Client, secretKey *[32]byte, p *config.Permission) *Client {
-	return &Client{
+func NewClient(l log.Logger, c *twilio.Client, secretKey *[32]byte, p *config.Permission) Client {
+	return &client{
 		Logger: l,
 		group:  singleflight.Group{},
 		// a message page is about 24k bytes compressed, 1000 entries is about
 		// 25 MB. We can toggle this
 		cache:      cache.NewCache(1000),
-		client:     client,
+		client:     c,
 		secretKey:  secretKey,
 		permission: p,
 	}
 }
 
 // SetBasicAuth sets the Twilio AccountSid and AuthToken on the given request.
-func (vc *Client) SetBasicAuth(r *http.Request) {
+func (vc *client) SetBasicAuth(r *http.Request) {
 	r.SetBasicAuth(vc.client.AccountSid, vc.client.AuthToken)
 }
 
 // GetMessage fetches a single Message from the Twilio API, and returns any
 // network or permission errors that occur.
-func (vc *Client) GetMessage(user *config.User, sid string) (*Message, error) {
+func (vc *client) GetMessage(user *config.User, sid string) (*Message, error) {
 	message, err := vc.client.Messages.Get(sid)
 	if err != nil {
 		return nil, err
@@ -60,7 +73,7 @@ func (vc *Client) GetMessage(user *config.User, sid string) (*Message, error) {
 
 // GetCall fetches a single Call from the Twilio API, and returns any
 // network or permission errors that occur.
-func (vc *Client) GetCall(user *config.User, sid string) (*Call, error) {
+func (vc *client) GetCall(user *config.User, sid string) (*Call, error) {
 	call, err := vc.client.Calls.Get(sid)
 	if err != nil {
 		return nil, err
@@ -75,7 +88,7 @@ var mediaUrlsFilters = url.Values{
 
 // GetMediaURLs retrieves all media URL's for a given client, but encrypts and
 // obscures them behind our image proxy first.
-func (vc *Client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
+func (vc *client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
 	if u.CanViewMedia() == false {
 		return nil, config.PermissionDenied
 	}
@@ -95,7 +108,7 @@ func (vc *Client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
 	return opaqueImages, nil
 }
 
-func (vc *Client) GetMessagePage(user *config.User, data url.Values) (*MessagePage, error) {
+func (vc *client) GetMessagePage(user *config.User, data url.Values) (*MessagePage, error) {
 	page, err := vc.client.Messages.GetPage(data)
 	if err != nil {
 		return nil, err
@@ -103,7 +116,7 @@ func (vc *Client) GetMessagePage(user *config.User, data url.Values) (*MessagePa
 	return NewMessagePage(page, vc.permission, user)
 }
 
-func (vc *Client) GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error) {
+func (vc *client) GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error) {
 	val, err := vc.group.Do("messages."+nextPage, func() (interface{}, error) {
 		if page, ok := vc.cache.GetMessagePage(nextPage); ok {
 			return page, nil
@@ -128,7 +141,7 @@ func (vc *Client) GetNextMessagePage(user *config.User, nextPage string) (*Messa
 	return NewMessagePage(page, vc.permission, user)
 }
 
-func (vc *Client) GetCallPage(user *config.User, data url.Values) (*CallPage, error) {
+func (vc *client) GetCallPage(user *config.User, data url.Values) (*CallPage, error) {
 	page, err := vc.client.Calls.GetPage(data)
 	if err != nil {
 		return nil, err
@@ -136,7 +149,7 @@ func (vc *Client) GetCallPage(user *config.User, data url.Values) (*CallPage, er
 	return NewCallPage(page, vc.permission, user)
 }
 
-func (vc *Client) GetNextCallPage(user *config.User, nextPage string) (*CallPage, error) {
+func (vc *client) GetNextCallPage(user *config.User, nextPage string) (*CallPage, error) {
 	val, err := vc.group.Do("calls."+nextPage, func() (interface{}, error) {
 		if page, ok := vc.cache.GetCallPage(nextPage); ok {
 			return page, nil
@@ -161,7 +174,7 @@ func (vc *Client) GetNextCallPage(user *config.User, nextPage string) (*CallPage
 	return NewCallPage(page, vc.permission, user)
 }
 
-func (vc *Client) GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error) {
+func (vc *client) GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error) {
 	page := new(twilio.RecordingPage)
 	err := vc.client.GetNextPage(nextPage, page)
 	if err != nil {
@@ -170,7 +183,7 @@ func (vc *Client) GetNextRecordingPage(user *config.User, nextPage string) (*Rec
 	return NewRecordingPage(page, vc.permission, user, vc.secretKey)
 }
 
-func (vc *Client) GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error) {
+func (vc *client) GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error) {
 	page, err := vc.client.Calls.GetRecordings(callSid, data)
 	if err != nil {
 		return nil, err

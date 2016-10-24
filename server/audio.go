@@ -11,7 +11,7 @@ import (
 )
 
 type audioServer struct {
-	Client    *views.Client
+	Client    views.Client
 	SecretKey *[32]byte
 	Proxy     *httputil.ReverseProxy
 }
