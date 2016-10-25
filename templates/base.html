@@ -28,11 +28,13 @@
             <li {{ if eq .Path "/messages" }}class="active"{{ end }}>
               <a href="/messages">Messages</a>
             </li>
+          </ul>
+          <ul class="nav navbar-nav pull-right">
             {{- if .LF }}
-            <li>
+            <li class="tz-control">
               <form method="POST" action="/tz">
                 <input type="hidden" name="g" value="{{ .Path }}" />
-                <select name="tz" id="tz-select" class="tz-control form-control">
+                <select name="tz" id="tz-select" class="form-control">
                   <option>Choose a timezone...</option>
                   {{/* ugh. also make this dynamic based on the LF list */}}
                   <option value="America/Los_Angeles" {{ if eq .TZ "America/Los_Angeles" }}selected="selected"{{ end }}>
@@ -51,16 +53,14 @@
               </form>
             </li>
             {{- end }}
-          </ul>
           {{- if eq .LoggedOut false }}
-          <ul class="nav navbar-nav pull-right">
             <li>
               <form method="post" action="/auth/logout">
                 <input class="btn btn-link logout" name="Logout" value="Logout" type="submit" />
               </form>
             </li>
-          </ul>
           {{- end }}
+          </ul>
         </div>
     </nav>
 
