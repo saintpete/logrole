@@ -7,29 +7,7 @@ set -eo pipefail
 main() {
 	local current_directory="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 	local config="$current_directory/../config.yml"
-	echo "port: $PORT" >> "$config"
-	echo "twilio_account_sid: $TWILIO_ACCOUNT_SID" >> "$config"
-	echo "twilio_auth_token: $TWILIO_AUTH_TOKEN" >> "$config"
-	echo "realm: $REALM" >> "$config"
-	echo "timezone: $TZ" >> "$config"
-	echo "page_size: $PAGE_SIZE" >> "$config"
-	echo "public_host: $PUBLIC_HOST" >> "$config"
-	echo "secret_key: $SECRET_KEY" >> "$config"
-	echo "max_resource_age: $MAX_RESOURCE_AGE" >> "$config"
-	echo "show_media_by_default: $SHOW_MEDIA_BY_DEFAULT" >> "$config"
-	echo "email_address: $EMAIL_ADDRESS" >> "$config"
-
-	echo "error_reporter: $ERROR_REPORTER" >> "$config"
-	echo "error_reporter_token: $ERROR_REPORTER_TOKEN" >> "$config"
-
-	echo "auth_scheme: $AUTH_SCHEME" >> "$config"
-
-	echo "basic_auth_user: $BASIC_AUTH_USER" >> "$config"
-	echo "basic_auth_password: $BASIC_AUTH_PASS" >> "$config"
-
-	echo "google_client_id: $GOOGLE_CLIENT_ID" >> "$config"
-	echo "google_client_secret: $GOOGLE_CLIENT_SECRET" >> "$config"
-
+	write_config_from_env --config="$config"
 	exec envdir "$current_directory/../env" server serve --config="$config"
 }
 

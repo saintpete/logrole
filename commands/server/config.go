@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/mail"
@@ -12,6 +13,8 @@ import (
 	"github.com/saintpete/logrole/server"
 	"github.com/saintpete/logrole/services"
 )
+
+var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
 
 type fileConfig struct {
 	Port           string        `yaml:"port"`
@@ -39,6 +42,26 @@ type fileConfig struct {
 
 	GoogleClientID     string `yaml:"google_client_id"`
 	GoogleClientSecret string `yaml:"google_client_secret"`
+}
+
+// getSecretKey produces a valid [32]byte secret key or returns an error. If
+// hexKey is the empty string, a valid 32 byte key will be randomly generated
+// and returned. If hexKey is invalid, an error is returned.
+func getSecretKey(hexKey string) (*[32]byte, error) {
+	if hexKey == "" {
+		return services.NewRandomKey(), nil
+	}
+
+	if len(hexKey) != 64 {
+		return nil, errWrongLength
+	}
+	secretKeyBytes, err := hex.DecodeString(hexKey)
+	if err != nil {
+		return nil, err
+	}
+	secretKey := new([32]byte)
+	copy(secretKey[:], secretKeyBytes)
+	return secretKey, nil
 }
 
 func NewSettingsFromConfig(c *fileConfig) (*server.Settings, error) {
