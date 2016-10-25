@@ -33,9 +33,10 @@ serve:
 	go run commands/server/main.go commands/server/config.go
 
 vet:
-	go vet ./assets/... ./commands/... ./config/... ./server/... ./services/... ./views/...
+	go vet ./assets/... ./cache/... ./commands/... ./config/... \
+		./server/... ./services/... ./test/... ./views/...
 
-deploy: 
+deploy:
 	git push heroku master
 
 assets: $(ASSET_TARGETS)

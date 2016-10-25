@@ -111,17 +111,31 @@ func (vc *client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
 	return opaqueImages, nil
 }
 
+func (vc *client) getAndCacheMessage(data url.Values) (*twilio.MessagePage, error) {
+	page, err := vc.client.Messages.GetPage(data)
+	if err != nil {
+		return nil, err
+	}
+	vc.cache.AddExpiringMessagePage(data.Encode(), 30*time.Second, page)
+	return page, nil
+}
+
+func (vc *client) getAndCacheCall(data url.Values) (*twilio.CallPage, error) {
+	page, err := vc.client.Calls.GetPage(data)
+	if err != nil {
+		return nil, err
+	}
+	vc.cache.AddExpiringCallPage(data.Encode(), 30*time.Second, page)
+	return page, nil
+}
+
 func (vc *client) GetMessagePage(user *config.User, data url.Values) (*MessagePage, error) {
 	val, err := vc.group.Do("messages."+data.Encode(), func() (interface{}, error) {
 		if page, ok := vc.cache.GetMessagePageByValues(data); ok {
 			return page, nil
 		}
-		page, err := vc.client.Messages.GetPage(data)
-		if err != nil {
-			return nil, err
-		}
-		vc.cache.AddExpiringMessagePage(data.Encode(), 30*time.Second, page)
-		return page, nil
+		page, err := vc.getAndCacheMessage(data)
+		return page, err
 	})
 	if err != nil {
 		return nil, err
@@ -163,12 +177,8 @@ func (vc *client) GetCallPage(user *config.User, data url.Values) (*CallPage, er
 		if page, ok := vc.cache.GetCallPageByValues(data); ok {
 			return page, nil
 		}
-		page, err := vc.client.Calls.GetPage(data)
-		if err != nil {
-			return nil, err
-		}
-		vc.cache.AddExpiringCallPage(data.Encode(), 30*time.Second, page)
-		return page, nil
+		page, err := vc.getAndCacheCall(data)
+		return page, err
 	})
 	if err != nil {
 		return nil, err
@@ -229,8 +239,8 @@ func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {
 	for {
 		select {
 		case <-timeout:
-			go vc.GetMessagePage(nil, data)
-			go vc.GetCallPage(nil, data)
+			go vc.getAndCacheMessage(data)
+			go vc.getAndCacheCall(data)
 		case <-doneCh:
 			return
 		}
