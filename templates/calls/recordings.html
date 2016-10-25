@@ -22,7 +22,7 @@
                 <tr>
                   <th>Sid</th>
                   {{- if .CanViewProperty "Sid" }}
-                  <td><code>{{ .Sid }}</code></td>
+                    {{- template "sid" . }}
                   {{- else }}
                   <td>[redacted]</td>
                   {{- end }}
