@@ -82,7 +82,7 @@ func (c *Cache) GetMessagePageByValues(data url.Values) (*twilio.MessagePage, bo
 		c.c.Remove(key)
 		return nil, false
 	}
-	c.Debug("found expiring message page in cache", "key", key)
+	c.Debug("found expiring message page in cache", "key", key, "size", c.c.Len())
 	return e.Page, true
 }
 
@@ -102,7 +102,7 @@ func (c *Cache) GetMessagePageByURL(nextPage string) (*twilio.MessagePage, bool)
 	if err := dec.Decode(mp); err != nil {
 		return nil, false
 	}
-	c.Debug("found message page in cache", "key", nextPage)
+	c.Debug("found message page in cache", "key", nextPage, "size", c.c.Len())
 	return mp, true
 }
 
@@ -122,7 +122,7 @@ func (c *Cache) GetCallPageByURL(nextPage string) (*twilio.CallPage, bool) {
 	if err := dec.Decode(mp); err != nil {
 		return nil, false
 	}
-	c.Debug("found call page in cache", "key", nextPage)
+	c.Debug("found call page in cache", "key", nextPage, "size", c.c.Len())
 	return mp, true
 }
 
@@ -148,7 +148,7 @@ func (c *Cache) GetCallPageByValues(data url.Values) (*twilio.CallPage, bool) {
 		c.c.Remove(key)
 		return nil, false
 	}
-	c.Debug("found expiring call page in cache", "key", key)
+	c.Debug("found expiring call page in cache", "key", key, "size", c.c.Len())
 	return e.Page, true
 }
 
@@ -182,7 +182,7 @@ func (c *Cache) encAndStore(key string, data interface{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.c.Add(key, buf.Bytes())
-	c.Debug("stored data in cache", "key", key)
+	c.Debug("stored data in cache", "key", key, "size", c.c.Len())
 }
 
 func (c *Cache) AddMessagePage(npuri string, mp *twilio.MessagePage) {
@@ -195,7 +195,7 @@ func (c *Cache) AddMessagePage(npuri string, mp *twilio.MessagePage) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.c.Add(c.MessagePagePrefix()+"."+npuri, buf.Bytes())
-	c.Debug("stored message page in cache", "key", npuri)
+	c.Debug("stored message page in cache", "key", npuri, "size", c.c.Len())
 }
 
 func (c *Cache) AddCallPage(npuri string, mp *twilio.CallPage) {
@@ -208,5 +208,5 @@ func (c *Cache) AddCallPage(npuri string, mp *twilio.CallPage) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.c.Add(c.CallPagePrefix()+"."+npuri, buf.Bytes())
-	c.Debug("stored call page in cache", "key", npuri)
+	c.Debug("stored call page in cache", "key", npuri, "size", c.c.Len())
 }
