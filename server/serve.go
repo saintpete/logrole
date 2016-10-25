@@ -176,8 +176,8 @@ func NewServer(settings *Settings) *Server {
 		Client:         vc,
 		LocationFinder: settings.LocationFinder,
 		PageSize:       settings.PageSize,
-		SecretKey:      settings.SecretKey,
 		MaxResourceAge: settings.MaxResourceAge,
+		secretKey:      settings.SecretKey,
 	}
 	mis := &messageInstanceServer{
 		Logger:             handlers.Logger,
@@ -189,9 +189,9 @@ func NewServer(settings *Settings) *Server {
 		Logger:         handlers.Logger,
 		Client:         vc,
 		LocationFinder: settings.LocationFinder,
-		SecretKey:      settings.SecretKey,
 		PageSize:       settings.PageSize,
 		MaxResourceAge: settings.MaxResourceAge,
+		secretKey:      settings.SecretKey,
 	}
 	cis := &callInstanceServer{
 		Logger:         handlers.Logger,
@@ -205,7 +205,7 @@ func NewServer(settings *Settings) *Server {
 	}
 	index := &indexServer{}
 	image := &imageServer{
-		SecretKey: settings.SecretKey,
+		secretKey: settings.SecretKey,
 	}
 	proxy, err := newAudioReverseProxy()
 	if err != nil {
@@ -213,8 +213,8 @@ func NewServer(settings *Settings) *Server {
 	}
 	audio := &audioServer{
 		Client:    vc,
-		SecretKey: settings.SecretKey,
 		Proxy:     proxy,
+		secretKey: settings.SecretKey,
 	}
 	staticServer := &static{
 		modTime: time.Now().UTC(),

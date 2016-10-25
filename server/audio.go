@@ -12,8 +12,8 @@ import (
 
 type audioServer struct {
 	Client    views.Client
-	SecretKey *[32]byte
 	Proxy     *httputil.ReverseProxy
+	secretKey *[32]byte
 }
 
 var audioRoute = regexp.MustCompile("^/audio/(?P<encrypted>([-_a-zA-Z0-9=]+))$")
@@ -39,7 +39,7 @@ func newAudioReverseProxy() (*httputil.ReverseProxy, error) {
 // TODO: add some sort of caching layer, since the images are not changing.
 func (a *audioServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	encoded := audioRoute.FindStringSubmatch(r.URL.Path)[1]
-	u, wroteError := decryptURL(w, r, encoded, a.SecretKey)
+	u, wroteError := decryptURL(w, r, encoded, a.secretKey)
 	if wroteError {
 		return
 	}

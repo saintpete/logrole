@@ -135,7 +135,7 @@ type messageListServer struct {
 	Client         views.Client
 	LocationFinder services.LocationFinder
 	PageSize       uint
-	SecretKey      *[32]byte
+	secretKey      *[32]byte
 	MaxResourceAge time.Duration
 }
 
@@ -206,7 +206,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	opaqueNext := query.Get("next")
 	start := time.Now()
 	if opaqueNext != "" {
-		next, nextErr := services.Unopaque(opaqueNext, s.SecretKey)
+		next, nextErr := services.Unopaque(opaqueNext, s.secretKey)
 		if nextErr != nil {
 			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
 			s.renderError(w, r, http.StatusBadRequest, query, err)
@@ -260,8 +260,8 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Loc:                   s.LocationFinder.GetLocationReq(r),
 			Query:                 query,
 			MaxResourceAge:        s.MaxResourceAge,
-			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.SecretKey),
-			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.SecretKey),
+			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
+			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
 		}, Duration: time.Since(start)}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := render(w, r, messageListTemplate, "base", data); err != nil {

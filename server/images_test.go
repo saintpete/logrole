@@ -24,7 +24,7 @@ func TestGetImages(t *testing.T) {
 	key := services.NewRandomKey()
 	u := services.Opaque(s.URL+imagepath, key)
 	i := &imageServer{
-		SecretKey: key,
+		secretKey: key,
 	}
 	req, _ := http.NewRequest("GET", "/images/"+u, nil)
 	w := httptest.NewRecorder()

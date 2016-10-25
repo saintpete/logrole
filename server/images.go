@@ -15,7 +15,7 @@ import (
 
 // An imageServer provides an opaque proxy for image requests.
 type imageServer struct {
-	SecretKey *[32]byte
+	secretKey *[32]byte
 }
 
 var imageRoute = regexp.MustCompile("^/images/(?P<encrypted>([-_a-zA-Z0-9=]+))$")
@@ -47,7 +47,7 @@ func decryptURL(w http.ResponseWriter, r *http.Request, encoded string, secretKe
 // TODO: add some sort of caching layer, since the images are not changing.
 func (i *imageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	encoded := imageRoute.FindStringSubmatch(r.URL.Path)[1]
-	u, wroteError := decryptURL(w, r, encoded, i.SecretKey)
+	u, wroteError := decryptURL(w, r, encoded, i.secretKey)
 	if wroteError {
 		return
 	}

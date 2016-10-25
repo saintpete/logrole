@@ -52,8 +52,8 @@ type callListServer struct {
 	Client         views.Client
 	LocationFinder services.LocationFinder
 	PageSize       uint
-	SecretKey      *[32]byte
 	MaxResourceAge time.Duration
+	secretKey      *[32]byte
 }
 
 type callInstanceServer struct {
@@ -117,7 +117,7 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	opaqueNext := query.Get("next")
 	start := time.Now()
 	if opaqueNext != "" {
-		next, nextErr := services.Unopaque(opaqueNext, c.SecretKey)
+		next, nextErr := services.Unopaque(opaqueNext, c.secretKey)
 		if nextErr != nil {
 			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
 			c.renderError(w, r, http.StatusBadRequest, query, err)
@@ -161,8 +161,8 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Loc:                   c.LocationFinder.GetLocationReq(r),
 		Query:                 query,
 		MaxResourceAge:        c.MaxResourceAge,
-		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.SecretKey),
-		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.SecretKey),
+		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.secretKey),
+		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := render(w, r, callListTemplate, "base", data); err != nil {
