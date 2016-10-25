@@ -10,7 +10,7 @@ import (
 
 // Code that's shared across list views
 
-func getEncryptedNextPage(npuri types.NullString, secretKey *[32]byte) string {
+func getEncryptedPage(npuri types.NullString, secretKey *[32]byte) string {
 	if !npuri.Valid {
 		return ""
 	}

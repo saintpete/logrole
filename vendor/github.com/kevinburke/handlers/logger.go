@@ -28,15 +28,26 @@ const timeFormat = "2006-01-02T15:04:05.000000-07:00"
 
 const floatFormat = 'f'
 
-var Logger log15.Logger = log15.New()
+// Logger is a logger configured to avoid the 40-char spacing gap between the
+// message and the first key, and to write timestamps with full nanosecond
+// precision.
+var Logger log15.Logger
 
 func init() {
-	if term.IsTty(os.Stdout.Fd()) {
-		Logger.SetHandler(log15.StreamHandler(colorable.NewColorableStdout(), termFormat()))
-	} else {
-		Logger.SetHandler(log15.StreamHandler(os.Stdout, logfmtFormat()))
-	}
+	Logger = NewLogger()
 	rest.Logger = Logger
+}
+
+// NewLogger returns a new customizable Logger, with the same initial settings
+// as the package Logger.
+func NewLogger() log15.Logger {
+	l := log15.New()
+	if term.IsTty(os.Stdout.Fd()) {
+		l.SetHandler(log15.StreamHandler(colorable.NewColorableStdout(), termFormat()))
+	} else {
+		l.SetHandler(log15.StreamHandler(os.Stdout, logfmtFormat()))
+	}
+	return l
 }
 
 // LogfmtFormat prints records in logfmt format, an easy machine-parseable but human-readable

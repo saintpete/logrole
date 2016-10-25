@@ -103,6 +103,10 @@ pre, code {
     float: right;
 }
 
+.btn-previous {
+    min-width: 135px;
+}
+
 .row-search {
     margin-top: 20px;
     margin-bottom: 20px;

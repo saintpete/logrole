@@ -33,9 +33,11 @@ func init() {
 
 	tlist := template.Must(templates.Clone())
 	listTpl := string(assets.MustAsset("templates/calls/list.html"))
+	pagingTpl := string(assets.MustAsset("templates/snippets/paging.html"))
 	phoneTpl := string(assets.MustAsset("templates/snippets/phonenumber.html"))
 	copyScript := string(assets.MustAsset("templates/snippets/copy-phonenumber.js"))
-	callListTemplate = template.Must(tlist.Parse(listTpl + phoneTpl + copyScript))
+	callListTemplate = template.Must(tlist.Parse(
+		listTpl + pagingTpl + phoneTpl + copyScript))
 
 	tinstance := template.Must(templates.Clone())
 	instanceTpl := string(assets.MustAsset("templates/calls/instance.html"))
@@ -67,16 +69,21 @@ type callInstanceData struct {
 }
 
 type callListData struct {
-	Page              *views.CallPage
-	EncryptedNextPage string
-	Loc               *time.Location
-	Query             url.Values
-	Err               string
-	MaxResourceAge    time.Duration
+	Page                  *views.CallPage
+	EncryptedPreviousPage string
+	EncryptedNextPage     string
+	Loc                   *time.Location
+	Query                 url.Values
+	Err                   string
+	MaxResourceAge        time.Duration
 }
 
 func (c *callListData) Title() string {
 	return "Calls"
+}
+
+func (c *callListData) Path() string {
+	return "/calls"
 }
 
 // Min returns the minimum acceptable resource date, formatted for use in a
@@ -150,11 +157,12 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Duration: time.Since(start),
 	}
 	data.Data = &callListData{
-		Page:              page,
-		Loc:               c.LocationFinder.GetLocationReq(r),
-		Query:             query,
-		MaxResourceAge:    c.MaxResourceAge,
-		EncryptedNextPage: getEncryptedNextPage(page.NextPageURI(), c.SecretKey),
+		Page:                  page,
+		Loc:                   c.LocationFinder.GetLocationReq(r),
+		Query:                 query,
+		MaxResourceAge:        c.MaxResourceAge,
+		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.SecretKey),
+		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.SecretKey),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := render(w, r, callListTemplate, "base", data); err != nil {

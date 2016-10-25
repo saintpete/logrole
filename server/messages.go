@@ -35,8 +35,9 @@ func init() {
 
 	tlist := template.Must(templates.Clone())
 	listTpl := string(assets.MustAsset("templates/messages/list.html"))
+	pagingTpl := string(assets.MustAsset("templates/snippets/paging.html"))
 	copyScript := string(assets.MustAsset("templates/snippets/copy-phonenumber.js"))
-	messageListTemplate = template.Must(tlist.Parse(listTpl + phoneTpl + copyScript))
+	messageListTemplate = template.Must(tlist.Parse(listTpl + pagingTpl + phoneTpl + copyScript))
 
 	tinstance := template.Must(templates.Clone())
 	instanceTpl := string(assets.MustAsset("templates/messages/instance.html"))
@@ -138,28 +139,33 @@ type messageListServer struct {
 	MaxResourceAge time.Duration
 }
 
-type messageData struct {
-	Page              *views.MessagePage
-	EncryptedNextPage string
-	Loc               *time.Location
-	Query             url.Values
-	Err               string
-	MaxResourceAge    time.Duration
+type messageListData struct {
+	Page                  *views.MessagePage
+	EncryptedPreviousPage string
+	EncryptedNextPage     string
+	Loc                   *time.Location
+	Query                 url.Values
+	Err                   string
+	MaxResourceAge        time.Duration
 }
 
-func (m *messageData) Title() string {
+func (m *messageListData) Title() string {
 	return "Messages"
+}
+
+func (m *messageListData) Path() string {
+	return "/messages"
 }
 
 // Min returns the minimum acceptable resource date, formatted for use in a
 // date HTML input field.
-func (m *messageData) Min() string {
+func (m *messageListData) Min() string {
 	return time.Now().Add(-m.MaxResourceAge).Format("2006-01-02")
 }
 
 // Max returns a the maximum acceptable resource date, formatted for use in a
 // date HTML input field.
-func (m *messageData) Max() string {
+func (m *messageListData) Max() string {
 	return time.Now().UTC().Format("2006-01-02")
 }
 
@@ -169,7 +175,7 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 	}
 	str := strings.Replace(err.Error(), "twilio: ", "", 1)
 	data := &baseData{LF: s.LocationFinder,
-		Data: &messageData{
+		Data: &messageListData{
 			Err:            str,
 			Query:          query,
 			Page:           new(views.MessagePage),
@@ -249,12 +255,13 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI())
 	data := &baseData{
 		LF: s.LocationFinder,
-		Data: &messageData{
-			Page:              page,
-			Loc:               s.LocationFinder.GetLocationReq(r),
-			Query:             query,
-			MaxResourceAge:    s.MaxResourceAge,
-			EncryptedNextPage: getEncryptedNextPage(page.NextPageURI(), s.SecretKey),
+		Data: &messageListData{
+			Page:                  page,
+			Loc:                   s.LocationFinder.GetLocationReq(r),
+			Query:                 query,
+			MaxResourceAge:        s.MaxResourceAge,
+			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.SecretKey),
+			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.SecretKey),
 		}, Duration: time.Since(start)}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := render(w, r, messageListTemplate, "base", data); err != nil {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/groupcache/lru"
 	log "github.com/inconshreveable/log15"
+	"github.com/kevinburke/handlers"
 	twilio "github.com/kevinburke/twilio-go"
 )
 
@@ -21,7 +22,7 @@ type Cache struct {
 }
 
 func NewCache(size int) *Cache {
-	l := log.New()
+	l := handlers.NewLogger()
 	if debug {
 		l.SetHandler(log.LvlFilterHandler(log.LvlDebug, l.GetHandler()))
 	}
@@ -44,7 +45,7 @@ type ExpiringMessagePage struct {
 	Page   *twilio.MessagePage
 }
 
-// GetMessagePageByValues retrieves
+// GetMessagePageByValues retrieves messages for given set of query values.
 func (c *Cache) GetMessagePageByValues(data url.Values) (*twilio.MessagePage, bool) {
 	key := "expiring_messages." + data.Encode()
 	c.mu.RLock()

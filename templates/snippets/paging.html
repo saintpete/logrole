@@ -1,0 +1,16 @@
+{{- define "paging" }}
+  {{- if or .EncryptedPreviousPage .EncryptedNextPage }}
+  <div class="row">
+    <div class="col-md-2">
+      {{- if .EncryptedPreviousPage }}
+      <a class="btn btn-info btn-lg btn-default btn-previous" href="{{ .Path }}?next={{ .EncryptedPreviousPage }}">Previous</a>
+      {{- end }}
+    </div>
+    <div class="col-md-2 col-md-offset-8">
+      {{- if .EncryptedNextPage }}
+      <a class="btn btn-info btn-lg btn-default btn-next" href="{{ .Path }}?next={{ .EncryptedNextPage }}">Next</a>
+      {{- end }}
+    </div>
+  </div>
+  {{- end }}
+{{- end }}

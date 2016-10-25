@@ -15,8 +15,9 @@ type Message struct {
 }
 
 type MessagePage struct {
-	messages    []*Message
-	nextPageURI types.NullString
+	messages        []*Message
+	previousPageURI types.NullString
+	nextPageURI     types.NullString
 }
 
 func (mp *MessagePage) Messages() []*Message {
@@ -25,6 +26,10 @@ func (mp *MessagePage) Messages() []*Message {
 
 func (mp *MessagePage) NextPageURI() types.NullString {
 	return mp.nextPageURI
+}
+
+func (mp *MessagePage) PreviousPageURI() types.NullString {
+	return mp.previousPageURI
 }
 
 const showAllColumnsOnEmptyPage = true
@@ -64,7 +69,11 @@ func NewMessagePage(mp *twilio.MessagePage, p *config.Permission, u *config.User
 	if len(messages) > 0 {
 		npuri = mp.NextPageURI
 	}
-	return &MessagePage{messages: messages, nextPageURI: npuri}, nil
+	return &MessagePage{
+		messages:        messages,
+		nextPageURI:     npuri,
+		previousPageURI: mp.PreviousPageURI,
+	}, nil
 }
 
 // CanViewProperty returns true if the caller can access the given property.

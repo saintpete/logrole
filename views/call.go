@@ -10,8 +10,9 @@ import (
 )
 
 type CallPage struct {
-	calls       []*Call
-	nextPageURI types.NullString
+	calls           []*Call
+	previousPageURI types.NullString
+	nextPageURI     types.NullString
 }
 
 type Call struct {
@@ -141,7 +142,11 @@ func NewCallPage(cp *twilio.CallPage, p *config.Permission, u *config.User) (*Ca
 	if len(calls) > 0 {
 		npuri = cp.NextPageURI
 	}
-	return &CallPage{calls: calls, nextPageURI: npuri}, nil
+	return &CallPage{
+		calls:           calls,
+		nextPageURI:     npuri,
+		previousPageURI: cp.PreviousPageURI,
+	}, nil
 }
 
 func (cp *CallPage) Calls() []*Call {
@@ -150,6 +155,10 @@ func (cp *CallPage) Calls() []*Call {
 
 func (cp *CallPage) NextPageURI() types.NullString {
 	return cp.nextPageURI
+}
+
+func (cp *CallPage) PreviousPageURI() types.NullString {
+	return cp.previousPageURI
 }
 
 // ShowHeader returns true if we should show the table header in the call
