@@ -75,6 +75,9 @@ type static struct {
 }
 
 func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/favicon.ico" {
+		r.URL.Path = "/static/favicon.ico"
+	}
 	bits, err := assets.Asset(strings.TrimPrefix(r.URL.Path, "/"))
 	if err != nil {
 		rest.NotFound(w, r)
@@ -248,7 +251,7 @@ func NewServer(settings *Settings) *Server {
 
 	r := new(handlers.Regexp)
 	// TODO - don't protect static routes with basic auth
-	r.Handle(regexp.MustCompile(`^/static`), []string{"GET"}, staticServer)
+	r.Handle(regexp.MustCompile(`(^/static|^/favicon.ico$)`), []string{"GET"}, staticServer)
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/auth/logout$`), []string{"POST"}, logout)
 	// todo awkward using HTTP methods here
