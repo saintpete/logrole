@@ -48,4 +48,7 @@ func TestNewSettingsFromEmptyConfig(t *testing.T) {
 	if settings.PageSize == 0 {
 		t.Errorf("expected PageSize to be nonzero, got %d", settings.PageSize)
 	}
+	if settings.SecretKey == nil {
+		t.Errorf("expected SecretKey to be non-nil, got %v", settings.SecretKey)
+	}
 }

@@ -30,7 +30,7 @@ race-test: vet
 	go test -race ./...
 
 serve:
-	go run commands/server/main.go
+	go run commands/server/main.go commands/server/config.go
 
 vet:
 	go vet ./assets/... ./commands/... ./config/... ./server/... ./services/... ./views/...

@@ -108,6 +108,7 @@ func main() {
 		os.Exit(2)
 	}
 	s := server.NewServer(settings)
+	s.CacheCommonQueries()
 	publicMux := http.NewServeMux()
 	publicMux.Handle("/", s)
 	publicServer := http.Server{

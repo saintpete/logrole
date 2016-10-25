@@ -135,8 +135,23 @@ type Settings struct {
 	Authenticator Authenticator
 }
 
+type Server struct {
+	http.Handler
+	vc       views.Client
+	DoneChan chan bool
+	PageSize uint
+}
+
+func (s *Server) Close() error {
+	return nil
+}
+
+func (s *Server) CacheCommonQueries() {
+	go s.vc.CacheCommonQueries(s.PageSize, s.DoneChan)
+}
+
 // NewServer returns a new Handler that can serve the website.
-func NewServer(settings *Settings) http.Handler {
+func NewServer(settings *Settings) *Server {
 	if settings.Reporter == nil {
 		settings.Reporter = services.GetReporter("noop", "")
 	}
@@ -244,7 +259,7 @@ func NewServer(settings *Settings) http.Handler {
 	//h = AuthUserHandler(h)
 	//h = handlers.BasicAuth(h, "logrole", settings.Users)
 	//}
-	return handlers.Duration(
+	h = handlers.Duration(
 		settings.Reporter.ReportPanics(
 			handlers.Log(
 				handlers.Debug(
@@ -257,4 +272,10 @@ func NewServer(settings *Settings) http.Handler {
 			),
 		),
 	)
+	return &Server{
+		Handler:  h,
+		PageSize: settings.PageSize,
+		vc:       vc,
+		DoneChan: make(chan bool, 1),
+	}
 }

@@ -3,7 +3,9 @@ package cache
 import (
 	"bytes"
 	"encoding/gob"
+	"net/url"
 	"sync"
+	"time"
 
 	"github.com/golang/groupcache/lru"
 	log "github.com/inconshreveable/log15"
@@ -37,10 +39,42 @@ func (c *Cache) CallPagePrefix() string {
 	return "calls"
 }
 
-func (c *Cache) GetMessagePage(key string) (*twilio.MessagePage, bool) {
+type ExpiringMessagePage struct {
+	Expiry time.Time
+	Page   *twilio.MessagePage
+}
+
+// GetMessagePageByValues retrieves
+func (c *Cache) GetMessagePageByValues(data url.Values) (*twilio.MessagePage, bool) {
+	key := "expiring_messages." + data.Encode()
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	val, ok := c.c.Get(c.MessagePagePrefix() + "." + key)
+	val, ok := c.c.Get(key)
+	if !ok {
+		return nil, false
+	}
+	bits, ok := val.([]byte)
+	if !ok {
+		c.Warn("Invalid value in cache", "val", val, "key", key)
+		return nil, false
+	}
+	dec := gob.NewDecoder(bytes.NewReader(bits))
+	e := new(ExpiringMessagePage)
+	if err := dec.Decode(e); err != nil {
+		return nil, false
+	}
+	if time.Since(e.Expiry) > 0 {
+		c.c.Remove(key)
+		return nil, false
+	}
+	c.Debug("found expiring message page in cache", "key", key)
+	return e.Page, true
+}
+
+func (c *Cache) GetMessagePageByURL(nextPage string) (*twilio.MessagePage, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	val, ok := c.c.Get(c.MessagePagePrefix() + "." + nextPage)
 	if !ok {
 		return nil, false
 	}
@@ -53,7 +87,7 @@ func (c *Cache) GetMessagePage(key string) (*twilio.MessagePage, bool) {
 	if err := dec.Decode(mp); err != nil {
 		return nil, false
 	}
-	c.Debug("found message page in cache", "key", key)
+	c.Debug("found message page in cache", "key", nextPage)
 	return mp, true
 }
 
@@ -75,6 +109,23 @@ func (c *Cache) GetCallPage(key string) (*twilio.CallPage, bool) {
 	}
 	c.Debug("found call page in cache", "key", key)
 	return mp, true
+}
+
+func (c *Cache) AddExpiringMessagePage(key string, valid time.Duration, mp *twilio.MessagePage) {
+	e := &ExpiringMessagePage{
+		Expiry: time.Now().UTC().Add(valid),
+		Page:   mp,
+	}
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(e)
+	if err != nil {
+		panic(err)
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.c.Add("expiring_messages."+key, buf.Bytes())
+	c.Debug("stored message page in cache", "key", key)
 }
 
 func (c *Cache) AddMessagePage(npuri string, mp *twilio.MessagePage) {

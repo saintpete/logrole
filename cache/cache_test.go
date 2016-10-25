@@ -15,7 +15,7 @@ func TestEncodeDecode(t *testing.T) {
 	}
 	c := NewCache(1)
 	c.AddMessagePage("npuri", mp)
-	mp2, ok := c.GetMessagePage("npuri")
+	mp2, ok := c.GetMessagePageByURL("npuri")
 	if !ok {
 		t.Errorf("couldn't retrieve message page from cache")
 	}

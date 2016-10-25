@@ -9,6 +9,8 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strconv"
+	"time"
 
 	"github.com/golang/groupcache/singleflight"
 	log "github.com/inconshreveable/log15"
@@ -31,6 +33,7 @@ type Client interface {
 	GetNextCallPage(user *config.User, nextPage string) (*CallPage, error)
 	GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error)
 	GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error)
+	CacheCommonQueries(uint, <-chan bool)
 }
 
 type client struct {
@@ -109,16 +112,30 @@ func (vc *client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
 }
 
 func (vc *client) GetMessagePage(user *config.User, data url.Values) (*MessagePage, error) {
-	page, err := vc.client.Messages.GetPage(data)
+	val, err := vc.group.Do("messages."+data.Encode(), func() (interface{}, error) {
+		if page, ok := vc.cache.GetMessagePageByValues(data); ok {
+			return page, nil
+		}
+		page, err := vc.client.Messages.GetPage(data)
+		if err != nil {
+			return nil, err
+		}
+		vc.cache.AddExpiringMessagePage(data.Encode(), 30*time.Second, page)
+		return page, nil
+	})
 	if err != nil {
 		return nil, err
+	}
+	page, ok := val.(*twilio.MessagePage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a MessagePage")
 	}
 	return NewMessagePage(page, vc.permission, user)
 }
 
 func (vc *client) GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error) {
 	val, err := vc.group.Do("messages."+nextPage, func() (interface{}, error) {
-		if page, ok := vc.cache.GetMessagePage(nextPage); ok {
+		if page, ok := vc.cache.GetMessagePageByURL(nextPage); ok {
 			return page, nil
 		}
 		page := new(twilio.MessagePage)
@@ -189,4 +206,19 @@ func (vc *client) GetCallRecordings(user *config.User, callSid string, data url.
 		return nil, err
 	}
 	return NewRecordingPage(page, vc.permission, user, vc.secretKey)
+}
+
+func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {
+	timeout := time.After(1 * time.Millisecond)
+	ps := strconv.FormatUint(uint64(pageSize), 10)
+	data := url.Values{"PageSize": []string{ps}}
+	for {
+		select {
+		case <-timeout:
+			go vc.GetMessagePage(nil, data)
+		case <-doneCh:
+			return
+		}
+		timeout = time.After(30 * time.Second)
+	}
 }
