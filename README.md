@@ -35,24 +35,6 @@ export GOPATH="$HOME/go"
 
 There are several ways to deploy Logrole.
 
-### As a Go library
-
-Create [a `server.Settings` struct][settings-godoc]. You may want to look at
-`commands/server/config.go` for an example of how to build the Settings struct.
-
-```go
-settings := &server.Settings{PublicHost: "example.com", PageSize: 50}
-```
-
-Once you have a Settings object, get a Server, then you can do what you want to
-listen on ports or run tests or anything.
-
-```go
-s := server.NewServer(settings)
-http.Handle("/", s)
-http.ListenAndServe(":4114", nil)
-```
-
 ### As a binary
 
 Logrole comes with a `server` binary (in commands/server) that can load
@@ -79,6 +61,26 @@ To see which environment variables are loaded, run `write_config_from_env
 Logrole comes with a default Procfile and a start script (`bin/serve`) for easy
 Heroku deployment. Sensitive environment variables (auth token, basic auth
 password, etc) are dropped before the server process starts.
+
+### As a Go library
+
+Follow these instructions if you want to load Logrole from other Go code, or
+create your own custom binary for running Logrole. Create [a `server.Settings`
+struct][settings-godoc]. You may want to look at `commands/server/config.go`
+for an example of how to build the Settings struct.
+
+```go
+settings := &server.Settings{PublicHost: "example.com", PageSize: 50}
+```
+
+Once you have a Settings object, get a Server, then you can do what you want to
+listen on ports or run tests or anything.
+
+```go
+s := server.NewServer(settings)
+http.Handle("/", s)
+http.ListenAndServe(":4114", nil)
+```
 
 [settings-godoc]: https://godoc.org/github.com/saintpete/logrole/server/#Settings
 
