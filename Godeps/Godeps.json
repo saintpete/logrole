@@ -69,8 +69,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/twilio-go",
-			"Comment": "0.27",
-			"Rev": "16c186fb678d2b5ded393a232b21e3e833cba11a"
+			"Comment": "0.28",
+			"Rev": "d233ca2d3bf408a0fce6e2ef576ba3a186e948eb"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
