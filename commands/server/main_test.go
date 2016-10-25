@@ -32,3 +32,20 @@ func TestGetSecretKey(t *testing.T) {
 		t.Errorf("could not roundtrip decoded key: %s", h)
 	}
 }
+
+func TestNewSettingsFromEmptyConfig(t *testing.T) {
+	c := &fileConfig{
+		AccountSid: "AC123",
+		AuthToken:  "123",
+	}
+	settings, err := NewSettingsFromConfig(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if settings.Client.AccountSid != "AC123" {
+		t.Errorf("expected AccountSid to be AC123, got %s", settings.Client.AccountSid)
+	}
+	if settings.PageSize == 0 {
+		t.Errorf("expected PageSize to be nonzero, got %d", settings.PageSize)
+	}
+}

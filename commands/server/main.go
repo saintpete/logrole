@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/mail"
 	"os"
 	"time"
 
@@ -21,34 +20,6 @@ import (
 	"github.com/saintpete/logrole/services"
 	yaml "gopkg.in/yaml.v2"
 )
-
-type fileConfig struct {
-	Port           string        `yaml:"port"`
-	AccountSid     string        `yaml:"twilio_account_sid"`
-	AuthToken      string        `yaml:"twilio_auth_token"`
-	Realm          services.Rlm  `yaml:"realm"`
-	Timezone       string        `yaml:"timezone"`
-	PublicHost     string        `yaml:"public_host"`
-	PageSize       uint          `yaml:"page_size"`
-	SecretKey      string        `yaml:"secret_key"`
-	MaxResourceAge time.Duration `yaml:"max_resource_age"`
-
-	// Need a pointer to a boolean here since we want to be able to distinguish
-	// "false" from "omitted"
-	ShowMediaByDefault *bool `yaml:"show_media_by_default,omitempty"`
-
-	EmailAddress string `yaml:"email_address"`
-
-	ErrorReporter      string `yaml:"error_reporter,omitempty"`
-	ErrorReporterToken string `yaml:"error_reporter_token,omitempty"`
-
-	AuthScheme string `yaml:"auth_scheme"`
-	User       string `yaml:"basic_auth_user"`
-	Password   string `yaml:"basic_auth_password"`
-
-	GoogleClientID     string `yaml:"google_client_id"`
-	GoogleClientSecret string `yaml:"google_client_secret"`
-}
 
 // TODO
 var timezones = []string{
@@ -131,103 +102,10 @@ func main() {
 		c.Port = config.DefaultPort
 		c.Realm = services.Local
 	}
-	allowHTTP := false
-	if c.Realm == services.Local {
-		allowHTTP = true
-	}
-	if c.SecretKey == "" {
-		handlers.Logger.Warn("No secret key provided, generating random secret key. Sessions won't persist across restarts")
-	}
-	secretKey, err := getSecretKey(c.SecretKey)
+	settings, err := NewSettingsFromConfig(c)
 	if err != nil {
-		handlers.Logger.Error(err.Error(), "key", c.SecretKey)
+		handlers.Logger.Error("Error loading settings from config", "err", err)
 		os.Exit(2)
-	}
-	if c.MaxResourceAge == 0 {
-		c.MaxResourceAge = config.DefaultMaxResourceAge
-	}
-	var address *mail.Address
-	if c.EmailAddress != "" {
-		address, err = mail.ParseAddress(c.EmailAddress)
-		if err != nil {
-			handlers.Logger.Error("Couldn't parse email address", "err", err)
-			os.Exit(2)
-		}
-	}
-	if c.ErrorReporter != "" {
-		if !services.IsRegistered(c.ErrorReporter) {
-			handlers.Logger.Warn("Unknown error reporter, using the noop reporter", "name", c.ErrorReporter)
-		}
-	}
-	reporter := services.GetReporter(c.ErrorReporter, c.ErrorReporterToken)
-	var authenticator server.Authenticator
-	switch c.AuthScheme {
-	case "":
-		handlers.Logger.Warn("Disabling basic authentication")
-		authenticator = &server.NoopAuthenticator{}
-	case "basic":
-		if c.User == "" || c.Password == "" {
-			handlers.Logger.Error("Cannot run without Basic Auth, set a basic_auth_user")
-			os.Exit(2)
-		}
-		users := make(map[string]string)
-		if c.User != "" {
-			users[c.User] = c.Password
-		}
-		authenticator = server.NewBasicAuthAuthenticator("logrole", users)
-	case "google":
-		var baseURL string
-		if allowHTTP {
-			baseURL = "http://" + c.PublicHost
-		} else {
-			baseURL = "https://" + c.PublicHost
-		}
-		gauthenticator := server.NewGoogleAuthenticator(c.GoogleClientID, c.GoogleClientSecret, baseURL, secretKey)
-		gauthenticator.AllowUnencryptedTraffic = allowHTTP
-		authenticator = gauthenticator
-	default:
-		handlers.Logger.Error("Unknown auth scheme", "scheme", c.AuthScheme)
-		os.Exit(2)
-	}
-	client := twilio.NewClient(c.AccountSid, c.AuthToken, nil)
-	if c.Timezone == "" {
-		handlers.Logger.Info("No timezone provided, defaulting to UTC")
-	}
-	locationFinder, err := services.NewLocationFinder(c.Timezone)
-	if err != nil {
-		handlers.Logger.Error("Couldn't find timezone", "err", err, "timezone", c.Timezone)
-		os.Exit(2)
-	}
-	for _, timezone := range timezones {
-		if ok := locationFinder.AddLocation(timezone); !ok {
-			handlers.Logger.Warn("Couldn't add location", "tz", timezone)
-		}
-	}
-	// TODO
-	if c.PageSize == 0 {
-		c.PageSize = config.DefaultPageSize
-	}
-	if c.PageSize > 1000 {
-		handlers.Logger.Error("Maximum allowable page size is 1000")
-		os.Exit(2)
-	}
-	if c.ShowMediaByDefault == nil {
-		b := true
-		c.ShowMediaByDefault = &b
-	}
-
-	settings := &server.Settings{
-		AllowUnencryptedTraffic: allowHTTP,
-		Client:                  client,
-		LocationFinder:          locationFinder,
-		PublicHost:              c.PublicHost,
-		PageSize:                c.PageSize,
-		SecretKey:               secretKey,
-		MaxResourceAge:          c.MaxResourceAge,
-		ShowMediaByDefault:      *c.ShowMediaByDefault,
-		Mailto:                  address,
-		Reporter:                reporter,
-		Authenticator:           authenticator,
 	}
 	s := server.NewServer(settings)
 	publicMux := http.NewServeMux()
