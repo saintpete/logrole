@@ -2,7 +2,7 @@
 <script type="text/javascript">
   var evHandler = function(clipboardElem) {
     return function() {
-      var pnCopy = clipboardElem.parentNode.querySelector('.pn-copy');
+      var pnCopy = clipboardElem.parentNode.querySelector('.copy-target');
       if (pnCopy === null) {
         return;
       }

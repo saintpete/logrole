@@ -137,7 +137,7 @@ pre, code {
 }
 
 /* the input has to be "visible", if you use display: none copy won't work. */
-.pn-copy-form {
+.copy-form {
     position: absolute;
     height: 1px;
     left: -3000px;
@@ -160,5 +160,5 @@ pre, code {
 
 .tz-control {
     margin-top: 10px;
-	margin-right: 10px;
+    margin-right: 10px;
 }

@@ -31,6 +31,7 @@ func init() {
 	base := string(assets.MustAsset("templates/base.html"))
 	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
 	phoneTpl := string(assets.MustAsset("templates/snippets/phonenumber.html"))
+	sidTpl := string(assets.MustAsset("templates/snippets/sid.html"))
 
 	tlist := template.Must(templates.Clone())
 	listTpl := string(assets.MustAsset("templates/messages/list.html"))
@@ -39,7 +40,7 @@ func init() {
 
 	tinstance := template.Must(templates.Clone())
 	instanceTpl := string(assets.MustAsset("templates/messages/instance.html"))
-	messageInstanceTemplate = template.Must(tinstance.Parse(instanceTpl + phoneTpl + copyScript))
+	messageInstanceTemplate = template.Must(tinstance.Parse(instanceTpl + phoneTpl + sidTpl + copyScript))
 }
 
 type messageInstanceServer struct {

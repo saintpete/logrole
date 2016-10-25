@@ -40,8 +40,9 @@ func init() {
 	tinstance := template.Must(templates.Clone())
 	instanceTpl := string(assets.MustAsset("templates/calls/instance.html"))
 	recordingTpl := string(assets.MustAsset("templates/calls/recordings.html"))
+	sidTpl := string(assets.MustAsset("templates/snippets/sid.html"))
 	callInstanceTemplate = template.Must(tinstance.Parse(
-		instanceTpl + recordingTpl + phoneTpl + copyScript))
+		instanceTpl + recordingTpl + phoneTpl + sidTpl + copyScript))
 }
 
 type callListServer struct {

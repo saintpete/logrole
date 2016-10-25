@@ -8,7 +8,7 @@
         <tr>
           <th>Sid</th>
           {{- if .Call.CanViewProperty "Sid" }}
-          <td><code>{{ .Call.Sid }}</code></td>
+            {{- template "sid" .Call }}
           {{- else }}
           <td>[redacted]</td>
           {{- end }}

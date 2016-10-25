@@ -1,0 +1,9 @@
+{{- define "sid" }}
+<td>
+  <code>{{ .Sid }}</code>
+  {{- if .Sid }}
+    <a title="Click to copy" class="clipboard">&#x1f4cb;</a>
+  {{- end }}
+  <form class="copy-form"><input class="copy-target" type="text" value="{{ .Sid }}" /></form>
+</td>
+{{- end }}
