@@ -18,8 +18,18 @@ hand back insecure image links, but we rewrite URLs before fetching them.
 
 ## Installation
 
-To install Logrole, run `go get -u github.com/saintpete/logrole/...`. You will
-need a working [Go environment][go-env].
+To install Logrole, run
+
+```bash
+go get -u github.com/saintpete/logrole/...
+```
+
+You will need a working [Go environment][go-env]; I recommend setting the
+GOPATH environment variable to `$HOME/go` in your .bashrc or equivalent.
+
+```bash
+export GOPATH="$HOME/go"
+```
 
 ## Deployment
 
