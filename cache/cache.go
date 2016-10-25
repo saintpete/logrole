@@ -1,4 +1,13 @@
+// Package cache caches Twilio API requests for fast loading.
+//
+// Fetching a second page of resources from Twilio can be extremely slow - one
+// second or more. Often we know the URL we want to fetch in advance - the
+// first page of Messages or Calls, and any next_page_uri as soon as a user
+// retrieves any individual page. Fetching the page and caching it can greatly
+// improve latency.
 package cache
+
+// TODO work on the API's for storing/retrieving messages.
 
 import (
 	"bytes"
@@ -43,6 +52,11 @@ func (c *Cache) CallPagePrefix() string {
 type ExpiringMessagePage struct {
 	Expiry time.Time
 	Page   *twilio.MessagePage
+}
+
+type ExpiringCallPage struct {
+	Expiry time.Time
+	Page   *twilio.CallPage
 }
 
 // GetMessagePageByValues retrieves messages for given set of query values.
@@ -92,10 +106,10 @@ func (c *Cache) GetMessagePageByURL(nextPage string) (*twilio.MessagePage, bool)
 	return mp, true
 }
 
-func (c *Cache) GetCallPage(key string) (*twilio.CallPage, bool) {
+func (c *Cache) GetCallPageByURL(nextPage string) (*twilio.CallPage, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	val, ok := c.c.Get(c.CallPagePrefix() + "." + key)
+	val, ok := c.c.Get(c.CallPagePrefix() + "." + nextPage)
 	if !ok {
 		return nil, false
 	}
@@ -108,25 +122,67 @@ func (c *Cache) GetCallPage(key string) (*twilio.CallPage, bool) {
 	if err := dec.Decode(mp); err != nil {
 		return nil, false
 	}
-	c.Debug("found call page in cache", "key", key)
+	c.Debug("found call page in cache", "key", nextPage)
 	return mp, true
 }
 
+func (c *Cache) GetCallPageByValues(data url.Values) (*twilio.CallPage, bool) {
+	key := "expiring_calls." + data.Encode()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	val, ok := c.c.Get(key)
+	if !ok {
+		return nil, false
+	}
+	bits, ok := val.([]byte)
+	if !ok {
+		c.Warn("Invalid value in cache", "val", val, "key", key)
+		return nil, false
+	}
+	dec := gob.NewDecoder(bytes.NewReader(bits))
+	e := new(ExpiringCallPage)
+	if err := dec.Decode(e); err != nil {
+		return nil, false
+	}
+	if time.Since(e.Expiry) > 0 {
+		c.c.Remove(key)
+		return nil, false
+	}
+	c.Debug("found expiring call page in cache", "key", key)
+	return e.Page, true
+}
+
+// AddExpiringMessagePage caches mp at the given key for the provided duration.
+// Use GetMessagePageByValues to retrieve it.
 func (c *Cache) AddExpiringMessagePage(key string, valid time.Duration, mp *twilio.MessagePage) {
 	e := &ExpiringMessagePage{
 		Expiry: time.Now().UTC().Add(valid),
 		Page:   mp,
 	}
+	c.encAndStore("expiring_messages."+key, e)
+}
+
+// AddExpiringCallPage caches mp at the given key for the provided duration.
+// Use GetCallPageByValues to retrieve it.
+func (c *Cache) AddExpiringCallPage(key string, valid time.Duration, cp *twilio.CallPage) {
+	e := &ExpiringCallPage{
+		Expiry: time.Now().UTC().Add(valid),
+		Page:   cp,
+	}
+	c.encAndStore("expiring_calls."+key, e)
+}
+
+func (c *Cache) encAndStore(key string, data interface{}) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(e)
+	err := enc.Encode(data)
 	if err != nil {
 		panic(err)
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.c.Add("expiring_messages."+key, buf.Bytes())
-	c.Debug("stored message page in cache", "key", key)
+	c.c.Add(key, buf.Bytes())
+	c.Debug("stored data in cache", "key", key)
 }
 
 func (c *Cache) AddMessagePage(npuri string, mp *twilio.MessagePage) {

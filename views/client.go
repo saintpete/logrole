@@ -159,16 +159,30 @@ func (vc *client) GetNextMessagePage(user *config.User, nextPage string) (*Messa
 }
 
 func (vc *client) GetCallPage(user *config.User, data url.Values) (*CallPage, error) {
-	page, err := vc.client.Calls.GetPage(data)
+	val, err := vc.group.Do("calls."+data.Encode(), func() (interface{}, error) {
+		if page, ok := vc.cache.GetCallPageByValues(data); ok {
+			return page, nil
+		}
+		page, err := vc.client.Calls.GetPage(data)
+		if err != nil {
+			return nil, err
+		}
+		vc.cache.AddExpiringCallPage(data.Encode(), 30*time.Second, page)
+		return page, nil
+	})
 	if err != nil {
 		return nil, err
+	}
+	page, ok := val.(*twilio.CallPage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a CallPage")
 	}
 	return NewCallPage(page, vc.permission, user)
 }
 
 func (vc *client) GetNextCallPage(user *config.User, nextPage string) (*CallPage, error) {
 	val, err := vc.group.Do("calls."+nextPage, func() (interface{}, error) {
-		if page, ok := vc.cache.GetCallPage(nextPage); ok {
+		if page, ok := vc.cache.GetCallPageByURL(nextPage); ok {
 			return page, nil
 		}
 		page := new(twilio.CallPage)
@@ -216,6 +230,7 @@ func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {
 		select {
 		case <-timeout:
 			go vc.GetMessagePage(nil, data)
+			go vc.GetCallPage(nil, data)
 		case <-doneCh:
 			return
 		}
