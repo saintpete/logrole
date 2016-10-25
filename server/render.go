@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"html/template"
 	"io"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -27,6 +28,7 @@ var funcMap = template.FuncMap{
 	"render":        renderTime,
 	"truncate_sid":  services.TruncateSid,
 	"prefix_strip":  stripPrefix("+1 "),
+	"tztime":        tzTime,
 }
 
 func stripPrefix(pfx string) func(string) string {
@@ -44,6 +46,16 @@ type baseData struct {
 	Start     time.Time
 	Path      string
 	LoggedOut bool
+	TZ        string
+	LF        services.LocationFinder
+	// Whatever data gets sent to the child template. Should have a Title
+	// property or Title() function.
+	Data interface{}
+}
+
+func tzTime(now time.Time, lf services.LocationFinder, loc string) string {
+	l := lf.GetLocation(loc)
+	return services.FriendlyDate(now.In(l))
 }
 
 // Render renders the given template to a bytes.Buffer. If the template renders
@@ -51,12 +63,17 @@ type baseData struct {
 // error.
 //
 // data should inherit from baseData
-func render(w io.Writer, tpl *template.Template, name string, data interface{}) error {
+func render(w io.Writer, r *http.Request, tpl *template.Template, name string, data *baseData) error {
+	data.Start = time.Now()
+	data.Path = r.URL.Path
+	if data.LF != nil {
+		data.TZ = data.LF.GetLocationReq(r).String()
+	}
 	b := templatePool.Get().(*bytes.Buffer)
 	defer templatePool.Put(b)
 	if err := tpl.ExecuteTemplate(b, name, data); err != nil {
 		return err
 	}
-	_, err := io.Copy(w, b)
-	return err
+	_, writeErr := io.Copy(w, b)
+	return writeErr
 }

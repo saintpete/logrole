@@ -50,6 +50,14 @@ type fileConfig struct {
 	GoogleClientSecret string `yaml:"google_client_secret"`
 }
 
+// TODO
+var timezones = []string{
+	"America/Los_Angeles",
+	"America/Denver",
+	"America/Chicago",
+	"America/New_York",
+}
+
 var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
 
 // getSecretKey produces a valid [32]byte secret key or returns an error. If
@@ -182,18 +190,20 @@ func main() {
 		os.Exit(2)
 	}
 	client := twilio.NewClient(c.AccountSid, c.AuthToken, nil)
-	var location *time.Location
 	if c.Timezone == "" {
 		handlers.Logger.Info("No timezone provided, defaulting to UTC")
-		location = time.UTC
-	} else {
-		var err error
-		location, err = time.LoadLocation(c.Timezone)
-		if err != nil {
-			handlers.Logger.Error("Couldn't find timezone", "err", err, "timezone", c.Timezone)
-			os.Exit(2)
+	}
+	locationFinder, err := services.NewLocationFinder(c.Timezone)
+	if err != nil {
+		handlers.Logger.Error("Couldn't find timezone", "err", err, "timezone", c.Timezone)
+		os.Exit(2)
+	}
+	for _, timezone := range timezones {
+		if ok := locationFinder.AddLocation(timezone); !ok {
+			handlers.Logger.Warn("Couldn't add location", "tz", timezone)
 		}
 	}
+	// TODO
 	if c.PageSize == 0 {
 		c.PageSize = config.DefaultPageSize
 	}
@@ -209,7 +219,7 @@ func main() {
 	settings := &server.Settings{
 		AllowUnencryptedTraffic: allowHTTP,
 		Client:                  client,
-		Location:                location,
+		LocationFinder:          locationFinder,
 		PublicHost:              c.PublicHost,
 		PageSize:                c.PageSize,
 		SecretKey:               secretKey,

@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>{{ if .Title }}{{ .Title }} - Logrole{{ else }}Logrole{{ end }}</title>
+    <title>{{ if .Data.Title }}{{ .Data.Title }} - Logrole{{ else }}Logrole{{ end }}</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -28,6 +28,29 @@
             <li {{ if eq .Path "/messages" }}class="active"{{ end }}>
               <a href="/messages">Messages</a>
             </li>
+            {{- if .LF }}
+            <li>
+              <form method="POST" action="/tz">
+                <input type="hidden" name="g" value="{{ .Path }}" />
+                <select name="tz" id="tz-select" class="tz-control form-control">
+                  <option>Choose a timezone...</option>
+                  {{/* ugh. also make this dynamic based on the LF list */}}
+                  <option value="America/Los_Angeles" {{ if eq .TZ "America/Los_Angeles" }}selected="selected"{{ end }}>
+                    Pacific ({{ tztime .Start .LF "America/Los_Angeles" }})
+                  </option>
+                  <option value="America/Denver" {{ if eq .TZ "America/Denver" }}selected="selected"{{ end }}>
+                  Mountain ({{ tztime .Start .LF "America/Denver" }})
+                  </option>
+                  <option value="America/Chicago" {{ if eq .TZ "America/Chicago" }}selected="selected"{{ end }}>
+                    Central ({{ tztime .Start .LF "America/Chicago" }})</option>
+                  </option>
+                  <option value="America/New_York" {{ if eq .TZ "America/New_York" }}selected="selected"{{ end }}>
+                    Eastern ({{ tztime .Start .LF "America/New_York" }})
+                  </option>
+                </select>
+              </form>
+            </li>
+            {{- end }}
           </ul>
           {{- if eq .LoggedOut false }}
           <ul class="nav navbar-nav pull-right">
@@ -47,10 +70,10 @@
     <div class="page container-fluid">
       <div class="row">
         <div class="col-md-12">
-          <h2>{{ if .Title }}{{ .Title }}{{ else }}Logrole{{ end }}</h2>
+          <h2>{{ if .Data.Title }}{{ .Data.Title }}{{ else }}Logrole{{ end }}</h2>
         </div>
       </div>
-      {{template "content" . }}
+      {{template "content" .Data }}
     </div><!-- end #page -->
     <footer class="footer">
       <div class="container-fluid">
@@ -71,5 +94,11 @@
         </div>
       </div>
     </footer>
+    <script type="text/javascript">
+      var tzSelector = document.querySelector('#tz-select');
+      tzSelector.addEventListener('change', function(e) {
+        e.target.form.submit();
+      });
+    </script>
   </body>
 </html>

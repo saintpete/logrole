@@ -181,17 +181,17 @@ func (g *GoogleAuthenticator) renderLoginPage(w http.ResponseWriter, r *http.Req
 		return
 	}
 	encoded := services.OpaqueByte(bits, g.secretKey)
-	data := &loginData{
-		baseData: baseData{
-			Start:     time.Now(),
-			Path:      r.URL.Path,
-			LoggedOut: true,
-		},
+	bd := &baseData{
+		Start:     time.Now(),
+		Path:      r.URL.Path,
+		LoggedOut: true,
+	}
+	bd.Data = &loginData{
 		URL: g.Conf.AuthCodeURL(encoded),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(401)
-	if err := render(w, loginTemplate, "base", data); err != nil {
+	if err := render(w, r, loginTemplate, "base", bd); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }

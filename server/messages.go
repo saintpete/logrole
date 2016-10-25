@@ -45,12 +45,11 @@ func init() {
 type messageInstanceServer struct {
 	log.Logger
 	Client             views.Client
-	Location           *time.Location
+	LocationFinder     services.LocationFinder
 	ShowMediaByDefault bool
 }
 
 type messageInstanceData struct {
-	baseData
 	Message            *views.Message
 	Loc                *time.Location
 	Media              *mediaResp
@@ -108,9 +107,10 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		rest.Forbidden(w, r, &rest.Error{Title: "Cannot view this message"})
 		return
 	}
+	baseData := &baseData{LF: s.LocationFinder, Duration: time.Since(start)}
 	data := &messageInstanceData{
 		Message:            message,
-		Loc:                s.Location,
+		Loc:                s.LocationFinder.GetLocationReq(r),
 		ShowMediaByDefault: s.ShowMediaByDefault,
 	}
 	numMedia, err := message.NumMedia()
@@ -121,11 +121,9 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		r := <-rch
 		data.Media = r
 	}
-	data.Duration = time.Since(start)
+	baseData.Data = data
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data.Path = r.URL.Path
-	data.Start = time.Now()
-	if err := render(w, messageInstanceTemplate, "base", data); err != nil {
+	if err := render(w, r, messageInstanceTemplate, "base", baseData); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -133,14 +131,13 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 type messageListServer struct {
 	log.Logger
 	Client         views.Client
-	Location       *time.Location
+	LocationFinder services.LocationFinder
 	PageSize       uint
 	SecretKey      *[32]byte
 	MaxResourceAge time.Duration
 }
 
 type messageData struct {
-	baseData
 	Page              *views.MessagePage
 	EncryptedNextPage string
 	Loc               *time.Location
@@ -170,17 +167,16 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 		panic("called renderError with a nil error")
 	}
 	str := strings.Replace(err.Error(), "twilio: ", "", 1)
-	data := &messageData{
-		Err:            str,
-		Query:          query,
-		Page:           new(views.MessagePage),
-		MaxResourceAge: s.MaxResourceAge,
-	}
+	data := &baseData{LF: s.LocationFinder,
+		Data: &messageData{
+			Err:            str,
+			Query:          query,
+			Page:           new(views.MessagePage),
+			MaxResourceAge: s.MaxResourceAge,
+		}}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
-	data.Path = r.URL.Path
-	data.Start = time.Now()
-	if err := render(w, messageListTemplate, "base", data); err != nil {
+	if err := render(w, r, messageListTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -250,18 +246,17 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}(u, page.NextPageURI())
-	data := &messageData{
-		Page:           page,
-		Loc:            s.Location,
-		Query:          query,
-		MaxResourceAge: s.MaxResourceAge,
-	}
-	data.Duration = time.Since(start)
-	data.EncryptedNextPage = getEncryptedNextPage(page.NextPageURI(), s.SecretKey)
+	data := &baseData{
+		LF: s.LocationFinder,
+		Data: &messageData{
+			Page:              page,
+			Loc:               s.LocationFinder.GetLocationReq(r),
+			Query:             query,
+			MaxResourceAge:    s.MaxResourceAge,
+			EncryptedNextPage: getEncryptedNextPage(page.NextPageURI(), s.SecretKey),
+		}, Duration: time.Since(start)}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data.Path = r.URL.Path
-	data.Start = time.Now()
-	if err := render(w, messageListTemplate, "base", data); err != nil {
+	if err := render(w, r, messageListTemplate, "base", data); err != nil {
 		s.renderError(w, r, http.StatusInternalServerError, query, err)
 		return
 	}

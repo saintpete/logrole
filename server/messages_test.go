@@ -93,7 +93,8 @@ func TestNoResultsIfAllResultsOld(t *testing.T) {
 	age := time.Since(tt.Time) - time.Hour
 	harness := test.ViewHarness{TestServer: server, SecretKey: key, MaxResourceAge: age}
 	vc := test.ViewsClient(harness)
-	s := &messageListServer{Logger: dlog, SecretKey: key, Client: vc}
+	lf, _ := services.NewLocationFinder("America/Los_Angeles")
+	s := &messageListServer{Logger: dlog, SecretKey: key, Client: vc, LocationFinder: lf}
 	// TODO this is all very clunky
 	config.AddUser("test", theUser)
 	for _, uri := range uris {

@@ -47,7 +47,7 @@ func init() {
 type callListServer struct {
 	log.Logger
 	Client         views.Client
-	Location       *time.Location
+	LocationFinder services.LocationFinder
 	PageSize       uint
 	SecretKey      *[32]byte
 	MaxResourceAge time.Duration
@@ -55,19 +55,17 @@ type callListServer struct {
 
 type callInstanceServer struct {
 	log.Logger
-	Client   views.Client
-	Location *time.Location
+	Client         views.Client
+	LocationFinder services.LocationFinder
 }
 
 type callInstanceData struct {
-	baseData
 	Call       *views.Call
 	Loc        *time.Location
 	Recordings *recordingResp
 }
 
 type callListData struct {
-	baseData
 	Page              *views.CallPage
 	EncryptedNextPage string
 	Loc               *time.Location
@@ -146,18 +144,19 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}(u, page.NextPageURI())
-	data := &callListData{
-		Page:           page,
-		Loc:            c.Location,
-		Query:          query,
-		MaxResourceAge: c.MaxResourceAge,
+	data := &baseData{
+		LF:       c.LocationFinder,
+		Duration: time.Since(start),
 	}
-	data.Duration = time.Since(start)
-	data.EncryptedNextPage = getEncryptedNextPage(page.NextPageURI(), c.SecretKey)
+	data.Data = &callListData{
+		Page:              page,
+		Loc:               c.LocationFinder.GetLocationReq(r),
+		Query:             query,
+		MaxResourceAge:    c.MaxResourceAge,
+		EncryptedNextPage: getEncryptedNextPage(page.NextPageURI(), c.SecretKey),
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data.Start = time.Now()
-	data.Path = r.URL.Path
-	if err := render(w, callListTemplate, "base", data); err != nil {
+	if err := render(w, r, callListTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -167,17 +166,18 @@ func (c *callListServer) renderError(w http.ResponseWriter, r *http.Request, cod
 		panic("called renderError with a nil error")
 	}
 	str := strings.Replace(err.Error(), "twilio: ", "", 1)
-	data := &callListData{
-		Err:            str,
-		Query:          query,
-		Page:           new(views.CallPage),
-		MaxResourceAge: c.MaxResourceAge,
+	data := &baseData{
+		LF: c.LocationFinder,
+		Data: &callListData{
+			Err:            str,
+			Query:          query,
+			Page:           new(views.CallPage),
+			MaxResourceAge: c.MaxResourceAge,
+		},
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
-	data.Start = time.Now()
-	data.Path = r.URL.Path
-	if err := render(w, callListTemplate, "base", data); err != nil {
+	if err := render(w, r, callListTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 		return
 	}
@@ -266,18 +266,21 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	data := &callInstanceData{
-		Call: call,
-		Loc:  c.Location,
+	data := &baseData{
+		LF:       c.LocationFinder,
+		Duration: time.Since(start),
 	}
-	data.Duration = time.Since(start)
-	data.Start = time.Now()
+	cid := &callInstanceData{
+		Call: call,
+		Loc:  c.LocationFinder.GetLocationReq(r),
+	}
 	if u.CanViewNumRecordings() {
 		r := <-rch
-		data.Recordings = r
+		cid.Recordings = r
 	}
+	data.Data = cid
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := render(w, callInstanceTemplate, "base", data); err != nil {
+	if err := render(w, r, callInstanceTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 		return
 	}

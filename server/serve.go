@@ -95,14 +95,8 @@ func (i *indexData) Title() string {
 
 func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data := &indexData{
-		baseData: baseData{
-			Duration: 0,
-			Start:    time.Now(),
-			Path:     "/",
-		},
-	}
-	if err := render(w, indexTemplate, "base", data); err != nil {
+	data := &baseData{Data: &indexData{}}
+	if err := render(w, r, indexTemplate, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -115,8 +109,7 @@ type Settings struct {
 	AllowUnencryptedTraffic bool
 	Client                  *twilio.Client
 
-	// Times will be displayed in this Location.
-	Location *time.Location
+	LocationFinder services.LocationFinder
 
 	// How many messages to display per page.
 	PageSize uint
@@ -166,7 +159,7 @@ func NewServer(settings *Settings) http.Handler {
 	mls := &messageListServer{
 		Logger:         handlers.Logger,
 		Client:         vc,
-		Location:       settings.Location,
+		LocationFinder: settings.LocationFinder,
 		PageSize:       settings.PageSize,
 		SecretKey:      settings.SecretKey,
 		MaxResourceAge: settings.MaxResourceAge,
@@ -174,21 +167,21 @@ func NewServer(settings *Settings) http.Handler {
 	mis := &messageInstanceServer{
 		Logger:             handlers.Logger,
 		Client:             vc,
-		Location:           settings.Location,
+		LocationFinder:     settings.LocationFinder,
 		ShowMediaByDefault: settings.ShowMediaByDefault,
 	}
 	cls := &callListServer{
 		Logger:         handlers.Logger,
 		Client:         vc,
-		Location:       settings.Location,
+		LocationFinder: settings.LocationFinder,
 		SecretKey:      settings.SecretKey,
 		PageSize:       settings.PageSize,
 		MaxResourceAge: settings.MaxResourceAge,
 	}
 	cis := &callInstanceServer{
-		Logger:   handlers.Logger,
-		Client:   vc,
-		Location: settings.Location,
+		Logger:         handlers.Logger,
+		Client:         vc,
+		LocationFinder: settings.LocationFinder,
 	}
 	ss := &searchServer{}
 	o := &openSearchXMLServer{
@@ -214,6 +207,11 @@ func NewServer(settings *Settings) http.Handler {
 	logout := &logoutServer{
 		Authenticator: settings.Authenticator,
 	}
+	tz := &tzServer{
+		Logger:                  handlers.Logger,
+		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
+		LocationFinder:          settings.LocationFinder,
+	}
 
 	e := &errorServer{
 		Mailto:   settings.Mailto,
@@ -228,6 +226,7 @@ func NewServer(settings *Settings) http.Handler {
 	authR.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
 	authR.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
 	authR.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
+	authR.Handle(regexp.MustCompile(`^/tz$`), []string{"POST"}, tz)
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)
 	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	authH := AddAuthenticator(authR, settings.Authenticator)
