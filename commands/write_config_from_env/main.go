@@ -94,7 +94,7 @@ func main() {
 	writeVal(b, "BASIC_AUTH_USER", "basic_auth_user")
 	writeVal(b, "BASIC_AUTH_PASSWORD", "basic_auth_password")
 	writeVal(b, "GOOGLE_CLIENT_ID", "google_client_id")
-	writeVal(b, "GOOGLE_CLIENT_SECRET", "google_client_id")
+	writeVal(b, "GOOGLE_CLIENT_SECRET", "google_client_secret")
 	b.WriteByte('\n')
 	writeVal(b, "ERROR_REPORTER", "error_reporter")
 	writeVal(b, "ERROR_REPORTER_TOKEN", "error_reporter_token")
