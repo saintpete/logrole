@@ -12,6 +12,7 @@ import (
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/config"
+	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
 )
 
@@ -22,12 +23,14 @@ type conferenceListServer struct {
 	Client         views.Client
 	PageSize       uint
 	MaxResourceAge time.Duration
+	LocationFinder services.LocationFinder
 	tpl            *template.Template
 }
 
 type conferenceListData struct {
 	Query url.Values
 	Page  *views.ConferencePage
+	Loc   *time.Location
 }
 
 func (d *conferenceListData) Title() string {
@@ -46,10 +49,12 @@ func (d *conferenceListData) Statuses() []twilio.Status {
 	return validConferenceStatuses
 }
 
-func newConferenceListServer(l log.Logger, vc views.Client, pageSize uint, maxResourceAge time.Duration) (*conferenceListServer, error) {
+func newConferenceListServer(l log.Logger, vc views.Client, lf services.LocationFinder,
+	pageSize uint, maxResourceAge time.Duration) (*conferenceListServer, error) {
 	s := &conferenceListServer{
 		Client:         vc,
 		PageSize:       pageSize,
+		LocationFinder: lf,
 		MaxResourceAge: maxResourceAge,
 	}
 	tpl, err := newTpl(template.FuncMap{
@@ -87,10 +92,12 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if err := render(w, r, c.tpl, "base", &baseData{
+		LF:       c.LocationFinder,
 		Duration: time.Since(start),
 		Data: &conferenceListData{
 			Query: r.URL.Query(),
 			Page:  page,
+			Loc:   c.LocationFinder.GetLocationReq(r),
 		},
 	}); err != nil {
 		rest.ServerError(w, r, err)

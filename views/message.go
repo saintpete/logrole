@@ -39,7 +39,7 @@ const showAllColumnsOnEmptyPage = true
 // message in the list, and true if there are no messages.
 func (mp *MessagePage) ShowHeader(fieldName string) bool {
 	if mp == nil {
-		return true
+		return showAllColumnsOnEmptyPage
 	}
 	msgs := mp.Messages()
 	if len(msgs) == 0 {

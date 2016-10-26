@@ -6,9 +6,8 @@
         <label for="status">Status</label>
         <select name="status" class="form-control">
           <option>Choose a status..</option>
-          {{ $query := .Query }}
           {{- range .Statuses }}
-          <option {{ if eq ($query.Get "status") . }}selected="selected" {{ end }}value="{{ . }}">{{ .Friendly }}</option>
+          <option {{ if eq ($.Query.Get "status") . }}selected="selected" {{ end }}value="{{ . }}">{{ .Friendly }}</option>
           {{- end }}
         </select>
       </div>
@@ -34,22 +33,42 @@
   <thead>
     <tr>
       <th>Date</th>
-      {{- if .Page.ShowHeader "Direction" }}
-      <th>Direction</th>
+      {{- if .Page.ShowHeader "FriendlyName" }}
+      <th>Friendly Name</th>
       {{- end }}
       {{- if .Page.ShowHeader "Status" }}
       <th>Status</th>
       {{- end }}
-      {{- if .Page.ShowHeader "From" }}
-      <th class="pn">From</th>
-      {{- end }}
-      {{- if .Page.ShowHeader "To" }}
-      <th class="pn">To</th>
-      {{- end }}
-      {{- if .Page.ShowHeader "Duration" }}
-      <th>Duration</th>
+      {{- if .Page.ShowHeader "Region" }}
+      <th>Region</th>
       {{- end }}
     </tr>
   </thead>
+  <tbody>
+    {{- range .Page.Conferences }}
+      {{- if .CanViewProperty "Sid" }}
+      <tr class="conference">
+        <td>
+          <a href="/conferences/{{ .Sid }}" title="View more details">
+            {{- if .CanViewProperty "DateCreated" }}
+              {{ friendly_date (.DateCreated.Time.In $.Loc) }}
+            {{- else }}
+            View more details
+            {{- end }}
+          </a>
+        </td>
+        {{- if .CanViewProperty "FriendlyName" }}
+        <td>{{ .FriendlyName }}</td>
+        {{- end }}
+        {{- if .CanViewProperty "Status" }}
+        <td>{{ .Status.Friendly }}</td>
+        {{- end }}
+        {{- if .CanViewProperty "Region" }}
+        <td>{{ .Region }}</td>
+        {{- end }}
+      </tr>
+      {{- end }}
+    {{- end }}
+  </tbody>
 </table>
 {{- end }}

@@ -23,7 +23,7 @@
 		},
 		{
 			"ImportPath": "github.com/getsentry/raven-go",
-			"Rev": "b8684db99b339af19aa6f067df3be9de6e995f89"
+			"Rev": "82c0ca79025d1127e4e21b8fe373e97fc88573b6"
 		},
 		{
 			"ImportPath": "github.com/go-stack/stack",

@@ -56,7 +56,7 @@
   </thead>
   <tbody>
     {{- range .Page.Calls }}
-      {{ if .CanViewProperty "Sid" }}
+      {{- if .CanViewProperty "Sid" }}
       <tr class="call">
         <td>
           <a href="/calls/{{ .Sid }}" title="View more details">
