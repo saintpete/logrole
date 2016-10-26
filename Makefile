@@ -6,7 +6,7 @@ WATCH_TARGETS = static/css/style.css \
 	cache/cache.go \
 	commands/server/main.go \
 	config/permission.go \
-	templates/base.html templates/messages/list.html \
+	templates/base.html templates/index.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
 	templates/calls/instance.html templates/calls/recordings.html \
 	templates/conferences/list.html \

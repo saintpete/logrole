@@ -1,23 +1,17 @@
 package server
 
 import (
-	"html/template"
 	"net/http"
 	"regexp"
 
 	"github.com/kevinburke/rest"
 )
 
-var openSearchTemplate *template.Template
-
-func init() {
-	openSearchTemplate = template.Must(template.New("opensearch.xml").Option("missingkey=error").Parse(openSearchTpl))
-}
-
 type searchServer struct{}
 
 var smsSid = regexp.MustCompile("^" + messagePattern + "$")
 var callSid = regexp.MustCompile("^" + callPattern + "$")
+var conferenceSid = regexp.MustCompile("^" + conferencePattern + "$")
 
 func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -32,6 +26,10 @@ func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if callSid.MatchString(q) {
 		http.Redirect(w, r, "/calls/"+q, http.StatusMovedPermanently)
+		return
+	}
+	if conferenceSid.MatchString(q) {
+		http.Redirect(w, r, "/conferences/"+q, http.StatusMovedPermanently)
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -67,15 +65,3 @@ func (o *openSearchXMLServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		rest.ServerError(w, r, err)
 	}
 }
-
-// Described here: http://stackoverflow.com/a/7630169/329700
-var openSearchTpl = `
-<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
-<ShortName>Logrole</ShortName>
-<Description>
-    Quick jump to a given resource
-</Description>
-<InputEncoding>UTF-8</InputEncoding>
-<Url type="text/html" method="get" template="{{ .Scheme }}://{{ .PublicHost }}/search?q={searchTerms}"/>
-</OpenSearchDescription>
-`

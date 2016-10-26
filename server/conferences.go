@@ -15,6 +15,8 @@ import (
 	"github.com/saintpete/logrole/views"
 )
 
+const conferencePattern = `(?P<sid>CF[a-f0-9]{32})`
+
 type conferenceListServer struct {
 	log.Logger
 	Client         views.Client

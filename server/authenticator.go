@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"net/url"
 	"time"
@@ -19,12 +18,6 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
-
-var loginTemplate *template.Template
-
-func init() {
-	loginTemplate = template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base + loginTpl))
-}
 
 type Authenticator interface {
 	// Authenticate ensures the request is authenticated. If it is not
@@ -342,4 +335,5 @@ var theUser = config.NewUser(&config.UserSettings{
 	CanViewNumRecordings:  true,
 	CanPlayRecordings:     true,
 	CanViewRecordingPrice: false,
+	CanViewConferences:    true,
 })

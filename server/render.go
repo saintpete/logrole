@@ -15,11 +15,13 @@ import (
 
 var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
 	callInstanceTpl, callListTpl, conferenceListTpl, indexTpl, loginTpl,
-	recordingTpl, pagingTpl, errorTpl string
+	recordingTpl, pagingTpl, openSearchTpl, errorTpl string
 
 // TODO move these to newServer() constructors with an error handler
 var errorTemplate *template.Template
 var indexTemplate *template.Template
+var loginTemplate *template.Template
+var openSearchTemplate *template.Template
 
 func init() {
 	base = assets.MustAssetString("templates/base.html")
@@ -35,10 +37,13 @@ func init() {
 	loginTpl = assets.MustAssetString("templates/login.html")
 	recordingTpl = assets.MustAssetString("templates/calls/recordings.html")
 	pagingTpl = assets.MustAssetString("templates/snippets/paging.html")
+	openSearchTpl = assets.MustAssetString("templates/opensearch.xml")
 	errorTpl = assets.MustAssetString("templates/errors.html")
 
-	errorTemplate = template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base + errorTpl))
-	indexTemplate = template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base + indexTpl))
+	errorTemplate = template.Must(newTpl(template.FuncMap{}, base+errorTpl))
+	indexTemplate = template.Must(newTpl(template.FuncMap{}, base+indexTpl))
+	loginTemplate = template.Must(newTpl(template.FuncMap{}, base+loginTpl))
+	openSearchTemplate = template.Must(newTpl(template.FuncMap{}, openSearchTpl))
 }
 
 // newTpl creates a new Template with the given base and common set of

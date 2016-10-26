@@ -82,7 +82,7 @@ type indexData struct {
 }
 
 func (i *indexData) Title() string {
-	return "Logrole Homepage"
+	return "Homepage"
 }
 
 func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,10 @@
+{{/* Open search template as described here: 
+http://stackoverflow.com/a/7630169/329700 */}}
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+<ShortName>Logrole</ShortName>
+<Description>
+    Quick jump to a given resource
+</Description>
+<InputEncoding>UTF-8</InputEncoding>
+<Url type="text/html" method="get" template="{{ .Scheme }}://{{ .PublicHost }}/search?q={searchTerms}"/>
+</OpenSearchDescription>

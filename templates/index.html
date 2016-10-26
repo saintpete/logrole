@@ -1,10 +1,35 @@
 {{ define "content" }}
-<p>
-(This is temporary, we'll put something more useful here soon.)
-</p>
+<div class="row">
+  <div class="col-md-4">
+    <p>
+    Logrole is a faster, usable, fine-grained client for exploring your Twilio
+    logs. It's pretty fast - there are hardly any dependencies and the main
+    bottleneck for every request is making an API request.
+    </p>
 
-<ul>
-  <li><a href="/messages">Messages</a>
-  <li><a href="/calls">Calls</a>
-</ul>
+    <ul>
+      <li>Customizable permissions for each user browsing the site - limit access to
+    SMS/MMS bodies, resources older than a certain age, recordings, calls, call
+    from, etc. etc.
+
+      <li>Your Account Sid is obscured from end users at all times.
+
+      <li>Easy site search - tab complete and search for a sid to go straight to the
+      instance view for that resource.
+
+      <li>MMS messages are always fetched over HTTPS. The default Twilio API/libraries
+    hand back insecure image links, but we rewrite URLs before fetching them.
+    </ul>
+
+    <p>
+    Start browsing:
+    </p>
+
+    <ul>
+      <li><a href="/messages">Messages</a>
+      <li><a href="/calls">Calls</a>
+      <li><a href="/conferences">Conferences</a>
+    </ul>
+  </div>
+</div>
 {{ end }}

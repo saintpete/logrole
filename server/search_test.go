@@ -8,6 +8,7 @@ import (
 
 const mms = "MM89a8c4a6891c53054e9cd604922bfb61"
 const call = "CA89a8c4a6891c53054e9cd604922bfb61"
+const conference = "CF89a8c4a6891c53054e9cd604922bfb61"
 
 var searchTests = []struct {
 	in       string
@@ -16,6 +17,7 @@ var searchTests = []struct {
 }{
 	{"/search?q=" + mms, 301, "/messages/" + mms},
 	{"/search?q=" + call, 301, "/calls/" + call},
+	{"/search?q=" + conference, 301, "/conferences/" + conference},
 	{"/search?", 302, "/"},
 	{"/search?q=unknown", 302, "/"},
 }
