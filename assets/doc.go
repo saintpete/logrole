@@ -5,3 +5,11 @@
 // read them from Go code. See the staticServer in server/serve.go for an
 // example.
 package assets
+
+func AssetString(name string) (string, error) {
+	b, err := Asset(name)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}

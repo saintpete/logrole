@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/golang/groupcache/singleflight"
@@ -34,6 +35,7 @@ type Client interface {
 	GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error)
 	GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error)
 	CacheCommonQueries(uint, <-chan bool)
+	IsTwilioNumber(num twilio.PhoneNumber) bool
 }
 
 type client struct {
@@ -43,11 +45,13 @@ type client struct {
 	client     *twilio.Client
 	secretKey  *[32]byte
 	permission *config.Permission
+	numbers    map[twilio.PhoneNumber]bool
+	numbersMu  sync.RWMutex
 }
 
 // NewClient creates a new Client encapsulating the provided values.
 func NewClient(l log.Logger, c *twilio.Client, secretKey *[32]byte, p *config.Permission) Client {
-	return &client{
+	vc := &client{
 		Logger: l,
 		group:  singleflight.Group{},
 		// a message page is about 24k bytes compressed, 1000 entries is about
@@ -56,6 +60,43 @@ func NewClient(l log.Logger, c *twilio.Client, secretKey *[32]byte, p *config.Pe
 		client:     c,
 		secretKey:  secretKey,
 		permission: p,
+	}
+	// TODO - would prefer to have another way to start this
+	if vc.client != nil {
+		go vc.getNumbers()
+		go vc.refreshNumberMap(30 * time.Second)
+	}
+	return vc
+}
+
+func (vc *client) getNumbers() {
+	iter := vc.client.IncomingNumbers.GetPageIterator(nil)
+	size, count := 0, 0
+	mp := make(map[twilio.PhoneNumber]bool)
+	for count < 200 {
+		page, err := iter.Next()
+		if err == twilio.NoMoreResults {
+			break
+		}
+		if err != nil {
+			return
+		}
+		for _, pn := range page.IncomingPhoneNumbers {
+			mp[pn.PhoneNumber] = true
+			size++
+		}
+		count++
+	}
+	vc.numbersMu.Lock()
+	vc.numbers = mp
+	vc.numbersMu.Unlock()
+	vc.Debug("Updated phone number map", "size", size)
+}
+
+func (vc *client) refreshNumberMap(interval time.Duration) {
+	tick := time.NewTicker(interval)
+	for range tick.C {
+		go vc.getNumbers()
 	}
 }
 
@@ -246,4 +287,11 @@ func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {
 		}
 		timeout = time.After(30 * time.Second)
 	}
+}
+
+func (vc *client) IsTwilioNumber(num twilio.PhoneNumber) bool {
+	vc.numbersMu.RLock()
+	_, ok := vc.numbers[num]
+	vc.numbersMu.RUnlock()
+	return ok
 }

@@ -23,9 +23,9 @@ func init() {
 }
 
 func TestInvalidNext(t *testing.T) {
-	s := &messageListServer{
-		Logger:    dlog,
-		secretKey: key,
+	s, err := newMessageListServer(dlog, nil, nil, 50, time.Hour, key)
+	if err != nil {
+		t.Fatal(err)
 	}
 	config.AddUser("test", theUser)
 	enc := services.Opaque("invalid", key)
@@ -94,7 +94,10 @@ func TestNoResultsIfAllResultsOld(t *testing.T) {
 	harness := test.ViewHarness{TestServer: server, SecretKey: key, MaxResourceAge: age}
 	vc := test.ViewsClient(harness)
 	lf, _ := services.NewLocationFinder("America/Los_Angeles")
-	s := &messageListServer{Logger: dlog, secretKey: key, Client: vc, LocationFinder: lf}
+	s, err := newMessageListServer(dlog, vc, lf, 50, time.Hour, key)
+	if err != nil {
+		t.Fatal(err)
+	}
 	// TODO this is all very clunky
 	config.AddUser("test", theUser)
 	for _, uri := range uris {

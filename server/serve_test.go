@@ -28,7 +28,10 @@ import (
 func TestRequestsUpgraded(t *testing.T) {
 	t.Parallel()
 	settings := &Settings{AllowUnencryptedTraffic: false, SecretKey: key}
-	s := NewServer(settings)
+	s, err := NewServer(settings)
+	if err != nil {
+		t.Fatal(err)
+	}
 	req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
 	req.Header.Set("X-Forwarded-Proto", "http")
 	w := httptest.NewRecorder()
@@ -50,7 +53,10 @@ func TestIndex(t *testing.T) {
 		Authenticator:           &NoopAuthenticator{},
 		SecretKey:               services.NewRandomKey(),
 	}
-	s := NewServer(settings)
+	s, err := NewServer(settings)
+	if err != nil {
+		t.Fatal(err)
+	}
 	req, _ := http.NewRequest("GET", "http://localhost:12345/", nil)
 	req.SetBasicAuth("test", "test")
 	w := httptest.NewRecorder()
@@ -69,7 +75,10 @@ func TestStaticPagesAvailableNoAuth(t *testing.T) {
 		SecretKey:     services.NewRandomKey(),
 		Authenticator: NewBasicAuthAuthenticator("logrole", map[string]string{"test": "test"}),
 	}
-	s := NewServer(settings)
+	s, err := NewServer(settings)
+	if err != nil {
+		t.Fatal(err)
+	}
 	req, _ := http.NewRequest("GET", "http://localhost:12345/static/css/style.css", nil)
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, req)

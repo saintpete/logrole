@@ -166,3 +166,7 @@ pre, code {
     margin-top: 10px;
     margin-right: 10px;
 }
+
+.owned-number {
+    color: #348034;
+}

@@ -6,6 +6,7 @@ package server
 
 import (
 	"bytes"
+	"errors"
 	"html/template"
 	"net/http"
 	"net/mail"
@@ -154,7 +155,7 @@ func (s *Server) CacheCommonQueries() {
 }
 
 // NewServer returns a new Handler that can serve the website.
-func NewServer(settings *Settings) *Server {
+func NewServer(settings *Settings) (*Server, error) {
 	if settings.Reporter == nil {
 		settings.Reporter = services.GetReporter("noop", "")
 	}
@@ -166,7 +167,7 @@ func NewServer(settings *Settings) *Server {
 		}
 	}
 	if !validKey {
-		panic("server: nil secret key in settings")
+		return nil, errors.New("Invalid secret key (must initialize some bytes)")
 	}
 	if settings.Authenticator == nil {
 		settings.Authenticator = &NoopAuthenticator{}
@@ -174,13 +175,10 @@ func NewServer(settings *Settings) *Server {
 
 	permission := config.NewPermission(settings.MaxResourceAge)
 	vc := views.NewClient(handlers.Logger, settings.Client, settings.SecretKey, permission)
-	mls := &messageListServer{
-		Logger:         handlers.Logger,
-		Client:         vc,
-		LocationFinder: settings.LocationFinder,
-		PageSize:       settings.PageSize,
-		MaxResourceAge: settings.MaxResourceAge,
-		secretKey:      settings.SecretKey,
+	mls, err := newMessageListServer(handlers.Logger, vc, settings.LocationFinder,
+		settings.PageSize, settings.MaxResourceAge, settings.SecretKey)
+	if err != nil {
+		return nil, err
 	}
 	mis := &messageInstanceServer{
 		Logger:             handlers.Logger,
@@ -188,18 +186,14 @@ func NewServer(settings *Settings) *Server {
 		LocationFinder:     settings.LocationFinder,
 		ShowMediaByDefault: settings.ShowMediaByDefault,
 	}
-	cls := &callListServer{
-		Logger:         handlers.Logger,
-		Client:         vc,
-		LocationFinder: settings.LocationFinder,
-		PageSize:       settings.PageSize,
-		MaxResourceAge: settings.MaxResourceAge,
-		secretKey:      settings.SecretKey,
+	cls, err := newCallListServer(handlers.Logger, vc, settings.LocationFinder,
+		settings.PageSize, settings.MaxResourceAge, settings.SecretKey)
+	if err != nil {
+		return nil, err
 	}
-	cis := &callInstanceServer{
-		Logger:         handlers.Logger,
-		Client:         vc,
-		LocationFinder: settings.LocationFinder,
+	cis, err := newCallInstanceServer(handlers.Logger, vc, settings.LocationFinder)
+	if err != nil {
+		return nil, err
 	}
 	ss := &searchServer{}
 	o := &openSearchXMLServer{
@@ -212,7 +206,7 @@ func NewServer(settings *Settings) *Server {
 	}
 	proxy, err := newAudioReverseProxy()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	audio := &audioServer{
 		Client:    vc,
@@ -280,5 +274,5 @@ func NewServer(settings *Settings) *Server {
 		PageSize: settings.PageSize,
 		vc:       vc,
 		DoneChan: make(chan bool, 1),
-	}
+	}, nil
 }

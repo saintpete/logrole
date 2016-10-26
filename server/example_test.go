@@ -11,7 +11,7 @@ func Example() {
 		PublicHost: "myapp.com",
 		SecretKey:  services.NewRandomKey(),
 	}
-	s := NewServer(settings)
+	s, _ := NewServer(settings)
 	http.Handle("/", s)
 	http.ListenAndServe(":4114", nil)
 }

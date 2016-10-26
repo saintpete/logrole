@@ -1,5 +1,5 @@
 {{- define "phonenumber" }}
-<td class="pn"><span class="copyable">{{ prefix_strip .Friendly }}</span>
+<td class="pn"><span class="{{ if is_our_pn . }}owned-number{{ end }} copyable">{{ prefix_strip .Friendly }}</span>
   {{- if .Friendly }}
     <a title="Click to copy" class="clipboard">&#x1f4cb;</a>
   {{- end }}

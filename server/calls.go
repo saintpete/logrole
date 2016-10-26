@@ -20,32 +20,9 @@ import (
 	"github.com/saintpete/logrole/views"
 )
 
-var callListTemplate *template.Template
-var callInstanceTemplate *template.Template
-
 const callPattern = `(?P<sid>CA[a-f0-9]{32})`
 
 var callInstanceRoute = regexp.MustCompile("^/calls/" + callPattern + "$")
-
-func init() {
-	base := string(assets.MustAsset("templates/base.html"))
-	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
-
-	tlist := template.Must(templates.Clone())
-	listTpl := string(assets.MustAsset("templates/calls/list.html"))
-	pagingTpl := string(assets.MustAsset("templates/snippets/paging.html"))
-	phoneTpl := string(assets.MustAsset("templates/snippets/phonenumber.html"))
-	copyScript := string(assets.MustAsset("templates/snippets/copy-phonenumber.js"))
-	callListTemplate = template.Must(tlist.Parse(
-		listTpl + pagingTpl + phoneTpl + copyScript))
-
-	tinstance := template.Must(templates.Clone())
-	instanceTpl := string(assets.MustAsset("templates/calls/instance.html"))
-	recordingTpl := string(assets.MustAsset("templates/calls/recordings.html"))
-	sidTpl := string(assets.MustAsset("templates/snippets/sid.html"))
-	callInstanceTemplate = template.Must(tinstance.Parse(
-		instanceTpl + recordingTpl + phoneTpl + sidTpl + copyScript))
-}
 
 type callListServer struct {
 	log.Logger
@@ -54,12 +31,96 @@ type callListServer struct {
 	PageSize       uint
 	MaxResourceAge time.Duration
 	secretKey      *[32]byte
+	tpl            *template.Template
+}
+
+func newCallListServer(l log.Logger, vc views.Client, lf services.LocationFinder,
+	pageSize uint, maxResourceAge time.Duration,
+	secretKey *[32]byte) (*callListServer, error) {
+	base, err := assets.AssetString("templates/base.html")
+	if err != nil {
+		return nil, err
+	}
+	listTpl, err := assets.AssetString("templates/calls/list.html")
+	if err != nil {
+		return nil, err
+	}
+	pagingTpl, err := assets.AssetString("templates/snippets/paging.html")
+	if err != nil {
+		return nil, err
+	}
+	phoneTpl, err := assets.AssetString("templates/snippets/phonenumber.html")
+	if err != nil {
+		return nil, err
+	}
+	copyScript, err := assets.AssetString("templates/snippets/copy-phonenumber.js")
+	if err != nil {
+		return nil, err
+	}
+	cs := &callListServer{
+		Logger:         l,
+		Client:         vc,
+		LocationFinder: lf,
+		PageSize:       pageSize,
+		MaxResourceAge: maxResourceAge,
+		secretKey:      secretKey,
+	}
+	templates, err := template.New("base").Option("missingkey=error").Funcs(funcMap).Funcs(template.FuncMap{
+		"is_our_pn": vc.IsTwilioNumber,
+	}).Parse(base + listTpl + pagingTpl + phoneTpl + copyScript)
+	if err != nil {
+		return nil, err
+	}
+	cs.tpl = templates
+	return cs, nil
 }
 
 type callInstanceServer struct {
 	log.Logger
 	Client         views.Client
 	LocationFinder services.LocationFinder
+	tpl            *template.Template
+}
+
+func newCallInstanceServer(l log.Logger, vc views.Client,
+	lf services.LocationFinder) (*callInstanceServer, error) {
+	base, err := assets.AssetString("templates/base.html")
+	if err != nil {
+		return nil, err
+	}
+	instanceTpl, err := assets.AssetString("templates/calls/instance.html")
+	if err != nil {
+		return nil, err
+	}
+	phoneTpl, err := assets.AssetString("templates/snippets/phonenumber.html")
+	if err != nil {
+		return nil, err
+	}
+	copyScript, err := assets.AssetString("templates/snippets/copy-phonenumber.js")
+	if err != nil {
+		return nil, err
+	}
+	recordingTpl, err := assets.AssetString("templates/calls/recordings.html")
+	if err != nil {
+		return nil, err
+	}
+	sidTpl, err := assets.AssetString("templates/snippets/sid.html")
+	if err != nil {
+		return nil, err
+	}
+	c := &callInstanceServer{
+		Logger:         l,
+		Client:         vc,
+		LocationFinder: lf,
+	}
+	templates, err := template.New("base").Option("missingkey=error").Funcs(funcMap).Funcs(template.FuncMap{
+		"is_our_pn": vc.IsTwilioNumber,
+	}).Parse(base + instanceTpl + recordingTpl + phoneTpl + sidTpl + copyScript)
+	if err != nil {
+		return nil, err
+	}
+	c.tpl = templates
+	return c, nil
 }
 
 type callInstanceData struct {
@@ -165,7 +226,7 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := render(w, r, callListTemplate, "base", data); err != nil {
+	if err := render(w, r, c.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -186,7 +247,7 @@ func (c *callListServer) renderError(w http.ResponseWriter, r *http.Request, cod
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
-	if err := render(w, r, callListTemplate, "base", data); err != nil {
+	if err := render(w, r, c.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 		return
 	}
@@ -289,7 +350,7 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Data = cid
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := render(w, r, callInstanceTemplate, "base", data); err != nil {
+	if err := render(w, r, c.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 		return
 	}

@@ -83,7 +83,11 @@ func main() {
 		handlers.Logger.Error("Error loading settings from config", "err", err)
 		os.Exit(2)
 	}
-	s := server.NewServer(settings)
+	s, err := server.NewServer(settings)
+	if err != nil {
+		handlers.Logger.Error("Error creating the server", "err", err)
+		os.Exit(2)
+	}
 	s.CacheCommonQueries()
 	publicMux := http.NewServeMux()
 	publicMux.Handle("/", s)
