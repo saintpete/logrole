@@ -291,7 +291,13 @@ func (g *GoogleAuthenticator) Authenticate(w http.ResponseWriter, r *http.Reques
 	if t.Expiry.Before(time.Now().UTC()) {
 		// TODO logout
 		g.renderLoginPage(w, r)
-		return nil, err
+		return nil, errors.New("cookie expired")
+	}
+	// if you got to this point you have a valid login cookie, don't show you
+	// the login page.
+	if r.URL.Path == "/login" {
+		http.Redirect(w, r, "/", 302)
+		return nil, errors.New("redirected logged in user to homepage")
 	}
 	// TODO return different users
 	return LookupUser(t.ID)

@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"errors"
 	"html/template"
 	"io"
 	"net/http"
@@ -134,6 +135,9 @@ func render(w io.Writer, r *http.Request, tpl *template.Template, name string, d
 	}(b)
 	if err := tpl.ExecuteTemplate(b, name, data); err != nil {
 		return err
+	}
+	if b.Len() == 0 {
+		return errors.New("Rendered a zero length template")
 	}
 	_, writeErr := io.Copy(w, b)
 	return writeErr

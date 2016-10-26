@@ -37,3 +37,16 @@ func TestGoogleAuthenticatorRendersLoginPage(t *testing.T) {
 		t.Errorf("expected Body to contain 'Log in with Google', got %s", body)
 	}
 }
+
+func TestLoggedInAuthenticates(t *testing.T) {
+	key := services.NewRandomKey()
+	req, _ := http.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	a := NewGoogleAuthenticator("", "", "http://localhost", key)
+	cookie := a.newCookie("user@example.com")
+	req.AddCookie(cookie)
+	_, err := a.Authenticate(w, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
