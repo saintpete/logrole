@@ -22,6 +22,7 @@ type User struct {
 	canViewNumRecordings  bool
 	canPlayRecordings     bool
 	canViewRecordingPrice bool
+	canViewConferences    bool
 }
 
 // UserSettings are used to define which permissions a User has.
@@ -42,6 +43,9 @@ type UserSettings struct {
 	// Can the user listen to recordings?
 	CanPlayRecordings     bool
 	CanViewRecordingPrice bool
+	// Can the user view metadata about a conference (sid, date created,
+	// region, etc)?
+	CanViewConferences bool
 }
 
 // AllUserSettings returns a UserSettings value with the widest possible set of
@@ -62,6 +66,7 @@ func AllUserSettings() *UserSettings {
 		CanViewNumRecordings:  true,
 		CanPlayRecordings:     true,
 		CanViewRecordingPrice: true,
+		CanViewConferences:    true,
 	}
 }
 
@@ -85,6 +90,7 @@ func NewUser(us *UserSettings) *User {
 		canViewNumRecordings:  us.CanViewNumRecordings,
 		canPlayRecordings:     us.CanPlayRecordings,
 		canViewRecordingPrice: us.CanViewRecordingPrice,
+		canViewConferences:    us.CanViewConferences,
 	}
 }
 
@@ -142,6 +148,10 @@ func (u *User) CanPlayRecordings() bool {
 
 func (u *User) CanViewRecordingPrice() bool {
 	return u.canViewRecordingPrice
+}
+
+func (u *User) CanViewConferences() bool {
+	return u.canViewConferences
 }
 
 // TODO store in database or something

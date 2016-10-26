@@ -98,6 +98,19 @@ func tzTime(now time.Time, lf services.LocationFinder, loc string) string {
 	return services.FriendlyDate(now.In(l))
 }
 
+// minFunc returns a function that, when called, returns the minimum acceptable
+// age for a resource, formatted as "YYYY-MM-DD".
+func minFunc(age time.Duration) func() string {
+	return func() string {
+		return time.Now().UTC().Add(-age).Format("2006-01-02")
+	}
+}
+
+// max returns the current time in UTC, formatted as YYYY-MM-DD.
+func max() string {
+	return time.Now().UTC().Format("2006-01-02")
+}
+
 // Render renders the given template to a bytes.Buffer. If the template renders
 // successfully, we write it to the ResponseWriter, otherwise we return the
 // error.

@@ -116,7 +116,7 @@ pre, code {
     margin-right: 10px;
 }
 
-.form-search input {
+.form-search input, .form-search select {
     margin-right: 20px;
 }
 

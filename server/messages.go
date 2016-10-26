@@ -148,6 +148,8 @@ func newMessageListServer(l log.Logger, vc views.Client, lf services.LocationFin
 	}
 	tpl, err := newTpl(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
+		"min":       minFunc(s.MaxResourceAge),
+		"max":       max,
 	}, base+messageListTpl+pagingTpl+phoneTpl+copyScript)
 	if err != nil {
 		return nil, err
@@ -172,18 +174,6 @@ func (m *messageListData) Title() string {
 
 func (m *messageListData) Path() string {
 	return "/messages"
-}
-
-// Min returns the minimum acceptable resource date, formatted for use in a
-// date HTML input field.
-func (m *messageListData) Min() string {
-	return time.Now().Add(-m.MaxResourceAge).Format("2006-01-02")
-}
-
-// Max returns a the maximum acceptable resource date, formatted for use in a
-// date HTML input field.
-func (m *messageListData) Max() string {
-	return time.Now().UTC().Format("2006-01-02")
 }
 
 func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {

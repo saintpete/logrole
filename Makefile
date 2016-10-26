@@ -9,6 +9,7 @@ WATCH_TARGETS = static/css/style.css \
 	templates/base.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
 	templates/calls/instance.html templates/calls/recordings.html \
+	templates/conferences/list.html \
 	templates/errors.html templates/login.html \
 	templates/snippets/phonenumber.html \
 	services/error_reporter.go services/services.go \

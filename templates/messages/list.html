@@ -21,11 +21,11 @@
       </div>
       <div class="form-group">
         <label for="start">Start</label>
-        <input type="date" class="form-control" name="start" id="start" min="{{ .Min }}" max="{{ .Max }}" placeholder="Start" value="{{ (.Query.Get "start") }}">
+        <input type="date" class="form-control" name="start" id="start" min="{{ min }}" max="{{ max }}" placeholder="Start" value="{{ (.Query.Get "start") }}">
       </div>
       <div class="form-group">
         <label for="end">End</label>
-        <input type="date" class="form-control" name="end" id="end" min="{{ .Min }}" max="{{ .Max }}" placeholder="End" value="{{ (.Query.Get "end") }}">
+        <input type="date" class="form-control" name="end" id="end" min="{{ min }}" max="{{ max }}" placeholder="End" value="{{ (.Query.Get "end") }}">
       </div>
     </div>
     <div class="col-md-2">

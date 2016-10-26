@@ -44,13 +44,15 @@ func newCallListServer(l log.Logger, vc views.Client, lf services.LocationFinder
 		MaxResourceAge: maxResourceAge,
 		secretKey:      secretKey,
 	}
-	templates, err := template.New("base").Option("missingkey=error").Funcs(funcMap).Funcs(template.FuncMap{
+	tpl, err := newTpl(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
-	}).Parse(base + callListTpl + pagingTpl + phoneTpl + copyScript)
+		"min":       minFunc(cs.MaxResourceAge),
+		"max":       max,
+	}, base+callListTpl+pagingTpl+phoneTpl+copyScript)
 	if err != nil {
 		return nil, err
 	}
-	cs.tpl = templates
+	cs.tpl = tpl
 	return cs, nil
 }
 
@@ -68,9 +70,9 @@ func newCallInstanceServer(l log.Logger, vc views.Client,
 		Client:         vc,
 		LocationFinder: lf,
 	}
-	templates, err := template.New("base").Option("missingkey=error").Funcs(funcMap).Funcs(template.FuncMap{
+	templates, err := newTpl(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
-	}).Parse(base + callInstanceTpl + recordingTpl + phoneTpl + sidTpl + copyScript)
+	}, base+callInstanceTpl+recordingTpl+phoneTpl+sidTpl+copyScript)
 	if err != nil {
 		return nil, err
 	}
@@ -100,19 +102,6 @@ func (c *callListData) Title() string {
 
 func (c *callListData) Path() string {
 	return "/calls"
-}
-
-// Min returns the minimum acceptable resource date, formatted for use in a
-// date HTML input field.
-func (c *callListData) Min() string {
-	// TODO combine with the Message implementation
-	return time.Now().Add(-c.MaxResourceAge).Format("2006-01-02")
-}
-
-// Max returns a the maximum acceptable resource date, formatted for use in a
-// date HTML input field.
-func (c *callListData) Max() string {
-	return time.Now().UTC().Format("2006-01-02")
 }
 
 func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
