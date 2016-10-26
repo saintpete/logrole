@@ -14,7 +14,6 @@ import (
 	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
-	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
@@ -37,26 +36,6 @@ type callListServer struct {
 func newCallListServer(l log.Logger, vc views.Client, lf services.LocationFinder,
 	pageSize uint, maxResourceAge time.Duration,
 	secretKey *[32]byte) (*callListServer, error) {
-	base, err := assets.AssetString("templates/base.html")
-	if err != nil {
-		return nil, err
-	}
-	listTpl, err := assets.AssetString("templates/calls/list.html")
-	if err != nil {
-		return nil, err
-	}
-	pagingTpl, err := assets.AssetString("templates/snippets/paging.html")
-	if err != nil {
-		return nil, err
-	}
-	phoneTpl, err := assets.AssetString("templates/snippets/phonenumber.html")
-	if err != nil {
-		return nil, err
-	}
-	copyScript, err := assets.AssetString("templates/snippets/copy-phonenumber.js")
-	if err != nil {
-		return nil, err
-	}
 	cs := &callListServer{
 		Logger:         l,
 		Client:         vc,
@@ -67,7 +46,7 @@ func newCallListServer(l log.Logger, vc views.Client, lf services.LocationFinder
 	}
 	templates, err := template.New("base").Option("missingkey=error").Funcs(funcMap).Funcs(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
-	}).Parse(base + listTpl + pagingTpl + phoneTpl + copyScript)
+	}).Parse(base + callListTpl + pagingTpl + phoneTpl + copyScript)
 	if err != nil {
 		return nil, err
 	}
@@ -84,30 +63,6 @@ type callInstanceServer struct {
 
 func newCallInstanceServer(l log.Logger, vc views.Client,
 	lf services.LocationFinder) (*callInstanceServer, error) {
-	base, err := assets.AssetString("templates/base.html")
-	if err != nil {
-		return nil, err
-	}
-	instanceTpl, err := assets.AssetString("templates/calls/instance.html")
-	if err != nil {
-		return nil, err
-	}
-	phoneTpl, err := assets.AssetString("templates/snippets/phonenumber.html")
-	if err != nil {
-		return nil, err
-	}
-	copyScript, err := assets.AssetString("templates/snippets/copy-phonenumber.js")
-	if err != nil {
-		return nil, err
-	}
-	recordingTpl, err := assets.AssetString("templates/calls/recordings.html")
-	if err != nil {
-		return nil, err
-	}
-	sidTpl, err := assets.AssetString("templates/snippets/sid.html")
-	if err != nil {
-		return nil, err
-	}
 	c := &callInstanceServer{
 		Logger:         l,
 		Client:         vc,
@@ -115,7 +70,7 @@ func newCallInstanceServer(l log.Logger, vc views.Client,
 	}
 	templates, err := template.New("base").Option("missingkey=error").Funcs(funcMap).Funcs(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
-	}).Parse(base + instanceTpl + recordingTpl + phoneTpl + sidTpl + copyScript)
+	}).Parse(base + callInstanceTpl + recordingTpl + phoneTpl + sidTpl + copyScript)
 	if err != nil {
 		return nil, err
 	}

@@ -6,10 +6,6 @@
 // example.
 package assets
 
-func AssetString(name string) (string, error) {
-	b, err := Asset(name)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
+func MustAssetString(name string) string {
+	return string(MustAsset(name))
 }

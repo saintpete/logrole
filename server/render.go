@@ -9,9 +9,27 @@ import (
 	"sync"
 	"time"
 
+	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/services"
 )
 
+var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
+	callInstanceTpl, callListTpl, recordingTpl, pagingTpl string
+
+func init() {
+	base = assets.MustAssetString("templates/base.html")
+	phoneTpl = assets.MustAssetString("templates/snippets/phonenumber.html")
+	copyScript = assets.MustAssetString("templates/snippets/copy-phonenumber.js")
+	sidTpl = assets.MustAssetString("templates/snippets/sid.html")
+	messageInstanceTpl = assets.MustAssetString("templates/messages/instance.html")
+	messageListTpl = assets.MustAssetString("templates/messages/list.html")
+	callInstanceTpl = assets.MustAssetString("templates/calls/instance.html")
+	callListTpl = assets.MustAssetString("templates/calls/list.html")
+	pagingTpl = assets.MustAssetString("templates/snippets/paging.html")
+	recordingTpl = assets.MustAssetString("templates/calls/recordings.html")
+}
+
+// Shown in the copyright notice
 var year = time.Now().UTC().Year()
 
 // renderTime returns the amount of time since we began rendering this
@@ -31,6 +49,8 @@ var funcMap = template.FuncMap{
 	"tztime":        tzTime,
 }
 
+// stripPrefix strips the prefix from a phone number - in this case we strip
+// the US prefix "+1 " from numbers. We could make this configurable.
 func stripPrefix(pfx string) func(string) string {
 	return func(val string) string {
 		return strings.TrimPrefix(val, pfx)

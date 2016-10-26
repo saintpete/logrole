@@ -30,6 +30,9 @@
             <li {{ if eq .Path "/messages" }}class="active"{{ end }}>
               <a href="/messages">Messages</a>
             </li>
+            <li {{ if eq .Path "/conferences" }}class="active"{{ end }}>
+              <a href="/conferences">Conferences</a>
+            </li>
           </ul>
           <ul class="nav navbar-nav pull-right">
             {{- if .LF }}
@@ -55,13 +58,13 @@
               </form>
             </li>
             {{- end }}
-          {{- if eq .LoggedOut false }}
+            {{- if eq .LoggedOut false }}
             <li>
               <form method="post" action="/auth/logout">
                 <input class="btn btn-link logout" name="Logout" value="Logout" type="submit" />
               </form>
             </li>
-          {{- end }}
+            {{- end }}
           </ul>
         </div>
     </nav>
