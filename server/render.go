@@ -14,8 +14,8 @@ import (
 )
 
 var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
-	callInstanceTpl, callListTpl, indexTpl, loginTpl, recordingTpl,
-	pagingTpl, errorTpl string
+	callInstanceTpl, callListTpl, conferenceListTpl, indexTpl, loginTpl,
+	recordingTpl, pagingTpl, errorTpl string
 
 // TODO move these to newServer() constructors with an error handler
 var errorTemplate *template.Template
@@ -30,6 +30,7 @@ func init() {
 	messageListTpl = assets.MustAssetString("templates/messages/list.html")
 	callInstanceTpl = assets.MustAssetString("templates/calls/instance.html")
 	callListTpl = assets.MustAssetString("templates/calls/list.html")
+	conferenceListTpl = assets.MustAssetString("templates/conferences/list.html")
 	indexTpl = assets.MustAssetString("templates/index.html")
 	loginTpl = assets.MustAssetString("templates/login.html")
 	recordingTpl = assets.MustAssetString("templates/calls/recordings.html")
@@ -38,6 +39,14 @@ func init() {
 
 	errorTemplate = template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base + errorTpl))
 	indexTemplate = template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base + indexTpl))
+}
+
+// newTpl creates a new Template with the given base and common set of
+// functions.
+func newTpl(mp template.FuncMap, tpls string) (*template.Template, error) {
+	t := template.New("base").Option("missingkey=error").Funcs(funcMap)
+	t = t.Funcs(mp)
+	return t.Parse(tpls)
 }
 
 // Shown in the copyright notice
@@ -101,7 +110,10 @@ func render(w io.Writer, r *http.Request, tpl *template.Template, name string, d
 		data.TZ = data.LF.GetLocationReq(r).String()
 	}
 	b := templatePool.Get().(*bytes.Buffer)
-	defer templatePool.Put(b)
+	defer func(buf *bytes.Buffer) {
+		buf.Reset()
+		templatePool.Put(buf)
+	}(b)
 	if err := tpl.ExecuteTemplate(b, name, data); err != nil {
 		return err
 	}

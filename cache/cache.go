@@ -12,6 +12,7 @@ package cache
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"net/url"
 	"sync"
 	"time"
@@ -59,27 +60,20 @@ type ExpiringCallPage struct {
 	Page   *twilio.CallPage
 }
 
+type ExpiringConferencePage struct {
+	Expiry time.Time
+	Page   *twilio.ConferencePage
+}
+
 // GetMessagePageByValues retrieves messages for given set of query values.
 func (c *Cache) GetMessagePageByValues(data url.Values) (*twilio.MessagePage, bool) {
 	key := "expiring_messages." + data.Encode()
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	val, ok := c.c.Get(key)
-	if !ok {
-		return nil, false
-	}
-	bits, ok := val.([]byte)
-	if !ok {
-		c.Warn("Invalid value in cache", "val", val, "key", key)
-		return nil, false
-	}
-	dec := gob.NewDecoder(bytes.NewReader(bits))
 	e := new(ExpiringMessagePage)
-	if err := dec.Decode(e); err != nil {
+	if err := c.decodeValueAtKey(key, e); err != nil {
 		return nil, false
 	}
 	if time.Since(e.Expiry) > 0 {
-		c.c.Remove(key)
+		c.remove(key)
 		return nil, false
 	}
 	c.Debug("found expiring message page in cache", "key", key, "size", c.c.Len())
@@ -128,27 +122,52 @@ func (c *Cache) GetCallPageByURL(nextPage string) (*twilio.CallPage, bool) {
 
 func (c *Cache) GetCallPageByValues(data url.Values) (*twilio.CallPage, bool) {
 	key := "expiring_calls." + data.Encode()
+	e := new(ExpiringCallPage)
+	if err := c.decodeValueAtKey(key, e); err != nil {
+		return nil, false
+	}
+	if time.Since(e.Expiry) > 0 {
+		c.remove(key)
+		return nil, false
+	}
+	c.Debug("found expiring call page in cache", "key", key, "size", c.c.Len())
+	return e.Page, true
+}
+
+func (c *Cache) remove(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.c.Remove(key)
+}
+
+func (c *Cache) decodeValueAtKey(key string, e interface{}) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	val, ok := c.c.Get(key)
 	if !ok {
-		return nil, false
+		return errors.New("key not found")
 	}
 	bits, ok := val.([]byte)
 	if !ok {
 		c.Warn("Invalid value in cache", "val", val, "key", key)
-		return nil, false
+		return errors.New("could not cast value to []byte")
 	}
 	dec := gob.NewDecoder(bytes.NewReader(bits))
-	e := new(ExpiringCallPage)
-	if err := dec.Decode(e); err != nil {
+	return dec.Decode(e)
+}
+
+// GetConferencePageByValues retrieves messages for given set of query values.
+func (c *Cache) GetConferencePageByValues(data url.Values) (*twilio.ConferencePage, bool) {
+	key := "expiring_conferences." + data.Encode()
+	e := new(ExpiringConferencePage)
+	if err := c.decodeValueAtKey(key, e); err != nil {
 		return nil, false
 	}
 	if time.Since(e.Expiry) > 0 {
-		c.c.Remove(key)
+		c.remove(key)
 		return nil, false
 	}
-	c.Debug("found expiring call page in cache", "key", key, "size", c.c.Len())
+	c.Debug("found expiring conference page in cache", "key", key, "size", c.c.Len())
 	return e.Page, true
 }
 
@@ -160,6 +179,14 @@ func (c *Cache) AddExpiringMessagePage(key string, valid time.Duration, mp *twil
 		Page:   mp,
 	}
 	c.encAndStore("expiring_messages."+key, e)
+}
+
+func (c *Cache) AddExpiringConferencePage(key string, valid time.Duration, mp *twilio.ConferencePage) {
+	e := &ExpiringConferencePage{
+		Expiry: time.Now().UTC().Add(valid),
+		Page:   mp,
+	}
+	c.encAndStore("expiring_conferences."+key, e)
 }
 
 // AddExpiringCallPage caches mp at the given key for the provided duration.

@@ -38,13 +38,13 @@ func newMessageInstanceServer(l log.Logger, vc views.Client, lf services.Locatio
 		LocationFinder:     lf,
 		ShowMediaByDefault: smbd,
 	}
-	templates, err := template.New("base").Option("missingkey=error").Funcs(funcMap).Funcs(template.FuncMap{
+	tpl, err := newTpl(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
-	}).Parse(base + messageInstanceTpl + phoneTpl + sidTpl + copyScript)
+	}, base+messageInstanceTpl+phoneTpl+sidTpl+copyScript)
 	if err != nil {
 		return nil, err
 	}
-	s.tpl = templates
+	s.tpl = tpl
 	return s, nil
 }
 
@@ -146,13 +146,13 @@ func newMessageListServer(l log.Logger, vc views.Client, lf services.LocationFin
 		MaxResourceAge: maxResourceAge,
 		secretKey:      secretKey,
 	}
-	templates, err := template.New("base").Option("missingkey=error").Funcs(funcMap).Funcs(template.FuncMap{
+	tpl, err := newTpl(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
-	}).Parse(base + messageListTpl + pagingTpl + phoneTpl + copyScript)
+	}, base+messageListTpl+pagingTpl+phoneTpl+copyScript)
 	if err != nil {
 		return nil, err
 	}
-	s.tpl = templates
+	s.tpl = tpl
 	return s, nil
 }
 

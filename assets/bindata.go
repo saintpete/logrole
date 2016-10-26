@@ -4,6 +4,7 @@
 // templates/calls/instance.html
 // templates/calls/list.html
 // templates/calls/recordings.html
+// templates/conferences/list.html
 // templates/errors.html
 // templates/index.html
 // templates/login.html
@@ -162,6 +163,26 @@ func templatesCallsRecordingsHtml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "templates/calls/recordings.html", size: 2438, mode: os.FileMode(420), modTime: time.Unix(1477417956, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _templatesConferencesListHtml = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\xaa\xae\x56\x48\x49\x4d\xcb\xcc\x4b\x55\x50\x4a\xce\xcf\x2b\x49\xcd\x2b\x51\x52\xa8\xad\xe5\xf2\x48\xcd\xc9\xc9\x57\x08\xcf\x2f\xca\x49\xe1\xaa\xae\xd6\x55\x48\xcd\x4b\x01\x09\x03\x02\x00\x00\xff\xff\xfc\xee\x4f\x83\x2e\x00\x00\x00")
+
+func templatesConferencesListHtmlBytes() ([]byte, error) {
+	return bindataRead(
+		_templatesConferencesListHtml,
+		"templates/conferences/list.html",
+	)
+}
+
+func templatesConferencesListHtml() (*asset, error) {
+	bytes, err := templatesConferencesListHtmlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "templates/conferences/list.html", size: 46, mode: os.FileMode(420), modTime: time.Unix(1477508260, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -522,6 +543,7 @@ var _bindata = map[string]func() (*asset, error){
 	"templates/calls/instance.html": templatesCallsInstanceHtml,
 	"templates/calls/list.html": templatesCallsListHtml,
 	"templates/calls/recordings.html": templatesCallsRecordingsHtml,
+	"templates/conferences/list.html": templatesConferencesListHtml,
 	"templates/errors.html": templatesErrorsHtml,
 	"templates/index.html": templatesIndexHtml,
 	"templates/login.html": templatesLoginHtml,
@@ -595,6 +617,9 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"instance.html": &bintree{templatesCallsInstanceHtml, map[string]*bintree{}},
 			"list.html": &bintree{templatesCallsListHtml, map[string]*bintree{}},
 			"recordings.html": &bintree{templatesCallsRecordingsHtml, map[string]*bintree{}},
+		}},
+		"conferences": &bintree{nil, map[string]*bintree{
+			"list.html": &bintree{templatesConferencesListHtml, map[string]*bintree{}},
 		}},
 		"errors.html": &bintree{templatesErrorsHtml, map[string]*bintree{}},
 		"index.html": &bintree{templatesIndexHtml, map[string]*bintree{}},

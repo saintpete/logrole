@@ -34,6 +34,7 @@ type Client interface {
 	GetNextCallPage(user *config.User, nextPage string) (*CallPage, error)
 	GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error)
 	GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error)
+	GetConferencePage(user *config.User, data url.Values) (*ConferencePage, error)
 	CacheCommonQueries(uint, <-chan bool)
 	IsTwilioNumber(num twilio.PhoneNumber) bool
 }
@@ -161,6 +162,15 @@ func (vc *client) getAndCacheMessage(data url.Values) (*twilio.MessagePage, erro
 	return page, nil
 }
 
+func (vc *client) getAndCacheConference(data url.Values) (*twilio.ConferencePage, error) {
+	page, err := vc.client.Conferences.GetPage(data)
+	if err != nil {
+		return nil, err
+	}
+	vc.cache.AddExpiringConferencePage(data.Encode(), 30*time.Second, page)
+	return page, nil
+}
+
 func (vc *client) getAndCacheCall(data url.Values) (*twilio.CallPage, error) {
 	page, err := vc.client.Calls.GetPage(data)
 	if err != nil {
@@ -186,6 +196,24 @@ func (vc *client) GetMessagePage(user *config.User, data url.Values) (*MessagePa
 		return nil, errors.New("Could not cast fetch result to a MessagePage")
 	}
 	return NewMessagePage(page, vc.permission, user)
+}
+
+func (vc *client) GetConferencePage(user *config.User, data url.Values) (*ConferencePage, error) {
+	val, err := vc.group.Do("conferences."+data.Encode(), func() (interface{}, error) {
+		if page, ok := vc.cache.GetConferencePageByValues(data); ok {
+			return page, nil
+		}
+		page, err := vc.getAndCacheConference(data)
+		return page, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	page, ok := val.(*twilio.ConferencePage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a ConferencePage")
+	}
+	return NewConferencePage(page, vc.permission, user)
 }
 
 func (vc *client) GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error) {
@@ -282,6 +310,7 @@ func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {
 		case <-timeout:
 			go vc.getAndCacheMessage(data)
 			go vc.getAndCacheCall(data)
+			go vc.getAndCacheConference(data)
 		case <-doneCh:
 			return
 		}

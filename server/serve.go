@@ -181,6 +181,10 @@ func NewServer(settings *Settings) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	confs, err := newConferenceListServer(handlers.Logger, vc, settings.PageSize)
+	if err != nil {
+		return nil, err
+	}
 	ss := &searchServer{}
 	o := &openSearchXMLServer{
 		PublicHost:              settings.PublicHost,
@@ -223,6 +227,7 @@ func NewServer(settings *Settings) (*Server, error) {
 	authR.Handle(audioRoute, []string{"GET"}, audio)
 	authR.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
 	authR.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
+	authR.Handle(regexp.MustCompile(`^/conferences$`), []string{"GET"}, confs)
 	authR.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
 	authR.Handle(regexp.MustCompile(`^/tz$`), []string{"POST"}, tz)
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)

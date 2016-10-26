@@ -13,9 +13,11 @@ WATCH_TARGETS = static/css/style.css \
 	templates/snippets/phonenumber.html \
 	services/error_reporter.go services/services.go \
 	server/authenticator.go server/render.go server/tz.go \
+	server/conferences.go \
 	server/serve.go server/messages.go server/search.go server/images.go \
 	server/calls.go server/page.go server/audio.go server/errors.go \
 	views/message.go views/client.go views/call.go views/recording.go \
+	views/conference.go \
 	Makefile config.yml
 
 ASSET_TARGETS = templates/base.html templates/messages/list.html \
