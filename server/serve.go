@@ -180,11 +180,9 @@ func NewServer(settings *Settings) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	mis := &messageInstanceServer{
-		Logger:             handlers.Logger,
-		Client:             vc,
-		LocationFinder:     settings.LocationFinder,
-		ShowMediaByDefault: settings.ShowMediaByDefault,
+	mis, err := newMessageInstanceServer(handlers.Logger, vc, settings.LocationFinder, settings.ShowMediaByDefault)
+	if err != nil {
+		return nil, err
 	}
 	cls, err := newCallListServer(handlers.Logger, vc, settings.LocationFinder,
 		settings.PageSize, settings.MaxResourceAge, settings.SecretKey)
