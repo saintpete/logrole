@@ -14,7 +14,6 @@ import (
 	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
-	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"golang.org/x/oauth2"
@@ -24,12 +23,7 @@ import (
 var loginTemplate *template.Template
 
 func init() {
-	base := string(assets.MustAsset("templates/base.html"))
-	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
-
-	tindex := template.Must(templates.Clone())
-	loginTpl := string(assets.MustAsset("templates/login.html"))
-	loginTemplate = template.Must(tindex.Parse(loginTpl))
+	loginTemplate = template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base + loginTpl))
 }
 
 type Authenticator interface {

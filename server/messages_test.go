@@ -13,6 +13,7 @@ import (
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/test"
+	"github.com/saintpete/logrole/views"
 )
 
 var dlog = log.New()
@@ -23,7 +24,8 @@ func init() {
 }
 
 func TestInvalidNext(t *testing.T) {
-	s, err := newMessageListServer(dlog, nil, nil, 50, time.Hour, key)
+	vc := views.NewClient(dlog, nil, nil, nil)
+	s, err := newMessageListServer(dlog, vc, nil, 50, time.Hour, key)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,7 +14,12 @@ import (
 )
 
 var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
-	callInstanceTpl, callListTpl, recordingTpl, pagingTpl string
+	callInstanceTpl, callListTpl, indexTpl, loginTpl, recordingTpl,
+	pagingTpl, errorTpl string
+
+// TODO move these to newServer() constructors with an error handler
+var errorTemplate *template.Template
+var indexTemplate *template.Template
 
 func init() {
 	base = assets.MustAssetString("templates/base.html")
@@ -25,8 +30,14 @@ func init() {
 	messageListTpl = assets.MustAssetString("templates/messages/list.html")
 	callInstanceTpl = assets.MustAssetString("templates/calls/instance.html")
 	callListTpl = assets.MustAssetString("templates/calls/list.html")
-	pagingTpl = assets.MustAssetString("templates/snippets/paging.html")
+	indexTpl = assets.MustAssetString("templates/index.html")
+	loginTpl = assets.MustAssetString("templates/login.html")
 	recordingTpl = assets.MustAssetString("templates/calls/recordings.html")
+	pagingTpl = assets.MustAssetString("templates/snippets/paging.html")
+	errorTpl = assets.MustAssetString("templates/errors.html")
+
+	errorTemplate = template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base + errorTpl))
+	indexTemplate = template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base + indexTpl))
 }
 
 // Shown in the copyright notice

@@ -7,7 +7,6 @@ package server
 import (
 	"bytes"
 	"errors"
-	"html/template"
 	"net/http"
 	"net/mail"
 	"regexp"
@@ -25,17 +24,6 @@ import (
 
 // Server version, run "make release" to increase this value
 const Version = "0.41"
-
-var indexTemplate *template.Template
-
-func init() {
-	base := string(assets.MustAsset("templates/base.html"))
-	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
-
-	tindex := template.Must(templates.Clone())
-	indexTpl := string(assets.MustAsset("templates/index.html"))
-	indexTemplate = template.Must(tindex.Parse(indexTpl))
-}
 
 func authUserHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

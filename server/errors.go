@@ -2,26 +2,13 @@ package server
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"net/mail"
 
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
-	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/services"
 )
-
-var errorTemplate *template.Template
-
-func init() {
-	base := string(assets.MustAsset("templates/base.html"))
-	templates := template.Must(template.New("base").Option("missingkey=error").Funcs(funcMap).Parse(base))
-
-	terror := template.Must(templates.Clone())
-	errorTpl := string(assets.MustAsset("templates/errors.html"))
-	errorTemplate = template.Must(terror.Parse(errorTpl))
-}
 
 type errorData struct {
 	baseData
