@@ -1,10 +1,11 @@
 package config
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"sync"
+
+	"golang.org/x/net/context"
 )
 
 type User struct {
