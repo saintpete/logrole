@@ -10,6 +10,7 @@ import (
 	"time"
 
 	log "github.com/inconshreveable/log15"
+	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/config"
@@ -134,10 +135,19 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		}
 		page, err = c.Client.GetConferencePage(u, data)
 	}
+	// Fetch the next page into the cache
+	go func(u *config.User, n types.NullString) {
+		if n.Valid {
+			if _, err := c.Client.GetNextConferencePage(u, n.String); err != nil {
+				c.Debug("Error fetching next page", "err", err)
+			}
+		}
+	}(u, page.NextPageURI())
 	if err != nil {
 		rest.ServerError(w, r, err)
 		return
 	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = render(w, r, c.tpl, "base", &baseData{
 		LF:       c.LocationFinder,
 		Duration: time.Since(start),

@@ -51,14 +51,16 @@ type client struct {
 	numbersMu  sync.RWMutex
 }
 
+// this allows about 8k entries in the cache
+const cacheSizeMB = 25
+const averageCacheEntryBytes = 3000
+
 // NewClient creates a new Client encapsulating the provided values.
 func NewClient(l log.Logger, c *twilio.Client, secretKey *[32]byte, p *config.Permission) Client {
 	vc := &client{
-		Logger: l,
-		group:  singleflight.Group{},
-		// a message page is about 24k bytes compressed, 1000 entries is about
-		// 25 MB. We can toggle this
-		cache:      cache.NewCache(1000),
+		Logger:     l,
+		group:      singleflight.Group{},
+		cache:      cache.NewCache(cacheSizeMB * 1024 * 1024 / averageCacheEntryBytes),
 		client:     c,
 		secretKey:  secretKey,
 		permission: p,
