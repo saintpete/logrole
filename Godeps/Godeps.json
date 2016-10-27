@@ -22,10 +22,6 @@
 			"Rev": "a61bf5eafa3aee233ec8043e9da052447e5463dd"
 		},
 		{
-			"ImportPath": "github.com/getsentry/raven-go",
-			"Rev": "82c0ca79025d1127e4e21b8fe373e97fc88573b6"
-		},
-		{
 			"ImportPath": "github.com/go-stack/stack",
 			"Comment": "v1.5.2",
 			"Rev": "100eb0c0a9c5b306ca2fb4f165df21d80ada4b82"
@@ -61,6 +57,10 @@
 			"ImportPath": "github.com/kevinburke/handlers",
 			"Comment": "0.20",
 			"Rev": "91e67d36c1a15884e0710899fc2faa59cacad29a"
+		},
+		{
+			"ImportPath": "github.com/kevinburke/raven-go",
+			"Rev": "82c0ca79025d1127e4e21b8fe373e97fc88573b6"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/rest",

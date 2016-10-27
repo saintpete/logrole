@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sync"
 
-	raven "github.com/getsentry/raven-go"
+	raven "github.com/kevinburke/raven-go"
 )
 
 // An ErrorReporter reports errors to a third party service. ErrorReporter
