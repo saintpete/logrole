@@ -60,7 +60,7 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/raven-go",
-			"Rev": "82c0ca79025d1127e4e21b8fe373e97fc88573b6"
+			"Rev": "db62b783ee6ac1713c57e6adeb4d051eeae91341"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/rest",
