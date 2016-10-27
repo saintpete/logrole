@@ -12,7 +12,7 @@ import (
 
 func init() {
 	flag.Usage = func() {
-		os.Stderr.WriteString(`write_config_from_env
+		os.Stderr.WriteString(`logrole_write_config_from_env
 
 Read configuration from environment variables and write it to a yml file. By
 default this script prints the config to stdout. Pass --config=<file> to write

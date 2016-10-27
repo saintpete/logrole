@@ -7,8 +7,8 @@ set -eo pipefail
 main() {
 	local current_directory="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 	local config="$current_directory/../config.yml"
-	write_config_from_env --config="$config"
-	exec envdir "$current_directory/../env" server serve --config="$config"
+	logrole_write_config_from_env --config="$config"
+	exec envdir "$current_directory/../env" logrole_server serve --config="$config"
 }
 
 main "$@"

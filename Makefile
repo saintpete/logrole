@@ -1,10 +1,12 @@
 BUMP_VERSION := $(shell command -v bump_version)
 GODOCDOC := $(shell command -v godocdoc)
 GO_BINDATA := $(shell command -v go-bindata)
+GODEP := $(shell command -v godep)
+JUSTRUN := $(shell command -v justrun)
 
 WATCH_TARGETS = static/css/style.css \
 	cache/cache.go \
-	commands/server/main.go \
+	commands/logrole_server/main.go \
 	config/permission.go \
 	templates/base.html templates/index.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
@@ -37,9 +39,10 @@ race-test: vet
 	go test -race ./...
 
 serve:
-	go run commands/server/main.go commands/server/config.go
+	go run commands/logrole_server/main.go commands/logrole_server/config.go
 
 vet:
+	@# We can't vet the vendor directory, it fails.
 	go vet ./assets/... ./cache/... ./commands/... ./config/... \
 		./server/... ./services/... ./test/... ./views/...
 
@@ -53,9 +56,15 @@ endif
 	go-bindata -o=assets/bindata.go --pkg=assets templates/... static/...
 
 watch:
+ifndef JUSTRUN
+	go get -u github.com/jmhodges/justrun
+endif
 	justrun --delay=100ms -c 'make assets serve' $(WATCH_TARGETS)
 
 deps:
+ifndef GODEP
+	go get -u github.com/tools/godep
+endif
 	godep save ./...
 
 release: race-test
