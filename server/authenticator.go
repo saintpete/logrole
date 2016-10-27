@@ -331,7 +331,7 @@ var theUser = config.NewUser(&config.UserSettings{
 	CanViewMessages:       true,
 	CanViewMessageFrom:    true,
 	CanViewMessageTo:      true,
-	CanViewMessageBody:    true,
+	CanViewMessageBody:    false,
 	CanViewMessagePrice:   false,
 	CanViewMedia:          true,
 	CanViewCalls:          true,
