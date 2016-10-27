@@ -11,6 +11,7 @@ package cache
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/gob"
 	"errors"
 	"net/url"
@@ -31,6 +32,8 @@ type Cache struct {
 	mu sync.RWMutex
 }
 
+var errNotFound = errors.New("Key not found in cache")
+
 func NewCache(size int) *Cache {
 	l := handlers.NewLogger()
 	if debug {
@@ -40,6 +43,10 @@ func NewCache(size int) *Cache {
 		Logger: l,
 		c:      lru.New(size),
 	}
+}
+
+func (c *Cache) ConferencePagePrefix() string {
+	return "conferences"
 }
 
 func (c *Cache) MessagePagePrefix() string {
@@ -76,48 +83,31 @@ func (c *Cache) GetMessagePageByValues(data url.Values) (*twilio.MessagePage, bo
 		c.remove(key)
 		return nil, false
 	}
-	c.Debug("found expiring message page in cache", "key", key, "size", c.c.Len())
 	return e.Page, true
 }
 
+func (c *Cache) GetConferencePageByURL(nextPage string) (*twilio.ConferencePage, bool) {
+	cp := new(twilio.ConferencePage)
+	if err := c.decodeValueAtKey(c.ConferencePagePrefix()+"."+nextPage, cp); err != nil {
+		return nil, false
+	}
+	return cp, true
+}
+
 func (c *Cache) GetMessagePageByURL(nextPage string) (*twilio.MessagePage, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	val, ok := c.c.Get(c.MessagePagePrefix() + "." + nextPage)
-	if !ok {
-		return nil, false
-	}
-	bits, ok := val.([]byte)
-	if !ok {
-		return nil, false
-	}
-	dec := gob.NewDecoder(bytes.NewReader(bits))
 	mp := new(twilio.MessagePage)
-	if err := dec.Decode(mp); err != nil {
+	if err := c.decodeValueAtKey(c.MessagePagePrefix()+"."+nextPage, mp); err != nil {
 		return nil, false
 	}
-	c.Debug("found message page in cache", "key", nextPage, "size", c.c.Len())
 	return mp, true
 }
 
 func (c *Cache) GetCallPageByURL(nextPage string) (*twilio.CallPage, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	val, ok := c.c.Get(c.CallPagePrefix() + "." + nextPage)
-	if !ok {
+	cp := new(twilio.CallPage)
+	if err := c.decodeValueAtKey(c.MessagePagePrefix()+"."+nextPage, cp); err != nil {
 		return nil, false
 	}
-	bits, ok := val.([]byte)
-	if !ok {
-		return nil, false
-	}
-	dec := gob.NewDecoder(bytes.NewReader(bits))
-	mp := new(twilio.CallPage)
-	if err := dec.Decode(mp); err != nil {
-		return nil, false
-	}
-	c.Debug("found call page in cache", "key", nextPage, "size", c.c.Len())
-	return mp, true
+	return cp, true
 }
 
 func (c *Cache) GetCallPageByValues(data url.Values) (*twilio.CallPage, bool) {
@@ -130,7 +120,6 @@ func (c *Cache) GetCallPageByValues(data url.Values) (*twilio.CallPage, bool) {
 		c.remove(key)
 		return nil, false
 	}
-	c.Debug("found expiring call page in cache", "key", key, "size", c.c.Len())
 	return e.Page, true
 }
 
@@ -145,14 +134,20 @@ func (c *Cache) decodeValueAtKey(key string, e interface{}) error {
 	defer c.mu.RUnlock()
 	val, ok := c.c.Get(key)
 	if !ok {
-		return errors.New("key not found")
+		return errNotFound
 	}
 	bits, ok := val.([]byte)
 	if !ok {
 		c.Warn("Invalid value in cache", "val", val, "key", key)
 		return errors.New("could not cast value to []byte")
 	}
-	dec := gob.NewDecoder(bytes.NewReader(bits))
+	c.Debug("found value in cache", "key", key, "size", len(bits))
+	reader, err := gzip.NewReader(bytes.NewReader(bits))
+	if err != nil {
+		panic(err)
+	}
+	defer reader.Close()
+	dec := gob.NewDecoder(reader)
 	return dec.Decode(e)
 }
 
@@ -167,7 +162,6 @@ func (c *Cache) GetConferencePageByValues(data url.Values) (*twilio.ConferencePa
 		c.remove(key)
 		return nil, false
 	}
-	c.Debug("found expiring conference page in cache", "key", key, "size", c.c.Len())
 	return e.Page, true
 }
 
@@ -201,39 +195,29 @@ func (c *Cache) AddExpiringCallPage(key string, valid time.Duration, cp *twilio.
 
 func (c *Cache) encAndStore(key string, data interface{}) {
 	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
+	writer := gzip.NewWriter(&buf)
+	enc := gob.NewEncoder(writer)
 	err := enc.Encode(data)
 	if err != nil {
+		panic(err)
+	}
+	if err := writer.Close(); err != nil {
 		panic(err)
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.c.Add(key, buf.Bytes())
-	c.Debug("stored data in cache", "key", key, "size", c.c.Len())
+	c.Debug("stored data in cache", "key", key, "size", buf.Len(), "cache_size", c.c.Len())
 }
 
 func (c *Cache) AddMessagePage(npuri string, mp *twilio.MessagePage) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(mp)
-	if err != nil {
-		panic(err)
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.c.Add(c.MessagePagePrefix()+"."+npuri, buf.Bytes())
-	c.Debug("stored message page in cache", "key", npuri, "size", c.c.Len())
+	c.encAndStore(c.MessagePagePrefix()+"."+npuri, mp)
 }
 
-func (c *Cache) AddCallPage(npuri string, mp *twilio.CallPage) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(mp)
-	if err != nil {
-		panic(err)
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.c.Add(c.CallPagePrefix()+"."+npuri, buf.Bytes())
-	c.Debug("stored call page in cache", "key", npuri, "size", c.c.Len())
+func (c *Cache) AddCallPage(npuri string, cp *twilio.CallPage) {
+	c.encAndStore(c.CallPagePrefix()+"."+npuri, cp)
+}
+
+func (c *Cache) AddConferencePage(npuri string, cp *twilio.ConferencePage) {
+	c.encAndStore(c.ConferencePagePrefix()+"."+npuri, cp)
 }
