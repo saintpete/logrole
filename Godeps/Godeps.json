@@ -96,15 +96,15 @@
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/nacl/secretbox",
-			"Rev": "5f31782cfb2b6373211f8f9fbf31283fa234b570"
+			"Rev": "ca7e7f10cb9fd9c1a6ff7f60436c086d73714180"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/poly1305",
-			"Rev": "5f31782cfb2b6373211f8f9fbf31283fa234b570"
+			"Rev": "ca7e7f10cb9fd9c1a6ff7f60436c086d73714180"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/salsa20/salsa",
-			"Rev": "5f31782cfb2b6373211f8f9fbf31283fa234b570"
+			"Rev": "ca7e7f10cb9fd9c1a6ff7f60436c086d73714180"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
