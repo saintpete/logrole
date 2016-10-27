@@ -107,14 +107,33 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	query := r.URL.Query()
-	data := url.Values{}
-	data.Set("PageSize", strconv.FormatUint(uint64(c.PageSize), 10))
-	if filterErr := setPageFilters(query, data); filterErr != nil {
-		c.renderError(w, r, http.StatusBadRequest, query, filterErr)
-		return
-	}
+	page := new(views.ConferencePage)
+	var err error
+	opaqueNext := query.Get("next")
 	start := time.Now()
-	page, err := c.Client.GetConferencePage(u, data)
+	if opaqueNext != "" {
+		next, nextErr := services.Unopaque(opaqueNext, c.secretKey)
+		if nextErr != nil {
+			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
+			c.renderError(w, r, http.StatusBadRequest, query, err)
+			return
+		}
+		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
+			c.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
+			c.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
+			return
+		}
+		page, err = c.Client.GetNextConferencePage(u, next)
+		setNextPageValsOnQuery(next, query)
+	} else {
+		data := url.Values{}
+		data.Set("PageSize", strconv.FormatUint(uint64(c.PageSize), 10))
+		if filterErr := setPageFilters(query, data); filterErr != nil {
+			c.renderError(w, r, http.StatusBadRequest, query, filterErr)
+			return
+		}
+		page, err = c.Client.GetConferencePage(u, data)
+	}
 	if err != nil {
 		rest.ServerError(w, r, err)
 		return

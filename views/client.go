@@ -32,6 +32,7 @@ type Client interface {
 	GetCallPage(user *config.User, data url.Values) (*CallPage, error)
 	GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error)
 	GetNextCallPage(user *config.User, nextPage string) (*CallPage, error)
+	GetNextConferencePage(user *config.User, nextPage string) (*ConferencePage, error)
 	GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error)
 	GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error)
 	GetConferencePage(user *config.User, data url.Values) (*ConferencePage, error)
@@ -257,6 +258,31 @@ func (vc *client) GetCallPage(user *config.User, data url.Values) (*CallPage, er
 		return nil, errors.New("Could not cast fetch result to a CallPage")
 	}
 	return NewCallPage(page, vc.permission, user)
+}
+
+func (vc *client) GetNextConferencePage(user *config.User, nextPage string) (*ConferencePage, error) {
+	val, err := vc.group.Do("conferences."+nextPage, func() (interface{}, error) {
+		if page, ok := vc.cache.GetConferencePageByURL(nextPage); ok {
+			return page, nil
+		}
+		page := new(twilio.ConferencePage)
+		if err := vc.client.GetNextPage(nextPage, page); err != nil {
+			return nil, err
+		}
+		if page == nil {
+			panic("nil page")
+		}
+		vc.cache.AddConferencePage(nextPage, page)
+		return page, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	page, ok := val.(*twilio.ConferencePage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a ConferencePage")
+	}
+	return NewConferencePage(page, vc.permission, user)
 }
 
 func (vc *client) GetNextCallPage(user *config.User, nextPage string) (*CallPage, error) {
