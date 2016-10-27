@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"golang.org/x/net/context"
 )
 
 var googleResponse = []byte(`{
@@ -31,7 +33,7 @@ func TestGoogle(t *testing.T) {
 		s.Close()
 		UserDataBase = oldBaseURL
 	}()
-	u, err := GetGoogleUserData(http.DefaultClient)
+	u, err := GetGoogleUserData(context.Background(), http.DefaultClient)
 	if err != nil {
 		t.Fatal(err)
 	}

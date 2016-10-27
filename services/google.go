@@ -6,11 +6,16 @@ import (
 	"net/mail"
 
 	"github.com/kevinburke/rest"
+	"golang.org/x/net/context"
 )
 
+// Base URL to get user data from.
 var UserDataBase = "https://www.googleapis.com"
+
+// Path that allows you to get user data.
 var UserDataPath = "/oauth2/v3/userinfo"
 
+// The data about users that we get back from Google.
 type GoogleUser struct {
 	Sub           string `json:"sub"`
 	Name          string `json:"name"`
@@ -25,7 +30,7 @@ type GoogleUser struct {
 	HD            string `json:"hd"`
 }
 
-func GetGoogleUserData(client *http.Client) (*GoogleUser, error) {
+func GetGoogleUserData(ctx context.Context, client *http.Client) (*GoogleUser, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
@@ -35,6 +40,7 @@ func GetGoogleUserData(client *http.Client) (*GoogleUser, error) {
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	u := new(GoogleUser)
 	err = rc.Do(req, u)
 	if err != nil {

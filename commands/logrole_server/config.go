@@ -40,8 +40,9 @@ type fileConfig struct {
 	User       string `yaml:"basic_auth_user"`
 	Password   string `yaml:"basic_auth_password"`
 
-	GoogleClientID     string `yaml:"google_client_id"`
-	GoogleClientSecret string `yaml:"google_client_secret"`
+	GoogleClientID       string   `yaml:"google_client_id"`
+	GoogleClientSecret   string   `yaml:"google_client_secret"`
+	GoogleAllowedDomains []string `yaml:"google_allowed_domains"`
 }
 
 // getSecretKey produces a valid [32]byte secret key or returns an error. If
@@ -113,7 +114,7 @@ func NewSettingsFromConfig(c *fileConfig) (*server.Settings, error) {
 		} else {
 			baseURL = "https://" + c.PublicHost
 		}
-		gauthenticator := server.NewGoogleAuthenticator(c.GoogleClientID, c.GoogleClientSecret, baseURL, secretKey)
+		gauthenticator := server.NewGoogleAuthenticator(c.GoogleClientID, c.GoogleClientSecret, baseURL, c.GoogleAllowedDomains, secretKey)
 		gauthenticator.AllowUnencryptedTraffic = allowHTTP
 		authenticator = gauthenticator
 	default:

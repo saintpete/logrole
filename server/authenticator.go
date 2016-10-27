@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	log "github.com/inconshreveable/log15"
@@ -106,10 +107,11 @@ func LookupUser(name string) (*config.User, error) {
 type GoogleAuthenticator struct {
 	AllowUnencryptedTraffic bool
 	Conf                    *oauth2.Config
+	allowedDomains          []string
 	secretKey               *[32]byte
 }
 
-func NewGoogleAuthenticator(clientID string, clientSecret string, baseURL string, secretKey *[32]byte) *GoogleAuthenticator {
+func NewGoogleAuthenticator(clientID string, clientSecret string, baseURL string, allowedDomains []string, secretKey *[32]byte) *GoogleAuthenticator {
 	conf := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
@@ -122,8 +124,9 @@ func NewGoogleAuthenticator(clientID string, clientSecret string, baseURL string
 		Endpoint: google.Endpoint,
 	}
 	return &GoogleAuthenticator{
-		Conf:      conf,
-		secretKey: secretKey,
+		Conf:           conf,
+		allowedDomains: allowedDomains,
+		secretKey:      secretKey,
 	}
 }
 
@@ -254,10 +257,29 @@ func (g *GoogleAuthenticator) handleGoogleCallback(w http.ResponseWriter, r *htt
 	}
 
 	client := g.Conf.Client(ctx, tok)
-	u, err := services.GetGoogleUserData(client)
+	u, err := services.GetGoogleUserData(ctx, client)
 	if err != nil {
 		rest.ServerError(w, r, err)
 		return err
+	}
+	if len(g.allowedDomains) > 0 {
+		domainMatch := false
+		for _, domain := range g.allowedDomains {
+			if strings.HasSuffix(u.Email, "@"+domain) {
+				domainMatch = true
+				break
+			}
+		}
+		if !domainMatch {
+			err := &rest.Error{
+				Title: "Email " + u.Email + " is from a domain that is not authorized to access this site",
+				ID:    "unauthorized_domain",
+			}
+			// TODO - better error message here and also don't show the Logout
+			// link since you are not logged in
+			rest.Forbidden(w, r, err)
+			return err
+		}
 	}
 	cookie := g.newCookie(u.Email)
 	http.SetCookie(w, cookie)

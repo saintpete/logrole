@@ -59,3 +59,9 @@ error_reporter_token: your_sentry_dsn
 auth_scheme: google
 google_client_id:     customdomain.apps.googleusercontent.com
 google_client_secret: W-secretkey
+# Email domains that are permissible for Google authentication. Must be an
+# exact match.
+google_allowed_domains:
+  - example.com
+  - example.org
+  - example.net

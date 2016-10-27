@@ -13,7 +13,7 @@ func TestLoginRedirect(t *testing.T) {
 	t.Parallel()
 	req, _ := http.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	a := NewGoogleAuthenticator("", "", "http://localhost", services.NewRandomKey())
+	a := NewGoogleAuthenticator("", "", "http://localhost", nil, services.NewRandomKey())
 	a.Authenticate(w, req)
 	if w.Code != 302 {
 		t.Errorf("expected Code to be 302, got %d", w.Code)
@@ -25,7 +25,7 @@ func TestLoginRedirect(t *testing.T) {
 
 func TestGoogleAuthenticatorRendersLoginPage(t *testing.T) {
 	t.Parallel()
-	a := NewGoogleAuthenticator("", "", "http://localhost", services.NewRandomKey())
+	a := NewGoogleAuthenticator("", "", "http://localhost", nil, services.NewRandomKey())
 	req, _ := http.NewRequest("GET", "/login", nil)
 	w := httptest.NewRecorder()
 	a.Authenticate(w, req)
@@ -42,7 +42,7 @@ func TestLoggedInAuthenticates(t *testing.T) {
 	key := services.NewRandomKey()
 	req, _ := http.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	a := NewGoogleAuthenticator("", "", "http://localhost", key)
+	a := NewGoogleAuthenticator("", "", "http://localhost", nil, key)
 	cookie := a.newCookie("user@example.com")
 	req.AddCookie(cookie)
 	_, err := a.Authenticate(w, req)
