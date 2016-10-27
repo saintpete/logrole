@@ -16,6 +16,7 @@ import (
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	"golang.org/x/net/context"
 )
 
 const conferencePattern = `(?P<sid>CF[a-f0-9]{32})`
@@ -107,6 +108,8 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
 		return
 	}
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
 	query := r.URL.Query()
 	page := new(views.ConferencePage)
 	var err error
@@ -124,7 +127,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			c.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = c.Client.GetNextConferencePage(u, next)
+		page, err = c.Client.GetNextConferencePage(ctx, u, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		data := url.Values{}
@@ -133,12 +136,12 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			c.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = c.Client.GetConferencePage(u, data)
+		page, err = c.Client.GetConferencePage(ctx, u, data)
 	}
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString) {
 		if n.Valid {
-			if _, err := c.Client.GetNextConferencePage(u, n.String); err != nil {
+			if _, err := c.Client.GetNextConferencePage(context.Background(), u, n.String); err != nil {
 				c.Debug("Error fetching next page", "err", err)
 			}
 		}

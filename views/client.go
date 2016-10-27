@@ -26,17 +26,17 @@ import (
 // shouldn't be seen before returning them to the caller.
 type Client interface {
 	SetBasicAuth(r *http.Request)
-	GetMessage(user *config.User, sid string) (*Message, error)
-	GetCall(user *config.User, sid string) (*Call, error)
-	GetMediaURLs(u *config.User, sid string) ([]*url.URL, error)
-	GetMessagePage(user *config.User, data url.Values) (*MessagePage, error)
-	GetCallPage(user *config.User, data url.Values) (*CallPage, error)
-	GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error)
-	GetNextCallPage(user *config.User, nextPage string) (*CallPage, error)
-	GetNextConferencePage(user *config.User, nextPage string) (*ConferencePage, error)
-	GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error)
-	GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error)
-	GetConferencePage(user *config.User, data url.Values) (*ConferencePage, error)
+	GetMessage(context.Context, *config.User, string) (*Message, error)
+	GetCall(context.Context, *config.User, string) (*Call, error)
+	GetMediaURLs(context.Context, *config.User, string) ([]*url.URL, error)
+	GetMessagePage(context.Context, *config.User, url.Values) (*MessagePage, error)
+	GetCallPage(context.Context, *config.User, url.Values) (*CallPage, error)
+	GetNextMessagePage(context.Context, *config.User, string) (*MessagePage, error)
+	GetNextCallPage(context.Context, *config.User, string) (*CallPage, error)
+	GetNextConferencePage(context.Context, *config.User, string) (*ConferencePage, error)
+	GetNextRecordingPage(context.Context, *config.User, string) (*RecordingPage, error)
+	GetCallRecordings(context.Context, *config.User, string, url.Values) (*RecordingPage, error)
+	GetConferencePage(context.Context, *config.User, url.Values) (*ConferencePage, error)
 	CacheCommonQueries(uint, <-chan bool)
 	IsTwilioNumber(num twilio.PhoneNumber) bool
 }
@@ -112,8 +112,8 @@ func (vc *client) SetBasicAuth(r *http.Request) {
 
 // GetMessage fetches a single Message from the Twilio API, and returns any
 // network or permission errors that occur.
-func (vc *client) GetMessage(user *config.User, sid string) (*Message, error) {
-	message, err := vc.client.Messages.Get(context.TODO(), sid)
+func (vc *client) GetMessage(ctx context.Context, user *config.User, sid string) (*Message, error) {
+	message, err := vc.client.Messages.Get(ctx, sid)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +122,8 @@ func (vc *client) GetMessage(user *config.User, sid string) (*Message, error) {
 
 // GetCall fetches a single Call from the Twilio API, and returns any
 // network or permission errors that occur.
-func (vc *client) GetCall(user *config.User, sid string) (*Call, error) {
-	call, err := vc.client.Calls.Get(context.TODO(), sid)
+func (vc *client) GetCall(ctx context.Context, user *config.User, sid string) (*Call, error) {
+	call, err := vc.client.Calls.Get(ctx, sid)
 	if err != nil {
 		return nil, err
 	}
@@ -137,11 +137,11 @@ var mediaUrlsFilters = url.Values{
 
 // GetMediaURLs retrieves all media URL's for a given client, but encrypts and
 // obscures them behind our image proxy first.
-func (vc *client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
+func (vc *client) GetMediaURLs(ctx context.Context, u *config.User, sid string) ([]*url.URL, error) {
 	if u.CanViewMedia() == false {
 		return nil, config.PermissionDenied
 	}
-	urls, err := vc.client.Messages.GetMediaURLs(context.TODO(), sid, mediaUrlsFilters)
+	urls, err := vc.client.Messages.GetMediaURLs(ctx, sid, mediaUrlsFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -157,8 +157,8 @@ func (vc *client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
 	return opaqueImages, nil
 }
 
-func (vc *client) getAndCacheMessage(data url.Values) (*twilio.MessagePage, error) {
-	page, err := vc.client.Messages.GetPage(context.TODO(), data)
+func (vc *client) getAndCacheMessage(ctx context.Context, data url.Values) (*twilio.MessagePage, error) {
+	page, err := vc.client.Messages.GetPage(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +166,8 @@ func (vc *client) getAndCacheMessage(data url.Values) (*twilio.MessagePage, erro
 	return page, nil
 }
 
-func (vc *client) getAndCacheConference(data url.Values) (*twilio.ConferencePage, error) {
-	page, err := vc.client.Conferences.GetPage(context.TODO(), data)
+func (vc *client) getAndCacheConference(ctx context.Context, data url.Values) (*twilio.ConferencePage, error) {
+	page, err := vc.client.Conferences.GetPage(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +175,8 @@ func (vc *client) getAndCacheConference(data url.Values) (*twilio.ConferencePage
 	return page, nil
 }
 
-func (vc *client) getAndCacheCall(data url.Values) (*twilio.CallPage, error) {
-	page, err := vc.client.Calls.GetPage(context.TODO(), data)
+func (vc *client) getAndCacheCall(ctx context.Context, data url.Values) (*twilio.CallPage, error) {
+	page, err := vc.client.Calls.GetPage(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -184,12 +184,12 @@ func (vc *client) getAndCacheCall(data url.Values) (*twilio.CallPage, error) {
 	return page, nil
 }
 
-func (vc *client) GetMessagePage(user *config.User, data url.Values) (*MessagePage, error) {
+func (vc *client) GetMessagePage(ctx context.Context, user *config.User, data url.Values) (*MessagePage, error) {
 	val, err := vc.group.Do("messages."+data.Encode(), func() (interface{}, error) {
 		if page, ok := vc.cache.GetMessagePageByValues(data); ok {
 			return page, nil
 		}
-		page, err := vc.getAndCacheMessage(data)
+		page, err := vc.getAndCacheMessage(ctx, data)
 		return page, err
 	})
 	if err != nil {
@@ -202,12 +202,12 @@ func (vc *client) GetMessagePage(user *config.User, data url.Values) (*MessagePa
 	return NewMessagePage(page, vc.permission, user)
 }
 
-func (vc *client) GetConferencePage(user *config.User, data url.Values) (*ConferencePage, error) {
+func (vc *client) GetConferencePage(ctx context.Context, user *config.User, data url.Values) (*ConferencePage, error) {
 	val, err := vc.group.Do("conferences."+data.Encode(), func() (interface{}, error) {
 		if page, ok := vc.cache.GetConferencePageByValues(data); ok {
 			return page, nil
 		}
-		page, err := vc.getAndCacheConference(data)
+		page, err := vc.getAndCacheConference(ctx, data)
 		return page, err
 	})
 	if err != nil {
@@ -220,13 +220,13 @@ func (vc *client) GetConferencePage(user *config.User, data url.Values) (*Confer
 	return NewConferencePage(page, vc.permission, user)
 }
 
-func (vc *client) GetNextMessagePage(user *config.User, nextPage string) (*MessagePage, error) {
+func (vc *client) GetNextMessagePage(ctx context.Context, user *config.User, nextPage string) (*MessagePage, error) {
 	val, err := vc.group.Do("messages."+nextPage, func() (interface{}, error) {
 		if page, ok := vc.cache.GetMessagePageByURL(nextPage); ok {
 			return page, nil
 		}
 		page := new(twilio.MessagePage)
-		if err := vc.client.GetNextPage(context.TODO(), nextPage, page); err != nil {
+		if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
 			return nil, err
 		}
 		if page == nil {
@@ -245,12 +245,12 @@ func (vc *client) GetNextMessagePage(user *config.User, nextPage string) (*Messa
 	return NewMessagePage(page, vc.permission, user)
 }
 
-func (vc *client) GetCallPage(user *config.User, data url.Values) (*CallPage, error) {
+func (vc *client) GetCallPage(ctx context.Context, user *config.User, data url.Values) (*CallPage, error) {
 	val, err := vc.group.Do("calls."+data.Encode(), func() (interface{}, error) {
 		if page, ok := vc.cache.GetCallPageByValues(data); ok {
 			return page, nil
 		}
-		page, err := vc.getAndCacheCall(data)
+		page, err := vc.getAndCacheCall(ctx, data)
 		return page, err
 	})
 	if err != nil {
@@ -263,13 +263,13 @@ func (vc *client) GetCallPage(user *config.User, data url.Values) (*CallPage, er
 	return NewCallPage(page, vc.permission, user)
 }
 
-func (vc *client) GetNextConferencePage(user *config.User, nextPage string) (*ConferencePage, error) {
+func (vc *client) GetNextConferencePage(ctx context.Context, user *config.User, nextPage string) (*ConferencePage, error) {
 	val, err := vc.group.Do("conferences."+nextPage, func() (interface{}, error) {
 		if page, ok := vc.cache.GetConferencePageByURL(nextPage); ok {
 			return page, nil
 		}
 		page := new(twilio.ConferencePage)
-		if err := vc.client.GetNextPage(context.TODO(), nextPage, page); err != nil {
+		if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
 			return nil, err
 		}
 		if page == nil {
@@ -288,13 +288,13 @@ func (vc *client) GetNextConferencePage(user *config.User, nextPage string) (*Co
 	return NewConferencePage(page, vc.permission, user)
 }
 
-func (vc *client) GetNextCallPage(user *config.User, nextPage string) (*CallPage, error) {
+func (vc *client) GetNextCallPage(ctx context.Context, user *config.User, nextPage string) (*CallPage, error) {
 	val, err := vc.group.Do("calls."+nextPage, func() (interface{}, error) {
 		if page, ok := vc.cache.GetCallPageByURL(nextPage); ok {
 			return page, nil
 		}
 		page := new(twilio.CallPage)
-		if err := vc.client.GetNextPage(context.TODO(), nextPage, page); err != nil {
+		if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
 			return nil, err
 		}
 		if page == nil {
@@ -313,17 +313,17 @@ func (vc *client) GetNextCallPage(user *config.User, nextPage string) (*CallPage
 	return NewCallPage(page, vc.permission, user)
 }
 
-func (vc *client) GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error) {
+func (vc *client) GetNextRecordingPage(ctx context.Context, user *config.User, nextPage string) (*RecordingPage, error) {
 	page := new(twilio.RecordingPage)
-	err := vc.client.GetNextPage(context.TODO(), nextPage, page)
+	err := vc.client.GetNextPage(ctx, nextPage, page)
 	if err != nil {
 		return nil, err
 	}
 	return NewRecordingPage(page, vc.permission, user, vc.secretKey)
 }
 
-func (vc *client) GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error) {
-	page, err := vc.client.Calls.GetRecordings(context.TODO(), callSid, data)
+func (vc *client) GetCallRecordings(ctx context.Context, user *config.User, callSid string, data url.Values) (*RecordingPage, error) {
+	page, err := vc.client.Calls.GetRecordings(ctx, callSid, data)
 	if err != nil {
 		return nil, err
 	}
@@ -334,12 +334,16 @@ func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {
 	timeout := time.After(1 * time.Millisecond)
 	ps := strconv.FormatUint(uint64(pageSize), 10)
 	data := url.Values{"PageSize": []string{ps}}
+	// we could add timeouts here but not much value; these all happen in the
+	// background and the twilio client sets a 31 second timeout on all
+	// requests.
+	ctx := context.Background()
 	for {
 		select {
 		case <-timeout:
-			go vc.getAndCacheMessage(data)
-			go vc.getAndCacheCall(data)
-			go vc.getAndCacheConference(data)
+			go vc.getAndCacheMessage(ctx, data)
+			go vc.getAndCacheCall(ctx, data)
+			go vc.getAndCacheConference(ctx, data)
 		case <-doneCh:
 			return
 		}

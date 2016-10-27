@@ -17,6 +17,7 @@ import (
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	"golang.org/x/net/context"
 )
 
 const messagePattern = `(?P<sid>(MM|SM)[a-f0-9]{32})`
@@ -71,17 +72,19 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 	sid := messageInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
 	start := time.Now()
 	rch := make(chan *mediaResp, 1)
 	go func(sid string) {
-		urls, err := s.Client.GetMediaURLs(u, sid)
+		urls, err := s.Client.GetMediaURLs(ctx, u, sid)
 		rch <- &mediaResp{
 			URLs: urls,
 			Err:  err,
 		}
 		close(rch)
 	}(sid)
-	message, err := s.Client.GetMessage(u, sid)
+	message, err := s.Client.GetMessage(ctx, u, sid)
 	switch err {
 	case nil:
 		break
@@ -211,6 +214,8 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page := new(views.MessagePage)
 	var err error
 	opaqueNext := query.Get("next")
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
 	start := time.Now()
 	if opaqueNext != "" {
 		next, nextErr := services.Unopaque(opaqueNext, s.secretKey)
@@ -224,7 +229,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = s.Client.GetNextMessagePage(u, next)
+		page, err = s.Client.GetNextMessagePage(ctx, u, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		// valid values: https://www.twilio.com/docs/api/rest/message#list
@@ -234,7 +239,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = s.Client.GetMessagePage(u, data)
+		page, err = s.Client.GetMessagePage(ctx, u, data)
 	}
 	if err != nil {
 		switch terr := err.(type) {
@@ -255,7 +260,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString) {
 		if n.Valid {
-			if _, err := s.Client.GetNextMessagePage(u, n.String); err != nil {
+			if _, err := s.Client.GetNextMessagePage(context.Background(), u, n.String); err != nil {
 				s.Debug("Error fetching next page", "err", err)
 			}
 		}

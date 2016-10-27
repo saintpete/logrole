@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"time"
 
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
@@ -64,6 +65,9 @@ func (i *imageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	ctx, cancel := getContext(r.Context(), 5*time.Second)
+	defer cancel()
+	req = req.WithContext(ctx)
 	resp, err := twilio.MediaClient.Do(req)
 	if err != nil {
 		rest.ServerError(w, r, err)

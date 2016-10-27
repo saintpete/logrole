@@ -17,6 +17,7 @@ import (
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	"golang.org/x/net/context"
 )
 
 const callPattern = `(?P<sid>CA[a-f0-9]{32})`
@@ -119,6 +120,8 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page := new(views.CallPage)
 	var err error
 	opaqueNext := query.Get("next")
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
 	start := time.Now()
 	if opaqueNext != "" {
 		next, nextErr := services.Unopaque(opaqueNext, c.secretKey)
@@ -132,7 +135,7 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = c.Client.GetNextCallPage(u, next)
+		page, err = c.Client.GetNextCallPage(ctx, u, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		// valid values: https://www.twilio.com/docs/api/rest/message#list
@@ -142,7 +145,7 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = c.Client.GetCallPage(u, data)
+		page, err = c.Client.GetCallPage(ctx, u, data)
 	}
 	if err != nil {
 		c.renderError(w, r, http.StatusInternalServerError, query, err)
@@ -151,7 +154,7 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString) {
 		if n.Valid {
-			if _, err := c.Client.GetNextCallPage(u, n.String); err != nil {
+			if _, err := c.Client.GetNextCallPage(context.Background(), u, n.String); err != nil {
 				c.Debug("Error fetching next page", "err", err)
 			}
 		}
@@ -205,7 +208,7 @@ type recordingResp struct {
 	CanViewNumRecordings bool
 }
 
-func (c *callInstanceServer) fetchRecordings(sid string, u *config.User, rch chan<- *recordingResp) {
+func (c *callInstanceServer) fetchRecordings(ctx context.Context, sid string, u *config.User, rch chan<- *recordingResp) {
 	defer close(rch)
 	if u.CanViewNumRecordings() == false {
 		rch <- &recordingResp{
@@ -214,7 +217,7 @@ func (c *callInstanceServer) fetchRecordings(sid string, u *config.User, rch cha
 		}
 		return
 	}
-	rp, err := c.Client.GetCallRecordings(u, sid, nil)
+	rp, err := c.Client.GetCallRecordings(ctx, u, sid, nil)
 	if err != nil {
 		rch <- &recordingResp{Err: err}
 		return
@@ -222,7 +225,7 @@ func (c *callInstanceServer) fetchRecordings(sid string, u *config.User, rch cha
 	rs := rp.Recordings()
 	uri := rp.NextPageURI()
 	for uri.Valid {
-		rp, err := c.Client.GetNextRecordingPage(u, uri.String)
+		rp, err := c.Client.GetNextRecordingPage(ctx, u, uri.String)
 		if err == twilio.NoMoreResults {
 			break
 		}
@@ -253,10 +256,12 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sid := callInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
-	start := time.Now()
 	rch := make(chan *recordingResp, 1)
-	go c.fetchRecordings(sid, u, rch)
-	call, err := c.Client.GetCall(u, sid)
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
+	start := time.Now()
+	go c.fetchRecordings(ctx, sid, u, rch)
+	call, err := c.Client.GetCall(ctx, u, sid)
 	switch err {
 	case nil:
 		break

@@ -10,6 +10,7 @@ import (
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	"golang.org/x/net/context"
 )
 
 func Example() {
@@ -20,7 +21,7 @@ func Example() {
 
 	vc := views.NewClient(handlers.Logger, c, key, permission)
 
-	page, _ := vc.GetMessagePage(user, url.Values{})
+	page, _ := vc.GetMessagePage(context.TODO(), user, url.Values{})
 	for _, msg := range page.Messages() {
 		sid, _ := msg.Sid()
 		fmt.Println(sid)
