@@ -252,6 +252,11 @@ func (g *GoogleAuthenticator) handleGoogleCallback(w http.ResponseWriter, r *htt
 	defer cancel()
 	tok, err := g.Conf.Exchange(ctx, code)
 	if err != nil {
+		// TODO this can return 400+JSON if you try to redeem a code twice:
+		// Response: {
+		//  "error" : "invalid_grant",
+		//  "error_description" : "Invalid code."
+		// }
 		rest.ServerError(w, r, err)
 		return err
 	}

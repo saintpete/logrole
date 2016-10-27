@@ -103,45 +103,45 @@ func writeCommaSeparatedVal(w io.Writer, e environment, env string, cfgval strin
 
 func writeConfig(b *bytes.Buffer, e environment) {
 	var ok bool
-	ok = ok || writeVal(b, e, "PORT", "port")
-	ok = ok || writeVal(b, e, "PUBLIC_HOST", "public_host")
+	ok = writeVal(b, e, "PORT", "port") || ok
+	ok = writeVal(b, e, "PUBLIC_HOST", "public_host") || ok
 	if ok {
 		b.WriteByte('\n')
 		ok = false
 	}
-	ok = ok || writeVal(b, e, "TWILIO_ACCOUNT_SID", "twilio_account_sid")
-	ok = ok || writeVal(b, e, "TWILIO_AUTH_TOKEN", "twilio_auth_token")
+	ok = writeVal(b, e, "TWILIO_ACCOUNT_SID", "twilio_account_sid") || ok
+	ok = writeVal(b, e, "TWILIO_AUTH_TOKEN", "twilio_auth_token") || ok
 	if ok {
 		b.WriteByte('\n')
 		ok = false
 	}
-	ok = ok || writeVal(b, e, "REALM", "realm")
-	ok = ok || writeVal(b, e, "TZ", "timezone")
-	ok = ok || writeVal(b, e, "EMAIL_ADDRESS", "email_address")
-	ok = ok || writeVal(b, e, "PAGE_SIZE", "page_size")
+	ok = writeVal(b, e, "REALM", "realm") || ok
+	ok = writeVal(b, e, "TZ", "timezone") || ok
+	ok = writeVal(b, e, "EMAIL_ADDRESS", "email_address") || ok
+	ok = writeVal(b, e, "PAGE_SIZE", "page_size") || ok
 	if ok {
 		b.WriteByte('\n')
 		ok = false
 	}
-	ok = ok || writeVal(b, e, "SECRET_KEY", "secret_key")
-	ok = ok || writeVal(b, e, "MAX_RESOURCE_AGE", "max_resource_age")
-	ok = ok || writeVal(b, e, "SHOW_MEDIA_BY_DEFAULT", "show_media_by_default")
+	ok = writeVal(b, e, "SECRET_KEY", "secret_key") || ok
+	ok = writeVal(b, e, "MAX_RESOURCE_AGE", "max_resource_age") || ok
+	ok = writeVal(b, e, "SHOW_MEDIA_BY_DEFAULT", "show_media_by_default") || ok
 	if ok {
 		b.WriteByte('\n')
 		ok = false
 	}
-	ok = ok || writeVal(b, e, "AUTH_SCHEME", "auth_scheme")
-	ok = ok || writeVal(b, e, "BASIC_AUTH_USER", "basic_auth_user")
-	ok = ok || writeVal(b, e, "BASIC_AUTH_PASSWORD", "basic_auth_password")
-	ok = ok || writeVal(b, e, "GOOGLE_CLIENT_ID", "google_client_id")
-	ok = ok || writeVal(b, e, "GOOGLE_CLIENT_SECRET", "google_client_secret")
-	ok = ok || writeCommaSeparatedVal(b, e, "GOOGLE_ALLOWED_DOMAINS", "google_allowed_domains")
+	ok = writeVal(b, e, "AUTH_SCHEME", "auth_scheme") || ok
+	ok = writeVal(b, e, "BASIC_AUTH_USER", "basic_auth_user") || ok
+	ok = writeVal(b, e, "BASIC_AUTH_PASSWORD", "basic_auth_password") || ok
+	ok = writeVal(b, e, "GOOGLE_CLIENT_ID", "google_client_id") || ok
+	ok = writeVal(b, e, "GOOGLE_CLIENT_SECRET", "google_client_secret") || ok
+	ok = writeCommaSeparatedVal(b, e, "GOOGLE_ALLOWED_DOMAINS", "google_allowed_domains") || ok
 	if ok {
 		b.WriteByte('\n')
 		ok = false
 	}
-	ok = ok || writeVal(b, e, "ERROR_REPORTER", "error_reporter")
-	ok = ok || writeVal(b, e, "ERROR_REPORTER_TOKEN", "error_reporter_token")
+	ok = writeVal(b, e, "ERROR_REPORTER", "error_reporter") || ok
+	ok = writeVal(b, e, "ERROR_REPORTER_TOKEN", "error_reporter_token") || ok
 }
 
 func main() {
