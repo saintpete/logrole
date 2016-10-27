@@ -136,7 +136,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
+			"Rev": "c200b10b5d5e122be351b67af224adc6128af5bf"
 		},
 		{
 			"ImportPath": "google.golang.org/appengine",
