@@ -21,9 +21,13 @@ WATCH_TARGETS = static/css/style.css \
 	views/conference.go \
 	Makefile config.yml
 
-ASSET_TARGETS = templates/base.html templates/messages/list.html \
-	templates/messages/instance.html templates/calls/list.html \
-	templates/calls/instance.html templates/calls/recordings.html \
+ASSET_TARGETS = templates/base.html templates/index.html \
+	templates/messages/list.html templates/messages/instance.html \
+	templates/calls/list.html templates/calls/instance.html \
+	templates/calls/recordings.html \
+	templates/conferences/list.html \
+	templates/snippets/phonenumber.html \
+	templates/errors.html templates/login.html \
 	static/css/style.css static/css/bootstrap.min.css
 
 test: vet

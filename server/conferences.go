@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/inconshreveable/log15"
@@ -24,13 +25,17 @@ type conferenceListServer struct {
 	PageSize       uint
 	MaxResourceAge time.Duration
 	LocationFinder services.LocationFinder
+	secretKey      *[32]byte
 	tpl            *template.Template
 }
 
 type conferenceListData struct {
-	Query url.Values
-	Page  *views.ConferencePage
-	Loc   *time.Location
+	Err                   string
+	Query                 url.Values
+	Page                  *views.ConferencePage
+	Loc                   *time.Location
+	EncryptedNextPage     string
+	EncryptedPreviousPage string
 }
 
 func (d *conferenceListData) Title() string {
@@ -49,19 +54,20 @@ func (d *conferenceListData) Statuses() []twilio.Status {
 	return validConferenceStatuses
 }
 
-func newConferenceListServer(l log.Logger, vc views.Client, lf services.LocationFinder,
-	pageSize uint, maxResourceAge time.Duration) (*conferenceListServer, error) {
+func newConferenceListServer(l log.Logger, vc views.Client,
+	lf services.LocationFinder, pageSize uint, maxResourceAge time.Duration,
+	secretKey *[32]byte) (*conferenceListServer, error) {
 	s := &conferenceListServer{
 		Client:         vc,
 		PageSize:       pageSize,
 		LocationFinder: lf,
 		MaxResourceAge: maxResourceAge,
+		secretKey:      secretKey,
 	}
 	tpl, err := newTpl(template.FuncMap{
-		"is_our_pn": vc.IsTwilioNumber,
-		"min":       minFunc(s.MaxResourceAge),
-		"max":       max,
-	}, base+conferenceListTpl)
+		"min": minFunc(s.MaxResourceAge),
+		"max": max,
+	}, base+conferenceListTpl+pagingTpl)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +76,24 @@ func newConferenceListServer(l log.Logger, vc views.Client, lf services.Location
 }
 
 func (c *conferenceListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
-
+	if err == nil {
+		panic("called renderError with a nil error")
+	}
+	str := strings.Replace(err.Error(), "twilio: ", "", 1)
+	data := &baseData{
+		LF: c.LocationFinder,
+		Data: &conferenceListData{
+			Err:   str,
+			Query: query,
+			Page:  new(views.ConferencePage),
+		},
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(code)
+	if err := render(w, r, c.tpl, "base", data); err != nil {
+		rest.ServerError(w, r, err)
+		return
+	}
 }
 
 func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -83,23 +106,31 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
 		return
 	}
+	query := r.URL.Query()
 	data := url.Values{}
 	data.Set("PageSize", strconv.FormatUint(uint64(c.PageSize), 10))
+	if filterErr := setPageFilters(query, data); filterErr != nil {
+		c.renderError(w, r, http.StatusBadRequest, query, filterErr)
+		return
+	}
 	start := time.Now()
 	page, err := c.Client.GetConferencePage(u, data)
 	if err != nil {
 		rest.ServerError(w, r, err)
 		return
 	}
-	if err := render(w, r, c.tpl, "base", &baseData{
+	err = render(w, r, c.tpl, "base", &baseData{
 		LF:       c.LocationFinder,
 		Duration: time.Since(start),
 		Data: &conferenceListData{
-			Query: r.URL.Query(),
-			Page:  page,
-			Loc:   c.LocationFinder.GetLocationReq(r),
+			Query:                 r.URL.Query(),
+			Page:                  page,
+			Loc:                   c.LocationFinder.GetLocationReq(r),
+			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.secretKey),
+			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
 		},
-	}); err != nil {
+	})
+	if err != nil {
 		rest.ServerError(w, r, err)
 	}
 }

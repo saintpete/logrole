@@ -93,7 +93,6 @@ type callListData struct {
 	Loc                   *time.Location
 	Query                 url.Values
 	Err                   string
-	MaxResourceAge        time.Duration
 }
 
 func (c *callListData) Title() string {
@@ -165,7 +164,6 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Page:                  page,
 		Loc:                   c.LocationFinder.GetLocationReq(r),
 		Query:                 query,
-		MaxResourceAge:        c.MaxResourceAge,
 		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.secretKey),
 		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
 	}
@@ -183,10 +181,9 @@ func (c *callListServer) renderError(w http.ResponseWriter, r *http.Request, cod
 	data := &baseData{
 		LF: c.LocationFinder,
 		Data: &callListData{
-			Err:            str,
-			Query:          query,
-			Page:           new(views.CallPage),
-			MaxResourceAge: c.MaxResourceAge,
+			Err:   str,
+			Query: query,
+			Page:  new(views.CallPage),
 		},
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

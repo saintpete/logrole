@@ -182,7 +182,8 @@ func NewServer(settings *Settings) (*Server, error) {
 		return nil, err
 	}
 	confs, err := newConferenceListServer(handlers.Logger, vc,
-		settings.LocationFinder, settings.PageSize, settings.MaxResourceAge)
+		settings.LocationFinder, settings.PageSize, settings.MaxResourceAge,
+		settings.SecretKey)
 	if err != nil {
 		return nil, err
 	}

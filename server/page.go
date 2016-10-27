@@ -46,7 +46,8 @@ func setNextPageValsOnQuery(nextpageuri string, query url.Values) {
 	}
 }
 
-// Reverse of the function above, with validation
+// Reverse of the function above, with validation. Every list filter calls this
+// function to set Twilio search filters, so the query keys should be unique.
 func setPageFilters(query url.Values, pageFilters url.Values) error {
 	if from := query.Get("from"); from != "" {
 		fromPN, err := twilio.NewPhoneNumber(from)
@@ -76,11 +77,25 @@ func setPageFilters(query url.Values, pageFilters url.Values) error {
 	if end := query.Get("end"); end != "" {
 		pageFilters.Set("DateSent<", end)
 	}
+	// calls
 	if startDate := query.Get("start-after"); startDate != "" {
 		pageFilters.Set("StartTime>", startDate)
 	}
 	if startDate := query.Get("start-before"); startDate != "" {
 		pageFilters.Set("StartTime<", startDate)
+	}
+	// conferences
+	if friendlyName := query.Get("friendly-name"); friendlyName != "" {
+		pageFilters.Set("FriendlyName", friendlyName)
+	}
+	if status := query.Get("status"); status != "" {
+		pageFilters.Set("Status", status)
+	}
+	if createdDate := query.Get("created-after"); createdDate != "" {
+		pageFilters.Set("DateCreated>", createdDate)
+	}
+	if createdDate := query.Get("created-before"); createdDate != "" {
+		pageFilters.Set("DateCreated<", createdDate)
 	}
 	return nil
 }
