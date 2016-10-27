@@ -19,6 +19,7 @@ import (
 	"github.com/saintpete/logrole/cache"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
+	"golang.org/x/net/context"
 )
 
 // A Client retrieves resources from a backend API, and hides information that
@@ -78,7 +79,7 @@ func (vc *client) getNumbers() {
 	size, count := 0, 0
 	mp := make(map[twilio.PhoneNumber]bool)
 	for count < 200 {
-		page, err := iter.Next()
+		page, err := iter.Next(context.Background())
 		if err == twilio.NoMoreResults {
 			break
 		}
@@ -112,7 +113,7 @@ func (vc *client) SetBasicAuth(r *http.Request) {
 // GetMessage fetches a single Message from the Twilio API, and returns any
 // network or permission errors that occur.
 func (vc *client) GetMessage(user *config.User, sid string) (*Message, error) {
-	message, err := vc.client.Messages.Get(sid)
+	message, err := vc.client.Messages.Get(context.TODO(), sid)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +123,7 @@ func (vc *client) GetMessage(user *config.User, sid string) (*Message, error) {
 // GetCall fetches a single Call from the Twilio API, and returns any
 // network or permission errors that occur.
 func (vc *client) GetCall(user *config.User, sid string) (*Call, error) {
-	call, err := vc.client.Calls.Get(sid)
+	call, err := vc.client.Calls.Get(context.TODO(), sid)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +141,7 @@ func (vc *client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
 	if u.CanViewMedia() == false {
 		return nil, config.PermissionDenied
 	}
-	urls, err := vc.client.Messages.GetMediaURLs(sid, mediaUrlsFilters)
+	urls, err := vc.client.Messages.GetMediaURLs(context.TODO(), sid, mediaUrlsFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +158,7 @@ func (vc *client) GetMediaURLs(u *config.User, sid string) ([]*url.URL, error) {
 }
 
 func (vc *client) getAndCacheMessage(data url.Values) (*twilio.MessagePage, error) {
-	page, err := vc.client.Messages.GetPage(data)
+	page, err := vc.client.Messages.GetPage(context.TODO(), data)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +167,7 @@ func (vc *client) getAndCacheMessage(data url.Values) (*twilio.MessagePage, erro
 }
 
 func (vc *client) getAndCacheConference(data url.Values) (*twilio.ConferencePage, error) {
-	page, err := vc.client.Conferences.GetPage(data)
+	page, err := vc.client.Conferences.GetPage(context.TODO(), data)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +176,7 @@ func (vc *client) getAndCacheConference(data url.Values) (*twilio.ConferencePage
 }
 
 func (vc *client) getAndCacheCall(data url.Values) (*twilio.CallPage, error) {
-	page, err := vc.client.Calls.GetPage(data)
+	page, err := vc.client.Calls.GetPage(context.TODO(), data)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +226,7 @@ func (vc *client) GetNextMessagePage(user *config.User, nextPage string) (*Messa
 			return page, nil
 		}
 		page := new(twilio.MessagePage)
-		if err := vc.client.GetNextPage(nextPage, page); err != nil {
+		if err := vc.client.GetNextPage(context.TODO(), nextPage, page); err != nil {
 			return nil, err
 		}
 		if page == nil {
@@ -268,7 +269,7 @@ func (vc *client) GetNextConferencePage(user *config.User, nextPage string) (*Co
 			return page, nil
 		}
 		page := new(twilio.ConferencePage)
-		if err := vc.client.GetNextPage(nextPage, page); err != nil {
+		if err := vc.client.GetNextPage(context.TODO(), nextPage, page); err != nil {
 			return nil, err
 		}
 		if page == nil {
@@ -293,7 +294,7 @@ func (vc *client) GetNextCallPage(user *config.User, nextPage string) (*CallPage
 			return page, nil
 		}
 		page := new(twilio.CallPage)
-		if err := vc.client.GetNextPage(nextPage, page); err != nil {
+		if err := vc.client.GetNextPage(context.TODO(), nextPage, page); err != nil {
 			return nil, err
 		}
 		if page == nil {
@@ -314,7 +315,7 @@ func (vc *client) GetNextCallPage(user *config.User, nextPage string) (*CallPage
 
 func (vc *client) GetNextRecordingPage(user *config.User, nextPage string) (*RecordingPage, error) {
 	page := new(twilio.RecordingPage)
-	err := vc.client.GetNextPage(nextPage, page)
+	err := vc.client.GetNextPage(context.TODO(), nextPage, page)
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +323,7 @@ func (vc *client) GetNextRecordingPage(user *config.User, nextPage string) (*Rec
 }
 
 func (vc *client) GetCallRecordings(user *config.User, callSid string, data url.Values) (*RecordingPage, error) {
-	page, err := vc.client.Calls.GetRecordings(callSid, data)
+	page, err := vc.client.Calls.GetRecordings(context.TODO(), callSid, data)
 	if err != nil {
 		return nil, err
 	}

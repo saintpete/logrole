@@ -69,8 +69,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/twilio-go",
-			"Comment": "0.30",
-			"Rev": "771c4280ef38ef9f54b5135894c582c84ab15903"
+			"Comment": "0.31",
+			"Rev": "3f6ce900fbf3e60a63a77a6529dbafd3f5478e02"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
@@ -108,11 +108,11 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "daba796358cd2742b75aae05761f1b898c9f6a5c"
+			"Rev": "c46f265c325130a7a6c7b27db8c6fe14b64f1a68"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context/ctxhttp",
-			"Rev": "daba796358cd2742b75aae05761f1b898c9f6a5c"
+			"Rev": "c46f265c325130a7a6c7b27db8c6fe14b64f1a68"
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
