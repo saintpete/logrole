@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kevinburke/handlers"
 	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/services"
 )
@@ -89,15 +90,20 @@ var templatePool = sync.Pool{
 }
 
 type baseData struct {
-	Duration  time.Duration
-	Start     time.Time
-	Path      string
-	LoggedOut bool
-	TZ        string
-	LF        services.LocationFinder
+	Duration    time.Duration
+	ReqDuration func() time.Duration
+	Start       time.Time
+	Path        string
+	LoggedOut   bool
+	TZ          string
+	LF          services.LocationFinder
 	// Whatever data gets sent to the child template. Should have a Title
 	// property or Title() function.
 	Data interface{}
+}
+
+func (bd *baseData) Version() string {
+	return Version
 }
 
 func tzTime(now time.Time, lf services.LocationFinder, loc string) string {
@@ -126,6 +132,10 @@ func max() string {
 func render(w io.Writer, r *http.Request, tpl *template.Template, name string, data *baseData) error {
 	data.Start = time.Now()
 	data.Path = r.URL.Path
+	// needs to be a function since we want to capture it at the last moment.
+	data.ReqDuration = func() time.Duration {
+		return handlers.GetDuration(r.Context())
+	}
 	if data.LF != nil {
 		data.TZ = data.LF.GetLocationReq(r).String()
 	}

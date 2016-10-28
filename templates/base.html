@@ -83,6 +83,12 @@
     <footer class="footer">
       <div class="container-fluid">
         <div class="row timings">
+          {{- $dur := (call .ReqDuration) }}
+          {{- if gt $dur 0 }}
+          <div class="col-md-2">
+            Response time: {{ duration $dur }}
+          </div>
+          {{- end }}
           {{- if gt .Duration 0 }}
           <div class="col-md-2">
             API request time: {{ duration .Duration }}
@@ -94,7 +100,7 @@
         </div>
         <div class="row">
           <div class="col-md-12">
-            Copyright {{ year }} Chris Bennett
+            Logrole version {{ .Version }}. Copyright {{ year }} Chris Bennett
           </div>
         </div>
       </div>
