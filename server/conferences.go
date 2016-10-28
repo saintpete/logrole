@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +21,8 @@ import (
 )
 
 const conferencePattern = `(?P<sid>CF[a-f0-9]{32})`
+
+var conferenceInstanceRoute = regexp.MustCompile("^/conferences/" + conferencePattern + "$")
 
 type conferenceListServer struct {
 	log.Logger
@@ -46,6 +49,13 @@ func (d *conferenceListData) Title() string {
 
 func (d *conferenceListData) Path() string {
 	return "/conferences"
+}
+
+type conferenceInstanceServer struct {
+	log.Logger
+	Client         views.Client
+	LocationFinder services.LocationFinder
+	tpl            *template.Template
 }
 
 // Not putting this in the twilio-go library since Twilio might add more
@@ -165,4 +175,76 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		rest.ServerError(w, r, err)
 	}
+}
+
+func (c *conferenceInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	u, ok := config.GetUser(r)
+	if !ok {
+		rest.ServerError(w, r, errors.New("No user available"))
+		return
+	}
+	if !u.CanViewConferences() {
+		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
+		return
+	}
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
+	sid := conferenceInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
+	start := time.Now()
+	conference, err := c.Client.GetConference(ctx, u, sid)
+	switch err {
+	case nil:
+		break
+	case config.PermissionDenied, config.ErrTooOld:
+		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
+		return
+	default:
+		switch terr := err.(type) {
+		case *rest.Error:
+			switch terr.StatusCode {
+			case 404:
+				rest.NotFound(w, r)
+			default:
+				rest.ServerError(w, r, terr)
+			}
+		default:
+			rest.ServerError(w, r, err)
+		}
+		return
+	}
+	data := &baseData{
+		LF:       c.LocationFinder,
+		Duration: time.Since(start),
+		Data: &conferenceInstanceData{
+			Conference: conference,
+			Loc:        c.LocationFinder.GetLocationReq(r),
+		},
+	}
+	if err := render(w, r, c.tpl, "base", data); err != nil {
+		rest.ServerError(w, r, err)
+	}
+}
+
+type conferenceInstanceData struct {
+	Conference *views.Conference
+	Loc        *time.Location
+}
+
+func (c *conferenceInstanceData) Title() string {
+	return "Conference Details"
+}
+
+func newConferenceInstanceServer(l log.Logger, vc views.Client,
+	lf services.LocationFinder) (*conferenceInstanceServer, error) {
+	c := &conferenceInstanceServer{
+		Logger:         l,
+		Client:         vc,
+		LocationFinder: lf,
+	}
+	tpl, err := newTpl(template.FuncMap{}, base+conferenceInstanceTpl+sidTpl)
+	if err != nil {
+		return nil, err
+	}
+	c.tpl = tpl
+	return c, nil
 }

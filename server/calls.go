@@ -71,13 +71,13 @@ func newCallInstanceServer(l log.Logger, vc views.Client,
 		Client:         vc,
 		LocationFinder: lf,
 	}
-	templates, err := newTpl(template.FuncMap{
+	tpl, err := newTpl(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
 	}, base+callInstanceTpl+recordingTpl+phoneTpl+sidTpl+copyScript)
 	if err != nil {
 		return nil, err
 	}
-	c.tpl = templates
+	c.tpl = tpl
 	return c, nil
 }
 
@@ -253,6 +253,10 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, ok := config.GetUser(r)
 	if !ok {
 		rest.ServerError(w, r, errors.New("No user available"))
+		return
+	}
+	if !u.CanViewCalls() {
+		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
 		return
 	}
 	sid := callInstanceRoute.FindStringSubmatch(r.URL.Path)[1]

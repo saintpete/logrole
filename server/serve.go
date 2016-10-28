@@ -187,6 +187,11 @@ func NewServer(settings *Settings) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	confInstance, err := newConferenceInstanceServer(handlers.Logger, vc,
+		settings.LocationFinder)
+	if err != nil {
+		return nil, err
+	}
 	ss := &searchServer{}
 	o := &openSearchXMLServer{
 		PublicHost:              settings.PublicHost,
@@ -232,6 +237,7 @@ func NewServer(settings *Settings) (*Server, error) {
 	authR.Handle(regexp.MustCompile(`^/conferences$`), []string{"GET"}, confs)
 	authR.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
 	authR.Handle(regexp.MustCompile(`^/tz$`), []string{"POST"}, tz)
+	authR.Handle(conferenceInstanceRoute, []string{"GET"}, confInstance)
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)
 	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	authH := AddAuthenticator(authR, settings.Authenticator)

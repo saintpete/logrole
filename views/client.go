@@ -28,6 +28,7 @@ type Client interface {
 	SetBasicAuth(r *http.Request)
 	GetMessage(context.Context, *config.User, string) (*Message, error)
 	GetCall(context.Context, *config.User, string) (*Call, error)
+	GetConference(context.Context, *config.User, string) (*Conference, error)
 	GetMediaURLs(context.Context, *config.User, string) ([]*url.URL, error)
 	GetMessagePage(context.Context, *config.User, url.Values) (*MessagePage, error)
 	GetCallPage(context.Context, *config.User, url.Values) (*CallPage, error)
@@ -128,6 +129,16 @@ func (vc *client) GetCall(ctx context.Context, user *config.User, sid string) (*
 		return nil, err
 	}
 	return NewCall(call, vc.permission, user)
+}
+
+// GetConference fetches a single Conference from the Twilio API, and returns any
+// network or permission errors that occur.
+func (vc *client) GetConference(ctx context.Context, user *config.User, sid string) (*Conference, error) {
+	conference, err := vc.client.Conferences.Get(ctx, sid)
+	if err != nil {
+		return nil, err
+	}
+	return NewConference(conference, vc.permission, user)
 }
 
 // Just make sure we get all of the media when we make a request

@@ -1,8 +1,7 @@
 # logrole
 
 Logrole is a faster, usable, fine-grained client for exploring your Twilio
-logs. It's pretty fast - there are hardly any dependencies and the main
-bottleneck for every request is making an API request.
+logs.
 
 - Customizable permissions for each user browsing the site - limit access to
 SMS/MMS bodies, resources older than a certain age, recordings, calls, call
@@ -13,8 +12,20 @@ from, etc. etc.
 - Easy site search - tab complete and search for a sid to go straight to the
   instance view for that resource.
 
+- Click-to-copy sids and phone numbers.
+
 - MMS messages are always fetched over HTTPS. The default Twilio API/libraries
 hand back insecure image links, but we rewrite URLs before fetching them.
+
+## Latency
+
+Logrole fetches and caches the first page of every result set every 30 seconds,
+and any time you page through records, the next page is prefetched and stored
+in a cache. This means viewing your Twilio logs via Logrole is *significantly
+faster* than viewing results in your Dashboard or via the API! If you don't
+believe me, the request latencies are displayed on every page.
+
+If you need to search your Twilio Logs, this is the way you should do it.
 
 ## Installation
 
@@ -148,5 +159,12 @@ tests, or run `make race-test` to run the tests with the race detector enabled.
 Run `make docs`.
 
 ## Errata
+
+The Twilio Dashboard displays Participants for completed Conferences, but [this
+functionality is not available via the API][issue-4]. Please [contact Support
+to request this feature][support].
+
+[support]: mailto:help@twilio.com
+[issue-4]: https://github.com/saintpete/logrole/issues/4
 
 The Start/End date filters may only work in Chrome.

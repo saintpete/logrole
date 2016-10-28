@@ -11,7 +11,7 @@ WATCH_TARGETS = static/css/style.css \
 	templates/base.html templates/index.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
 	templates/calls/instance.html templates/calls/recordings.html \
-	templates/conferences/list.html \
+	templates/conferences/instance.html templates/conferences/list.html \
 	templates/errors.html templates/login.html \
 	templates/snippets/phonenumber.html \
 	services/error_reporter.go services/services.go \
@@ -27,7 +27,7 @@ ASSET_TARGETS = templates/base.html templates/index.html \
 	templates/messages/list.html templates/messages/instance.html \
 	templates/calls/list.html templates/calls/instance.html \
 	templates/calls/recordings.html \
-	templates/conferences/list.html \
+	templates/conferences/list.html templates/conferences/instance.html \
 	templates/snippets/phonenumber.html \
 	templates/errors.html templates/login.html \
 	static/css/style.css static/css/bootstrap.min.css

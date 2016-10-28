@@ -1,0 +1,78 @@
+{{- define "content" }}
+<div class="row">
+  <div class="col-md-6">
+    <table class="table table-striped">
+      <thead>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Sid</th>
+          {{- if .Conference.CanViewProperty "Sid" }}
+            {{- template "sid" .Conference }}
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Friendly Name</th>
+          {{- if .Conference.CanViewProperty "FriendlyName" }}
+          <td>{{ .Conference.FriendlyName }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Region</th>
+          {{- if .Conference.CanViewProperty "Region" }}
+          <td>{{ .Conference.Region }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Date Created</th>
+          {{- if .Conference.CanViewProperty "DateCreated" }}
+          <td>{{ friendly_date (.Conference.DateCreated.Time.In $.Loc) }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Status</th>
+          {{- if .Conference.CanViewProperty "Status" }}
+          <td>{{ .Conference.Status }}</td>
+          {{- else }}
+          <td>[redacted]</td>
+          {{- end }}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-4">
+    <h3>Participants</h3>
+    <p>
+      Despite offering this functionality in the Dashboard, Twilio <a
+      href="https://github.com/saintpete/logrole/issues/4">does not
+      offer an API to view conference participants</a>, or a way to
+      figure out which call sids are involved in a call. Please <a
+      href="mailto:help@twilio.com">contact Customer Support</a> and ask
+      for the ability to retrieve call SIDs for a Conference via the API.
+    </p>
+    <p>
+      Auto-scraping this data from the Twilio Dashboard would be a
+      violation of the Acceptable Use Policy. We cannot embed it
+      via an <code>&lt;iframe&gt;</code>, because Twilio sets a
+      X-Frame-Options: SAMEORIGIN framebusting header. Please <a
+      href="mailto:help@twilio.com">contact Support</a> to ask for the ability
+      to view conference Participants after a conference has finished.
+    </p>
+    <p>
+    If you have access to the Twilio Dashboard, you can <a
+    href="https://www.twilio.com/console/voice/logs/conferences/{{ .Conference.Sid }}">click
+    here to view the Participants for this conference</a>.
+    </p>
+  </div>
+</div>
+{{- end }}
