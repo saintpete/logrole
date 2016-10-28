@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 )
 
@@ -27,7 +28,7 @@ import (
 
 func TestRequestsUpgraded(t *testing.T) {
 	t.Parallel()
-	settings := &Settings{AllowUnencryptedTraffic: false, SecretKey: key}
+	settings := &config.Settings{AllowUnencryptedTraffic: false, SecretKey: key}
 	s, err := NewServer(settings)
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +49,7 @@ func TestRequestsUpgraded(t *testing.T) {
 
 func TestIndex(t *testing.T) {
 	t.Parallel()
-	settings := &Settings{
+	settings := &config.Settings{
 		AllowUnencryptedTraffic: true,
 		Authenticator:           &NoopAuthenticator{},
 		SecretKey:               services.NewRandomKey(),
@@ -71,7 +72,7 @@ func TestIndex(t *testing.T) {
 
 func TestStaticPagesAvailableNoAuth(t *testing.T) {
 	t.Parallel()
-	settings := &Settings{
+	settings := &config.Settings{
 		SecretKey:     services.NewRandomKey(),
 		Authenticator: NewBasicAuthAuthenticator("logrole", map[string]string{"test": "test"}),
 	}

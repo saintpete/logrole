@@ -3,11 +3,12 @@ package server
 import (
 	"net/http"
 
+	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 )
 
 func Example() {
-	settings := &Settings{
+	settings := &config.Settings{
 		PublicHost: "myapp.com",
 		SecretKey:  services.NewRandomKey(),
 	}
