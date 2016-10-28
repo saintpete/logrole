@@ -19,14 +19,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// TODO
-var timezones = []string{
-	"America/Los_Angeles",
-	"America/Denver",
-	"America/Chicago",
-	"America/New_York",
-}
-
 func init() {
 	flag.Usage = func() {
 		os.Stderr.WriteString(`Logrole: a faster, finer-grained Twilio log viewer

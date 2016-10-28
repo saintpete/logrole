@@ -29,6 +29,9 @@ TWILIO_AUTH_TOKEN      Auth token
 
 REALM                  Realm (either "local" or "prod")
 TZ                     Default timezone (example "America/Los_Angeles")
+TIMEZONES              Comma-separated list of timezones users can choose from
+                       (example "America/New_York,UTC,America/Chicago"). 
+                       Defaults to the four US timezones.
 EMAIL_ADDRESS          For "Contact Support" on server error pages
 PAGE_SIZE              How many resources to fetch/display on each page
 
@@ -116,7 +119,8 @@ func writeConfig(b *bytes.Buffer, e environment) {
 		ok = false
 	}
 	ok = writeVal(b, e, "REALM", "realm") || ok
-	ok = writeVal(b, e, "TZ", "timezone") || ok
+	ok = writeVal(b, e, "TZ", "default_timezone") || ok
+	ok = writeCommaSeparatedVal(b, e, "TIMEZONES", "timezones") || ok
 	ok = writeVal(b, e, "EMAIL_ADDRESS", "email_address") || ok
 	ok = writeVal(b, e, "PAGE_SIZE", "page_size") || ok
 	if ok {

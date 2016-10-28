@@ -9,8 +9,14 @@ import (
 type LocationFinder interface {
 	AddLocation(loc string) bool
 	GetLocation(string) *time.Location
+	// GetLocation gets a location preference from the user cookie, or the
+	// default location if no location was found.
 	GetLocationReq(*http.Request) *time.Location
+	// SetLocation sets the location (string) as a cookie, and returns true if
+	// it was successfully set.
 	SetLocation(http.ResponseWriter, string, bool) bool
+	// Locations returns all known locations
+	Locations() []*time.Location
 }
 
 // NewLocationFinder returns a new LocationFinder, where the defaultLocation
@@ -43,6 +49,18 @@ func (l *locationFinder) AddLocation(loc string) bool {
 	l.mp[loc] = loctn
 	l.mu.Unlock()
 	return true
+}
+
+func (lf *locationFinder) Locations() []*time.Location {
+	lf.mu.Lock()
+	defer lf.mu.Unlock()
+	locs := make([]*time.Location, len(lf.mp))
+	i := 0
+	for _, loc := range lf.mp {
+		locs[i] = loc
+		i++
+	}
+	return locs
 }
 
 func (lf *locationFinder) key() string {

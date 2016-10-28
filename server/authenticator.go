@@ -20,14 +20,6 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-type Authenticator interface {
-	// Authenticate ensures the request is authenticated. If it is not
-	// authenticated, or authentication returns an error, Authenticate will
-	// write a response and return a non-nil error.
-	Authenticate(w http.ResponseWriter, r *http.Request) (*config.User, error)
-	Logout(w http.ResponseWriter, r *http.Request)
-}
-
 type NoopAuthenticator struct{}
 
 func (n *NoopAuthenticator) Authenticate(w http.ResponseWriter, r *http.Request) (*config.User, error) {
@@ -36,20 +28,6 @@ func (n *NoopAuthenticator) Authenticate(w http.ResponseWriter, r *http.Request)
 }
 
 func (n *NoopAuthenticator) Logout(w http.ResponseWriter, r *http.Request) {}
-
-// AddAuthenticator adds the Authenticator as a HTTP middleware. If
-// authentication is successful, we set the User in the request context and
-// continue.
-func AddAuthenticator(h http.Handler, a Authenticator) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, err := a.Authenticate(w, r)
-		if err != nil {
-			return
-		}
-		r = config.SetUser(r, u)
-		h.ServeHTTP(w, r)
-	})
-}
 
 type BasicAuthAuthenticator struct {
 	Realm string
@@ -332,7 +310,7 @@ func (g *GoogleAuthenticator) Authenticate(w http.ResponseWriter, r *http.Reques
 
 type logoutServer struct {
 	log.Logger
-	Authenticator Authenticator
+	Authenticator config.Authenticator
 }
 
 func (l *logoutServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {

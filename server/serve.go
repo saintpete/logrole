@@ -8,14 +8,12 @@ import (
 	"bytes"
 	"errors"
 	"net/http"
-	"net/mail"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
-	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
@@ -93,40 +91,6 @@ func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Settings are used to configure a Server and apply to all of the website's
-// users.
-type Settings struct {
-	// The host the user visits to get to this site.
-	PublicHost              string
-	AllowUnencryptedTraffic bool
-	Client                  *twilio.Client
-
-	LocationFinder services.LocationFinder
-
-	// How many messages to display per page.
-	PageSize uint
-
-	// Used to encrypt next page URI's and sessions. See config.sample.yml for
-	// more information.
-	SecretKey *[32]byte
-
-	// Don't show resources that are older than this age.
-	MaxResourceAge time.Duration
-
-	// Should a user have to click a button to view media attached to a MMS?
-	ShowMediaByDefault bool
-
-	// Email address for server errors / "contact me" on error pages.
-	Mailto *mail.Address
-
-	// Error reporter. This must not be nil; set to NoopErrorReporter to ignore
-	// errors.
-	Reporter services.ErrorReporter
-
-	// The authentication scheme.
-	Authenticator Authenticator
-}
-
 type Server struct {
 	http.Handler
 	vc       views.Client
@@ -143,7 +107,7 @@ func (s *Server) CacheCommonQueries() {
 }
 
 // NewServer returns a new Handler that can serve the website.
-func NewServer(settings *Settings) (*Server, error) {
+func NewServer(settings *config.Settings) (*Server, error) {
 	if settings.Reporter == nil {
 		settings.Reporter = services.GetReporter("noop", "")
 	}
@@ -240,7 +204,7 @@ func NewServer(settings *Settings) (*Server, error) {
 	authR.Handle(conferenceInstanceRoute, []string{"GET"}, confInstance)
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)
 	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)
-	authH := AddAuthenticator(authR, settings.Authenticator)
+	authH := config.AddAuthenticator(authR, settings.Authenticator)
 	authH = handlers.Log(authH)
 
 	r := new(handlers.Regexp)

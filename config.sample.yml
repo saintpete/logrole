@@ -7,7 +7,7 @@ twilio_auth_token:  fill-in-token
 #
 # This should be a hex string that's exactly 64 bytes long. For example:
 #
-#   d7211b215341871968869ac50ef5302cc0ff1789fc88e0ac6e296ba36703edf8
+#   d7211b215341871968869dontusethisc0ff1789fc88e0ac6e296ba36703edf8
 #
 # Don't reuse that key - you can generate a random key by running:
 #
@@ -17,13 +17,29 @@ twilio_auth_token:  fill-in-token
 # However, this means that sessions and any in-progress paging attempts will
 # error when the server restarts.
 #
-# If a server key is present, but invalid, the server will crash.
+# If a server key is present, but invalid, the server will not start.
 secret_key: fill-in-key
 
 # Set to "prod" in production. See bin/serve for an example.
-realm:    local
+realm: local
+
 # What timezone should we display for dates in the UI?
-timezone: America/Los_Angeles
+default_timezone: America/Los_Angeles
+
+# What timezones should users be able to choose from? Defaults to the four US
+# timezones.
+#
+# A list of valid timezones can be found here:
+# https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+#
+# Note, your server may not contain exactly that same list in its
+# timezone database.
+timezones:
+  - Asia/Singapore
+  - Asia/Tokyo
+  - Europe/London
+  - America/New_York
+  - Africa/Cairo
 
 # What users type in their browser to reach your site
 public_host: localhost:4114
@@ -34,18 +50,23 @@ page_size: 100
 
 # Don't show resources that are older than this age. Valid values for this
 # field are defined here: https://golang.org/pkg/time/#ParseDuration. Defaults
-# to "all resources viewable".
+# to "all resources are viewable."
 max_resource_age: 720h
 
 # Set this to false and users will see a "Click to view MMS" button on message
 # instance pages, instead of seeing the photo on page load.
 show_media_by_default: true
 
-# This is shown as a "Contact Me" message on error pages.
+# This is shown as a "Contact Me" message on 401/403/404/500 error pages.
 email_address: test@example.com
 
 # Configure an error reporter. The only currently supported reporter is Sentry;
 # leave empty or omit to disable error handling.
+#
+# You can define and register your own
+# ErrorReporter as long as it uses this interface:
+# https://godoc.org/github.com/saintpete/logrole/services#ErrorReporter. See
+# services/error_reporter.go for an example.
 #
 # 500 server errors and panics are always logged to stderr.
 error_reporter: sentry

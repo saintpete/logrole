@@ -6,8 +6,8 @@ JUSTRUN := $(shell command -v justrun)
 
 WATCH_TARGETS = static/css/style.css \
 	cache/cache.go \
-	commands/logrole_server/main.go \
-	config/permission.go \
+	commands/logrole_server/main.go commands/logrole_server/config.go \
+	config/permission.go config/settings.go \
 	templates/base.html templates/index.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
 	templates/calls/instance.html templates/calls/recordings.html \
@@ -49,11 +49,13 @@ vet:
 deploy:
 	git push heroku master
 
-assets: $(ASSET_TARGETS)
+compile-css: static/css/bootstrap.min.css static/css/style.css
+	cat static/css/bootstrap.min.css static/css/style.css > static/css/all.css
+
+assets: $(ASSET_TARGETS) compile-css
 ifndef GO_BINDATA
 	go get -u github.com/jteeuwen/go-bindata/...
 endif
-	cat static/css/bootstrap.min.css static/css/style.css > static/css/all.css
 	go-bindata -o=assets/bindata.go --nometadata --pkg=assets templates/... static/...
 
 watch:

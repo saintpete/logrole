@@ -17,11 +17,14 @@ import (
 var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
 
 type fileConfig struct {
-	Port           string        `yaml:"port"`
-	AccountSid     string        `yaml:"twilio_account_sid"`
-	AuthToken      string        `yaml:"twilio_auth_token"`
-	Realm          services.Rlm  `yaml:"realm"`
-	Timezone       string        `yaml:"timezone"`
+	Port       string       `yaml:"port"`
+	AccountSid string       `yaml:"twilio_account_sid"`
+	AuthToken  string       `yaml:"twilio_auth_token"`
+	Realm      services.Rlm `yaml:"realm"`
+	// Default timezone for dates/times in the UI
+	Timezone string `yaml:"default_timezone"`
+	// List of timezones a user can choose in the UI
+	Timezones      []string      `yaml:"timezones"`
 	PublicHost     string        `yaml:"public_host"`
 	PageSize       uint          `yaml:"page_size"`
 	SecretKey      string        `yaml:"secret_key"`
@@ -65,7 +68,7 @@ func getSecretKey(hexKey string) (*[32]byte, error) {
 	return secretKey, nil
 }
 
-func NewSettingsFromConfig(c *fileConfig) (*server.Settings, error) {
+func NewSettingsFromConfig(c *fileConfig) (*config.Settings, error) {
 	allowHTTP := false
 	if c.Realm == services.Local {
 		allowHTTP = true
@@ -93,7 +96,7 @@ func NewSettingsFromConfig(c *fileConfig) (*server.Settings, error) {
 		}
 	}
 	reporter := services.GetReporter(c.ErrorReporter, c.ErrorReporterToken)
-	var authenticator server.Authenticator
+	var authenticator config.Authenticator
 	switch c.AuthScheme {
 	case "":
 		handlers.Logger.Warn("Disabling basic authentication")
@@ -128,7 +131,11 @@ func NewSettingsFromConfig(c *fileConfig) (*server.Settings, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't find timezone %s: %s", c.Timezone, err.Error())
 	}
-	for _, timezone := range timezones {
+	tzs := config.DefaultTimezones
+	if len(c.Timezones) > 0 {
+		tzs = c.Timezones
+	}
+	for _, timezone := range tzs {
 		if ok := locationFinder.AddLocation(timezone); !ok {
 			handlers.Logger.Warn("Couldn't add location", "tz", timezone)
 		}
@@ -145,7 +152,7 @@ func NewSettingsFromConfig(c *fileConfig) (*server.Settings, error) {
 		c.ShowMediaByDefault = &b
 	}
 
-	settings := &server.Settings{
+	settings := &config.Settings{
 		AllowUnencryptedTraffic: allowHTTP,
 		Client:                  client,
 		LocationFinder:          locationFinder,
