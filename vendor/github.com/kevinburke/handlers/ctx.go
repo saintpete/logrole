@@ -36,12 +36,21 @@ func GetRequestID(ctx context.Context) (uuid.UUID, bool) {
 // GetDuration returns the amount of time since the Duration handler ran, or
 // 0 if no Duration was set for this context.
 func GetDuration(ctx context.Context) time.Duration {
+	t := GetStartTime(ctx)
+	if t.IsZero() {
+		return time.Duration(0)
+	}
+	return time.Since(t)
+}
+
+// GetStartTime returns the time the Duration handler ran.
+func GetStartTime(ctx context.Context) time.Time {
 	val := ctx.Value(startTime)
 	if val != nil {
 		t := val.(time.Time)
-		return time.Since(t)
+		return t
 	}
-	return time.Duration(0)
+	return time.Time{}
 }
 
 // Duration sets a the start time in the context and sets a X-Request-Duration

@@ -90,13 +90,13 @@ var templatePool = sync.Pool{
 }
 
 type baseData struct {
-	Duration    time.Duration
-	ReqDuration func() time.Duration
-	Start       time.Time
-	Path        string
-	LoggedOut   bool
-	TZ          string
-	LF          services.LocationFinder
+	Duration  time.Duration
+	ReqStart  time.Time
+	Start     time.Time
+	Path      string
+	LoggedOut bool
+	TZ        string
+	LF        services.LocationFinder
 	// Whatever data gets sent to the child template. Should have a Title
 	// property or Title() function.
 	Data interface{}
@@ -132,10 +132,7 @@ func max() string {
 func render(w io.Writer, r *http.Request, tpl *template.Template, name string, data *baseData) error {
 	data.Start = time.Now()
 	data.Path = r.URL.Path
-	// needs to be a function since we want to capture it at the last moment.
-	data.ReqDuration = func() time.Duration {
-		return handlers.GetDuration(r.Context())
-	}
+	data.ReqStart = handlers.GetStartTime(r.Context())
 	if data.LF != nil {
 		data.TZ = data.LF.GetLocationReq(r).String()
 	}

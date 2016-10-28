@@ -17,15 +17,22 @@ from, etc. etc.
 - MMS messages are always fetched over HTTPS. The default Twilio API/libraries
 hand back insecure image links, but we rewrite URLs before fetching them.
 
-## Latency
+- Tab to search: start typing the URL in the tab bar, then press &lt;tab&gt;.
+  Paste any SID to immediately jump to that page.
+
+## It Is Really Fast
 
 Logrole fetches and caches the first page of every result set every 30 seconds,
-and any time you page through records, the next page is prefetched and stored
-in a cache. This means viewing your Twilio logs via Logrole is *significantly
-faster* than viewing results in your Dashboard or via the API! If you don't
-believe me, the request latencies are displayed on every page.
+and any time you page through records, the next page is prefetched and cached
+before you click on it. This means paging through your Twilio logs via Logrole
+is *significantly faster* than viewing results in your Dashboard or via the
+API! If you don't believe me, the request latencies are displayed at the bottom
+of every page; they're frequently 10ms and very rarely above 200ms.
 
-If you need to search your Twilio Logs, this is the way you should do it.
+Logrole uses hand-written HTML, one CSS file, one font, and close to no
+Javascript, so render times and memory performance are very good.
+
+If you need to search your Twilio Logs, this is the tool you should be using.
 
 ## Installation
 

@@ -53,6 +53,7 @@ assets: $(ASSET_TARGETS)
 ifndef GO_BINDATA
 	go get -u github.com/jteeuwen/go-bindata/...
 endif
+	cat static/css/bootstrap.min.css static/css/style.css > static/css/all.css
 	go-bindata -o=assets/bindata.go --pkg=assets templates/... static/...
 
 watch:

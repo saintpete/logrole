@@ -28,7 +28,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-const Version = "0.23"
+const Version = "0.24"
 
 // All wraps h with every handler in this file.
 func All(h http.Handler, serverName string) http.Handler {

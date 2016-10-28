@@ -12,8 +12,7 @@
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico" sizes="16x16">
     <link rel="apple-touch-icon" href="static/apple-touch-icon.png">
     <link rel="search" type="application/opensearchdescription+xml" title="Logrole" href="/opensearch.xml" />
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/all.css">
     <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;subset=latin-ext" rel="stylesheet">
   </head>
   <body>
@@ -83,10 +82,9 @@
     <footer class="footer">
       <div class="container-fluid">
         <div class="row timings">
-          {{- $dur := (call .ReqDuration) }}
-          {{- if gt $dur 0 }}
+          {{- if not .ReqStart.IsZero }}
           <div class="col-md-2">
-            Response time: {{ duration $dur }}
+            Response time: {{ render .ReqStart }}
           </div>
           {{- end }}
           {{- if gt .Duration 0 }}
