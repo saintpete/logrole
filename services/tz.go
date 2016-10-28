@@ -2,9 +2,23 @@ package services
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
+
+// Turns "America/New_York" into "New York"
+func FriendlyLocation(loc *time.Location) string {
+	if loc == nil {
+		panic("FriendlyLocation called with nil location")
+	}
+	s := loc.String()
+	parts := strings.Split(s, "/")
+	if len(parts) != 2 {
+		return s
+	}
+	return strings.Replace(parts[1], "_", " ", -1)
+}
 
 type LocationFinder interface {
 	AddLocation(loc string) bool

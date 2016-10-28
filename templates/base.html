@@ -42,7 +42,7 @@
                   <option>Choose a timezone...</option>
                   {{- range .LF.Locations }}
                   <option value="{{ .String }}" {{ if eq $.TZ .String }}selected="selected"{{ end }}>
-                    {{ .String }} ({{ tztime $.Start $.LF .String }})
+                    {{ friendly_loc . }} ({{ tztime $.Start $.LF .String }})
                   </option>
                   {{- end }}
                 </select>

@@ -70,6 +70,7 @@ func renderTime(start time.Time) string {
 var funcMap = template.FuncMap{
 	"year":          func() int { return year },
 	"friendly_date": services.FriendlyDate,
+	"friendly_loc":  services.FriendlyLocation,
 	"duration":      services.Duration,
 	"render":        renderTime,
 	"truncate_sid":  services.TruncateSid,
