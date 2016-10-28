@@ -10,7 +10,7 @@
           {{- if .Conference.CanViewProperty "Sid" }}
             {{- template "sid" .Conference }}
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -18,7 +18,7 @@
           {{- if .Conference.CanViewProperty "FriendlyName" }}
           <td>{{ .Conference.FriendlyName }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -26,7 +26,7 @@
           {{- if .Conference.CanViewProperty "Region" }}
           <td>{{ .Conference.Region }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -34,7 +34,7 @@
           {{- if .Conference.CanViewProperty "DateCreated" }}
           <td>{{ friendly_date (.Conference.DateCreated.Time.In $.Loc) }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -42,7 +42,7 @@
           {{- if .Conference.CanViewProperty "Status" }}
           <td>{{ .Conference.Status }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
       </tbody>

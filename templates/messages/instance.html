@@ -10,7 +10,7 @@
           {{- if .Message.CanViewProperty "Sid" }}
             {{- template "sid" .Message }}
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -18,7 +18,7 @@
           {{- if .Message.CanViewProperty "DateCreated" }}
           <td>{{ friendly_date (.Message.DateCreated.Time.In $.Loc) }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         {{/* need to nest these because all args are evaluated together */}}
@@ -35,7 +35,7 @@
           {{- if .Message.CanViewProperty "From" }}
             {{- template "phonenumber" .Message.From }}
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -43,7 +43,7 @@
           {{- if .Message.CanViewProperty "To" }}
             {{- template "phonenumber" .Message.To }}
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -51,7 +51,7 @@
           {{- if .Message.CanViewProperty "Status" }}
           <td>{{ .Message.Status.Friendly }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
       </tbody>
@@ -65,7 +65,7 @@
           {{- if .Message.CanViewProperty "Direction" }}
           <td>{{ .Message.Direction.Friendly }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -73,7 +73,7 @@
           {{- if .Message.CanViewProperty "NumSegments" }}
           <td>{{ .Message.NumSegments }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -81,7 +81,7 @@
           {{- if and (.Message.CanViewProperty "Price") (.Message.CanViewProperty "PriceUnit") }}
           <td>{{ .Message.FriendlyPrice }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -89,7 +89,7 @@
           {{- if .Message.CanViewProperty "NumMedia" }}
           <td>{{ .Message.NumMedia }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
       </tbody>
@@ -130,7 +130,7 @@
             {{ if .Message.CanViewProperty "ErrorMessage" }}
             <td>{{ .Message.ErrorMessage }}</td>
             {{ else }}
-            <td>[redacted]</td>
+            <td><i>hidden</i></td>
             {{ end }}
           </tr>
         </tbody>

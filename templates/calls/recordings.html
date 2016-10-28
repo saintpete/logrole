@@ -24,7 +24,7 @@
                   {{- if .CanViewProperty "Sid" }}
                     {{- template "sid" . }}
                   {{- else }}
-                  <td>[redacted]</td>
+                  <td><i>hidden</i></td>
                   {{- end }}
                 </tr>
                 <tr>
@@ -32,7 +32,7 @@
                   {{- if .CanViewProperty "Price" }}
                   <td>{{ .FriendlyPrice }}</td>
                   {{- else }}
-                  <td>[redacted]</td>
+                  <td><i>hidden</i></td>
                   {{- end }}
                 </tr>
                 <tr>
@@ -40,7 +40,7 @@
                   {{- if .CanViewProperty "Duration" }}
                   <td>{{ .Duration.String }}</td>
                   {{- else }}
-                  <td>[redacted]</td>
+                  <td><i>hidden</i></td>
                   {{- end }}
                 </tr>
               </tbody>

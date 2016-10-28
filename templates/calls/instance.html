@@ -10,7 +10,7 @@
           {{- if .Call.CanViewProperty "Sid" }}
             {{- template "sid" .Call }}
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -18,7 +18,7 @@
           {{- if .Call.CanViewProperty "DateCreated" }}
           <td>{{ friendly_date (.Call.DateCreated.Time.In $.Loc) }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -26,7 +26,7 @@
           {{- if .Call.CanViewProperty "StartTime" }}
           <td>{{ friendly_date (.Call.StartTime.Time.In $.Loc) }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -34,7 +34,7 @@
           {{- if .Call.CanViewProperty "Duration" }}
           <td>{{ .Call.Duration.String }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -42,7 +42,7 @@
           {{- if and (.Call.CanViewProperty "Price") (.Call.CanViewProperty "PriceUnit") }}
           <td>{{ .Call.FriendlyPrice }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
       </tbody>
@@ -56,7 +56,7 @@
           {{- if .Call.CanViewProperty "From" }}
             {{- template "phonenumber" .Call.From }}
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -64,7 +64,7 @@
           {{- if .Call.CanViewProperty "To" }}
             {{- template "phonenumber" .Call.To }}
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -72,7 +72,7 @@
           {{- if .Call.CanViewProperty "Direction" }}
           <td>{{ .Call.Direction.Friendly }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
         <tr>
@@ -80,7 +80,7 @@
           {{- if .Call.CanViewProperty "Status" }}
           <td>{{ .Call.Status.Friendly }}</td>
           {{- else }}
-          <td>[redacted]</td>
+          <td><i>hidden</i></td>
           {{- end }}
         </tr>
       </tbody>
