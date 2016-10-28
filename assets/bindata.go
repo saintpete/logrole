@@ -105,7 +105,7 @@ func templatesBaseHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/base.html", size: 4903, mode: os.FileMode(420), modTime: time.Unix(1477672413, 0)}
+	info := bindataFileInfo{name: "templates/base.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -125,7 +125,7 @@ func templatesCallsInstanceHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/calls/instance.html", size: 2564, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/calls/instance.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -145,7 +145,7 @@ func templatesCallsListHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/calls/list.html", size: 3579, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/calls/list.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -165,7 +165,7 @@ func templatesCallsRecordingsHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/calls/recordings.html", size: 2447, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/calls/recordings.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -185,7 +185,7 @@ func templatesConferencesInstanceHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/conferences/instance.html", size: 2594, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/conferences/instance.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -205,7 +205,7 @@ func templatesConferencesListHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/conferences/list.html", size: 3192, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/conferences/list.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -225,7 +225,7 @@ func templatesErrorsHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/errors.html", size: 442, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/errors.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -245,7 +245,7 @@ func templatesIndexHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/index.html", size: 1075, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/index.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -265,7 +265,7 @@ func templatesLoginHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/login.html", size: 190, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/login.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -285,7 +285,7 @@ func templatesMessagesInstanceHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/messages/instance.html", size: 6897, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/messages/instance.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -305,7 +305,7 @@ func templatesMessagesListHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/messages/list.html", size: 3644, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/messages/list.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -325,7 +325,7 @@ func templatesOpensearchXml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/opensearch.xml", size: 480, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/opensearch.xml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -345,7 +345,7 @@ func templatesSnippetsCopyPhonenumberJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/snippets/copy-phonenumber.js", size: 911, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/snippets/copy-phonenumber.js", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -365,7 +365,7 @@ func templatesSnippetsPagingHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/snippets/paging.html", size: 577, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/snippets/paging.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -385,7 +385,7 @@ func templatesSnippetsPhonenumberHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/snippets/phonenumber.html", size: 348, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/snippets/phonenumber.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -405,7 +405,7 @@ func templatesSnippetsSidHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/snippets/sid.html", size: 253, mode: os.FileMode(420), modTime: time.Unix(1477632581, 0)}
+	info := bindataFileInfo{name: "templates/snippets/sid.html", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -425,7 +425,7 @@ func staticDs_store() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/.DS_Store", size: 6148, mode: os.FileMode(420), modTime: time.Unix(1477424455, 0)}
+	info := bindataFileInfo{name: "static/.DS_Store", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -445,7 +445,7 @@ func staticAppleTouchIconPng() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/apple-touch-icon.png", size: 708, mode: os.FileMode(420), modTime: time.Unix(1477456764, 0)}
+	info := bindataFileInfo{name: "static/apple-touch-icon.png", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -465,7 +465,7 @@ func staticCssAllCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/css/all.css", size: 123992, mode: os.FileMode(420), modTime: time.Unix(1477672573, 0)}
+	info := bindataFileInfo{name: "static/css/all.css", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -485,7 +485,7 @@ func staticCssBootstrapMinCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/css/bootstrap.min.css", size: 121200, mode: os.FileMode(420), modTime: time.Unix(1476218826, 0)}
+	info := bindataFileInfo{name: "static/css/bootstrap.min.css", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -505,7 +505,7 @@ func staticCssStyleCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/css/style.css", size: 2792, mode: os.FileMode(420), modTime: time.Unix(1477513887, 0)}
+	info := bindataFileInfo{name: "static/css/style.css", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -525,7 +525,7 @@ func staticFavicon32x32Png() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/favicon-32x32.png", size: 246, mode: os.FileMode(420), modTime: time.Unix(1477456764, 0)}
+	info := bindataFileInfo{name: "static/favicon-32x32.png", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -545,7 +545,7 @@ func staticFaviconIco() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/favicon.ico", size: 2614, mode: os.FileMode(420), modTime: time.Unix(1477456766, 0)}
+	info := bindataFileInfo{name: "static/favicon.ico", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
