@@ -52,8 +52,8 @@ limitations under the License.
 
 ===========
 
-Portions of the Log() code have been added from github.com/gorilla/handlers.
-License for that code is below:
+Portions of the Log() code and gzip.go have been added from
+github.com/gorilla/handlers. License for that code is below:
 
 Copyright (c) 2013 The Gorilla Handlers Authors. All rights reserved.
 

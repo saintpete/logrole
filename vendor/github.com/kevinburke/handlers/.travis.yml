@@ -8,3 +8,5 @@ go:
 
 before_script:
   - go get ./...
+
+script: make race-test

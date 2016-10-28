@@ -55,8 +55,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/handlers",
-			"Comment": "0.20",
-			"Rev": "91e67d36c1a15884e0710899fc2faa59cacad29a"
+			"Comment": "0.23",
+			"Rev": "da4d619d7ccd0207ba88ff4ffbecdf26f582dd60"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/raven-go",

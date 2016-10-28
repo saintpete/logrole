@@ -28,14 +28,14 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-const Version = "0.20"
+const Version = "0.23"
 
 // All wraps h with every handler in this file.
 func All(h http.Handler, serverName string) http.Handler {
-	return Duration(Log(Debug(UUID(JSON(Server(h, serverName))))))
+	return Duration(Log(Debug(UUID(TrailingSlashRedirect(JSON(Server(h, serverName)))))))
 }
 
-// JSON sets the Content-Type to application/json; charset=utf-8
+// JSON sets the Content-Type to application/json; charset=utf-8.
 func JSON(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -185,7 +185,11 @@ func Debug(h http.Handler) http.Handler {
 			if err != nil {
 				_, _ = b.WriteString(err.Error())
 			} else {
-				_, _ = b.Write(bits)
+				if w.Header().Get("Content-Encoding") == "gzip" {
+					_, _ = b.WriteString("[binary data omitted]")
+				} else {
+					_, _ = b.Write(bits)
+				}
 			}
 			res := httptest.NewRecorder()
 			h.ServeHTTP(res, r)
@@ -199,7 +203,11 @@ func Debug(h http.Handler) http.Handler {
 			_, _ = b.WriteString("\r\n")
 			writer := io.MultiWriter(w, b)
 			_, _ = res.Body.WriteTo(writer)
-			_, _ = b.WriteTo(os.Stderr)
+			if w.Header().Get("Content-Encoding") == "gzip" {
+				os.Stderr.WriteString("[binary data omitted]")
+			} else {
+				_, _ = b.WriteTo(os.Stderr)
+			}
 		} else {
 			h.ServeHTTP(w, r)
 		}

@@ -241,10 +241,11 @@ func NewServer(settings *Settings) (*Server, error) {
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)
 	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	authH := AddAuthenticator(authR, settings.Authenticator)
+	authH = handlers.Log(authH)
 
 	r := new(handlers.Regexp)
 	// TODO - don't protect static routes with basic auth
-	r.Handle(regexp.MustCompile(`(^/static|^/favicon.ico$)`), []string{"GET"}, staticServer)
+	r.Handle(regexp.MustCompile(`(^/static|^/favicon.ico$)`), []string{"GET"}, handlers.GZip(staticServer))
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/auth/logout$`), []string{"POST"}, logout)
 	// todo awkward using HTTP methods here
@@ -255,19 +256,16 @@ func NewServer(settings *Settings) (*Server, error) {
 	//h = AuthUserHandler(h)
 	//h = handlers.BasicAuth(h, "logrole", settings.Users)
 	//}
-	h = handlers.Duration(
-		settings.Reporter.ReportPanics(
-			handlers.Log(
-				handlers.Debug(
-					handlers.TrailingSlashRedirect(
-						handlers.UUID(
-							handlers.Server(h, "logrole/"+Version),
-						),
-					),
-				),
-			),
-		),
-	)
+
+	// Innermost handlers are first.
+	h = handlers.Server(h, "logrole/"+Version)
+	h = handlers.UUID(h)
+	h = handlers.TrailingSlashRedirect(h)
+	h = handlers.Debug(h)
+	h = handlers.Log(h)
+	h = handlers.WithTimeout(h, 32*time.Second)
+	h = settings.Reporter.ReportPanics(h)
+	h = handlers.Duration(h)
 	return &Server{
 		Handler:  h,
 		PageSize: settings.PageSize,
