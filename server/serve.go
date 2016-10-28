@@ -21,7 +21,7 @@ import (
 )
 
 // Server version, run "make release" to increase this value
-const Version = "0.53"
+const Version = "0.54"
 
 func authUserHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
