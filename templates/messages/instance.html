@@ -96,10 +96,10 @@
     </table>
   </div>
 </div>
-{{- if (.Message.CanViewProperty "Body") }}
-  {{- if (gt (len .Message.Body) 0) }}
-  <div class="row">
-    <div class="col-md-4">
+<div class="row">
+  <div class="col-md-4">
+  {{- if (.Message.CanViewProperty "Body") }}
+    {{- if (gt (len .Message.Body) 0) }}
       <table class="table">
         <tbody>
           <tr>
@@ -108,10 +108,12 @@
           </tr>
         </tbody>
       </table>
-    </div>
-  </div>
+    {{- end }}
+  {{- else }}
+  <p>You do not have permission to view the message body.</p>
   {{- end }}
-{{- end }}
+  </div>
+</div>
 {{- if (.Message.CanViewProperty "ErrorCode") }}
   {{- if gt .Message.ErrorCode 0 }}
   <div class="row">

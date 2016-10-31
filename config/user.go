@@ -25,6 +25,7 @@ type User struct {
 	canViewRecordingPrice bool
 	canViewConferences    bool
 	canViewCallAlerts     bool
+	canViewCallbackURLs   bool
 }
 
 // UserSettings are used to define which permissions a User has.
@@ -51,6 +52,8 @@ type UserSettings struct {
 	// Can the user view information about errors that occurred while routing
 	// a call? e.g. "HTTP retrieval failure" at the callback URL.
 	CanViewCallAlerts bool
+	// Can the user view a StatusCallbackURL?
+	CanViewCallbackURLs bool
 }
 
 // AllUserSettings returns a UserSettings value with the widest possible set of
@@ -73,6 +76,7 @@ func AllUserSettings() *UserSettings {
 		CanViewRecordingPrice: true,
 		CanViewConferences:    true,
 		CanViewCallAlerts:     true,
+		CanViewCallbackURLs:   true,
 	}
 }
 
@@ -98,6 +102,7 @@ func NewUser(us *UserSettings) *User {
 		canViewRecordingPrice: us.CanViewRecordingPrice,
 		canViewConferences:    us.CanViewConferences,
 		canViewCallAlerts:     us.CanViewCallAlerts,
+		canViewCallbackURLs:   us.CanViewCallbackURLs,
 	}
 }
 
@@ -163,6 +168,10 @@ func (u *User) CanViewConferences() bool {
 
 func (u *User) CanViewCallAlerts() bool {
 	return u.canViewCallAlerts
+}
+
+func (u *User) CanViewCallbackURLs() bool {
+	return u.canViewCallbackURLs
 }
 
 // TODO store in database or something

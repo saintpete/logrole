@@ -61,8 +61,10 @@ func (c *Alert) CanViewProperty(property string) bool {
 		return false
 	}
 	switch property {
-	case "Sid", "ErrorCode", "RequestURL", "RequestMethod":
+	case "Sid", "ErrorCode", "MoreInfo":
 		return c.user.CanViewCallAlerts()
+	case "RequestURL", "RequestMethod":
+		return c.user.CanViewCallbackURLs()
 	default:
 		panic("unknown property " + property)
 	}
@@ -95,6 +97,14 @@ func (a *Alert) RequestMethod() (string, error) {
 func (a *Alert) RequestURL() (string, error) {
 	if a.CanViewProperty("RequestURL") {
 		return a.alert.RequestURL, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (a *Alert) MoreInfo() (string, error) {
+	if a.CanViewProperty("MoreInfo") {
+		return a.alert.MoreInfo, nil
 	} else {
 		return "", config.PermissionDenied
 	}

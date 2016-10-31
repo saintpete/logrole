@@ -116,7 +116,11 @@
           <tr>
             <th>Error</th>
             {{- if .CanViewProperty "ErrorCode" }}
-            <td><a href="https://www.twilio.com/console/dev-tools/debugger/{{ .Sid }}">Code {{ .ErrorCode }}. View more detail in the Twilio Debugger</a></td>
+              {{- if .CanViewProperty "RequestURL" }}
+              <td><a href="https://www.twilio.com/console/dev-tools/debugger/{{ .Sid }}">Code {{ .ErrorCode }}. View more detail in the Twilio Debugger</a></td>
+              {{- else if .CanViewProperty "MoreInfo" }}
+              <td><a href="{{ .MoreInfo }}">View more information about this error</a></td>
+              {{- end }}
             {{- else }}
             <td><i>hidden</i></td>
             {{- end }}
