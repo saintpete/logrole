@@ -1,5 +1,9 @@
 # Changes
 
+## 0.56
+
+Highlight Call list rows in red if the call ended unsuccessfully.
+
 ## 0.55
 
 Show error/warning information about a Call on the instance page.

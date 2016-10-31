@@ -57,7 +57,7 @@
   <tbody>
     {{- range .Page.Calls }}
       {{- if .CanViewProperty "Sid" }}
-      <tr class="call">
+      <tr class="call {{ if .CanViewProperty "Status" }}{{ if .EndedUnsuccessfully }}list-error{{ end }}{{ end }}">
         <td>
           <a href="/calls/{{ .Sid }}" title="View more details">
             {{- if .CanViewProperty "DateCreated" }}

@@ -130,6 +130,14 @@ func (c *Call) CanViewCallAlerts() bool {
 	return c.user.CanViewCallAlerts()
 }
 
+func (c *Call) EndedUnsuccessfully() (bool, error) {
+	if c.CanViewProperty("Status") {
+		return c.call.EndedUnsuccessfully(), nil
+	} else {
+		return false, config.PermissionDenied
+	}
+}
+
 func NewCallPage(cp *twilio.CallPage, p *config.Permission, u *config.User) (*CallPage, error) {
 	calls := make([]*Call, 0)
 	for _, call := range cp.Calls {
