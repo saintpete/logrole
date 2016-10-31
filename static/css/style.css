@@ -26,6 +26,11 @@ body {
 }
 /* end sticky footer */
 
+code {
+    color: #943A56;
+    background-color: #f4f2f4;
+}
+
 .page a {
     text-decoration: underline;
 }
@@ -92,6 +97,11 @@ pre, code {
 
 .home-link {
     padding-right: 20px;
+}
+
+/* need specifics to override table-striped */
+.table > tbody > tr.message-error {
+    background-color: #FDDFDA;
 }
 
 .pn {

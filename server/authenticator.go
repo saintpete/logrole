@@ -347,4 +347,5 @@ var theUser = config.NewUser(&config.UserSettings{
 	CanPlayRecordings:     true,
 	CanViewRecordingPrice: false,
 	CanViewConferences:    true,
+	CanViewCallAlerts:     true,
 })

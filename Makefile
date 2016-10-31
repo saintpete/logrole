@@ -20,7 +20,7 @@ WATCH_TARGETS = static/css/style.css \
 	server/serve.go server/messages.go server/search.go server/images.go \
 	server/calls.go server/page.go server/audio.go server/errors.go \
 	views/message.go views/client.go views/call.go views/recording.go \
-	views/conference.go \
+	views/conference.go views/alert.go \
 	Makefile config.yml
 
 ASSET_TARGETS = templates/base.html templates/index.html \

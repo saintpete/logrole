@@ -87,6 +87,54 @@
     </table>
   </div>
 </div>
+<div class="row">
+  <div class="col-md-12">
+    {{ if .Call.CanViewCallAlerts }}
+      <h3>Alerts and Warnings</h3>
+      {{- if .AlertError }}
+      <p>
+      Error retrieving alerts for this call: {{ .Err }}.
+      Refresh the page to try again.
+      </p>
+      {{- end }}
+      {{- if eq (len .Alerts.Alerts) 0 }}
+      <p>
+      There were no alerts for this call.
+      </p>
+      {{- end }}
+      {{- range .Alerts.Alerts }}
+      <table class="table table-striped">
+        <tbody>
+          <tr>
+            <th>Sid</th>
+            {{- if .CanViewProperty "Sid" }}
+              {{- template "sid" . }}
+            {{- else }}
+            <td><i>hidden</i></td>
+            {{- end }}
+          </tr>
+          <tr>
+            <th>Error</th>
+            {{- if .CanViewProperty "ErrorCode" }}
+            <td><a href="https://www.twilio.com/console/dev-tools/debugger/{{ .Sid }}">Code {{ .ErrorCode }}. View more detail in the Twilio Debugger</a></td>
+            {{- else }}
+            <td><i>hidden</i></td>
+            {{- end }}
+          </tr>
+          <tr>
+            <th>Request URL</th>
+            {{- if .CanViewProperty "RequestURL" }}
+            <td>{{ .RequestMethod }} {{ .RequestURL }}</td>
+            {{- else }}
+            <td><i>hidden</i></td>
+            {{- end }}
+          </tr>
+        </tbody>
+      </table>
+      {{- end }}
+    {{- end }}
+  </div>
+</div>
 {{- template "recordings" .Recordings }}
 {{- template "copy-phonenumber" }}
 {{- end }}{{/* end content */}}

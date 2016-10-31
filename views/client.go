@@ -38,6 +38,7 @@ type Client interface {
 	GetNextRecordingPage(context.Context, *config.User, string) (*RecordingPage, error)
 	GetCallRecordings(context.Context, *config.User, string, url.Values) (*RecordingPage, error)
 	GetConferencePage(context.Context, *config.User, url.Values) (*ConferencePage, error)
+	GetCallAlerts(context.Context, *config.User, string) (*AlertPage, error)
 	CacheCommonQueries(uint, <-chan bool)
 	IsTwilioNumber(num twilio.PhoneNumber) bool
 }
@@ -339,6 +340,17 @@ func (vc *client) GetCallRecordings(ctx context.Context, user *config.User, call
 		return nil, err
 	}
 	return NewRecordingPage(page, vc.permission, user, vc.secretKey)
+}
+
+func (vc *client) GetCallAlerts(ctx context.Context, user *config.User, callSid string) (*AlertPage, error) {
+	data := url.Values{}
+	data.Set("ResourceSid", callSid)
+	data.Set("PageSize", "4")
+	page, err := vc.client.Monitor.Alerts.GetPage(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	return NewAlertPage(page, vc.permission, user)
 }
 
 func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {

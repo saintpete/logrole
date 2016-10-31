@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/inconshreveable/log15"
@@ -85,6 +86,8 @@ type callInstanceData struct {
 	Call       *views.Call
 	Loc        *time.Location
 	Recordings *recordingResp
+	AlertError error
+	Alerts     *views.AlertPage
 }
 
 type callListData struct {
@@ -265,6 +268,14 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	start := time.Now()
 	go c.fetchRecordings(ctx, sid, u, rch)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var alerts *views.AlertPage
+	var alertsErr error
+	go func() {
+		alerts, alertsErr = c.Client.GetCallAlerts(ctx, u, sid)
+		wg.Done()
+	}()
 	call, err := c.Client.GetCall(ctx, u, sid)
 	switch err {
 	case nil:
@@ -286,13 +297,16 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	wg.Wait()
 	data := &baseData{
 		LF:       c.LocationFinder,
 		Duration: time.Since(start),
 	}
 	cid := &callInstanceData{
-		Call: call,
-		Loc:  c.LocationFinder.GetLocationReq(r),
+		Call:       call,
+		Loc:        c.LocationFinder.GetLocationReq(r),
+		AlertError: alertsErr,
+		Alerts:     alerts,
 	}
 	if u.CanViewNumRecordings() {
 		r := <-rch

@@ -51,7 +51,7 @@ func (c *Call) CanViewProperty(property string) bool {
 }
 
 func (c *Call) Sid() (string, error) {
-	if c.user.CanViewCalls() {
+	if c.CanViewProperty("Sid") {
 		return c.call.Sid, nil
 	} else {
 		return "", config.PermissionDenied
@@ -124,6 +124,10 @@ func (c *Call) FriendlyPrice() (string, error) {
 
 func (c *Call) CanViewNumRecordings() bool {
 	return c.user.CanViewNumRecordings()
+}
+
+func (c *Call) CanViewCallAlerts() bool {
+	return c.user.CanViewCallAlerts()
 }
 
 func NewCallPage(cp *twilio.CallPage, p *config.Permission, u *config.User) (*CallPage, error) {

@@ -197,8 +197,7 @@ func (c *Cache) encAndStore(key string, data interface{}) {
 	var buf bytes.Buffer
 	writer := gzip.NewWriter(&buf)
 	enc := gob.NewEncoder(writer)
-	err := enc.Encode(data)
-	if err != nil {
+	if err := enc.Encode(data); err != nil {
 		panic(err)
 	}
 	if err := writer.Close(); err != nil {
