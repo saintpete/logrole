@@ -51,7 +51,7 @@ func TestIndex(t *testing.T) {
 	t.Parallel()
 	settings := &config.Settings{
 		AllowUnencryptedTraffic: true,
-		Authenticator:           &NoopAuthenticator{},
+		Authenticator:           &config.NoopAuthenticator{},
 		SecretKey:               services.NewRandomKey(),
 	}
 	s, err := NewServer(settings)
@@ -70,11 +70,55 @@ func TestIndex(t *testing.T) {
 	}
 }
 
+func getGoogleAuthServer(t *testing.T) *Server {
+	key := services.NewRandomKey()
+	settings := &config.Settings{
+		SecretKey:     key,
+		Authenticator: config.NewGoogleAuthenticator("", "", "http://localhost", nil, key),
+	}
+	s, err := NewServer(settings)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+
+func TestGoogleAuthenticatorRendersLoginPage(t *testing.T) {
+	t.Parallel()
+	s := getGoogleAuthServer(t)
+	req, _ := http.NewRequest("GET", "/login", nil)
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, req)
+	if w.Code != 401 {
+		t.Errorf("expected Code to be 401, got %d", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Log in with Google") {
+		t.Errorf("expected Body to contain 'Log in with Google', got %s", body)
+	}
+}
+
+func TestGoogleAuthenticatorRedirects(t *testing.T) {
+	t.Parallel()
+	s := getGoogleAuthServer(t)
+	req, _ := http.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, req)
+	if w.Code != 302 {
+		t.Errorf("expected Code to be 302, got %d", w.Code)
+	}
+	if loc := w.Header().Get("Location"); loc != "/login?g=/" {
+		t.Errorf("expected redirect to /login?g=/, got %s", loc)
+	}
+}
+
 func TestStaticPagesAvailableNoAuth(t *testing.T) {
 	t.Parallel()
+	a := config.NewBasicAuthAuthenticator("logrole")
+	a.AddUserPassword("test", "test")
 	settings := &config.Settings{
 		SecretKey:     services.NewRandomKey(),
-		Authenticator: NewBasicAuthAuthenticator("logrole", map[string]string{"test": "test"}),
+		Authenticator: a,
 	}
 	s, err := NewServer(settings)
 	if err != nil {
@@ -87,23 +131,3 @@ func TestStaticPagesAvailableNoAuth(t *testing.T) {
 		t.Errorf("expected Code to be 200, got %d", w.Code)
 	}
 }
-
-//type data struct{}
-
-//func (d *data) Foo() (string, error) {
-//return "", errors.New("bad")
-//}
-
-//func TestRender(t *testing.T) {
-//tpl := template.Must(template.New("t").Option("missingkey=error").Funcs(funcMap).Parse(`
-//{{ (call redacted .Foo) }}
-//`))
-//d := &data{}
-//b := new(bytes.Buffer)
-//err := tpl.Execute(b, d)
-//if err != nil {
-//t.Fatal(err)
-//}
-//fmt.Println(b.String())
-//t.Fail()
-//}

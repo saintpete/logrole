@@ -55,7 +55,7 @@ func main() {
 		}
 	}
 	data, err := ioutil.ReadFile(*cfg)
-	c := new(fileConfig)
+	c := new(config.FileConfig)
 	if err == nil {
 		if err := yaml.Unmarshal(data, c); err != nil {
 			handlers.Logger.Error("Couldn't parse config file", "err", err)
@@ -70,7 +70,7 @@ func main() {
 		c.Port = config.DefaultPort
 		c.Realm = services.Local
 	}
-	settings, err := NewSettingsFromConfig(c)
+	settings, err := config.NewSettingsFromConfig(c)
 	if err != nil {
 		handlers.Logger.Error("Error loading settings from config", "err", err)
 		os.Exit(2)

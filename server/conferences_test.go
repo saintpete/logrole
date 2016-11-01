@@ -11,16 +11,16 @@ import (
 )
 
 func TestUnauthorizedUserCantViewConferenceList(t *testing.T) {
+	t.Parallel()
 	vc := test.ViewsClient(test.ViewHarness{})
 	s, err := newConferenceListServer(dlog, vc, nil, 50, time.Hour, key)
 	if err != nil {
 		t.Fatal(err)
 	}
-	u := config.NewUser(&config.UserSettings{CanViewConferences: false})
-	config.AddUser("test", u)
 	req, _ := http.NewRequest("GET", "/conferences", nil)
 	req.SetBasicAuth("test", "test")
-	req, _, _ = config.AuthUser(req)
+	u := config.NewUser(&config.UserSettings{CanViewConferences: false})
+	req = config.SetUser(req, u)
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, req)
 	if w.Code != 403 {
@@ -29,16 +29,16 @@ func TestUnauthorizedUserCantViewConferenceList(t *testing.T) {
 }
 
 func TestUnauthorizedUserCantViewConferenceInstance(t *testing.T) {
+	t.Parallel()
 	vc := test.ViewsClient(test.ViewHarness{})
 	s, err := newConferenceInstanceServer(dlog, vc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	u := config.NewUser(&config.UserSettings{CanViewConferences: false})
-	config.AddUser("test", u)
 	req, _ := http.NewRequest("GET", "/conferences/CF6c38e4202f499c5020dd3ca679010779", nil)
 	req.SetBasicAuth("test", "test")
-	req, _, _ = config.AuthUser(req)
+	u := config.NewUser(&config.UserSettings{CanViewConferences: false})
+	req = config.SetUser(req, u)
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, req)
 	if w.Code != 403 {

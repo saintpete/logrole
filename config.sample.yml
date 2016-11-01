@@ -72,17 +72,56 @@ email_address: test@example.com
 error_reporter: sentry
 error_reporter_token: your_sentry_dsn
 
+# Which auth_scheme should we use? Valid values are "noop", "basic", or
+# "google".
+#
+# For more on authentication, see
+# https://github.com/saintpete/logrole/blob/master/docs/settings.md#authentication
+auth_scheme: google
+
 # Uncomment these fields to use basic auth with a single user and password.
 #auth_scheme: basic
 #basic_auth_user:     test
 #basic_auth_password: hymanrickover
 
-auth_scheme: google
+# To create/configure Google credentials, see
+# https://github.com/saintpete/logrole/blob/master/docs/google.md
 google_client_id:     customdomain.apps.googleusercontent.com
 google_client_secret: W-secretkey
+
 # Email domains that are permissible for Google authentication. Must be an
 # exact match.
 google_allowed_domains:
   - example.com
   - example.org
   - example.net
+
+# Specify a policy to define groups with different permissions.
+#
+# Any omitted permissions are set to True. A list of valid settings for a
+# user can be found on the UserSettings struct. Users cannot be part of two
+# different groups.
+#
+# For more on the exact details of policy, see the authentication docs:
+# https://github.com/saintpete/logrole/blob/master/docs/settings.md#authentication
+policy:
+    - name: support
+      permissions:
+          can_view_num_media: false
+          can_view_calls: false
+      users:
+          - test@example.com
+          - test@example.net
+
+    - name: eng
+      permissions:
+          can_view_num_media: True
+          can_view_calls: True
+      users:
+          - eng@example.com
+          - eng@example.net
+
+# Alternatively, you can load permissions from a separate file, using the same
+# structure. It's not allowed to define both "policy" and "policy_file" in the
+# same configuration.
+# policy_file: /path/to/permission.yml

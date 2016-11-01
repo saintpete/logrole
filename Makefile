@@ -6,8 +6,8 @@ JUSTRUN := $(shell command -v justrun)
 
 WATCH_TARGETS = static/css/style.css \
 	cache/cache.go \
-	commands/logrole_server/main.go commands/logrole_server/config.go \
-	config/permission.go config/settings.go \
+	commands/logrole_server/main.go \
+	config/permission.go config/settings.go config/auth.go config/user.go \
 	templates/base.html templates/index.html templates/messages/list.html \
 	templates/messages/instance.html templates/calls/list.html \
 	templates/calls/instance.html templates/calls/recordings.html \
@@ -33,13 +33,14 @@ ASSET_TARGETS = templates/base.html templates/index.html \
 	static/css/style.css static/css/bootstrap.min.css
 
 test: vet
-	go test -short ./...
+	@# this target should always be listed first so "make" runs the tests.
+	go list ./... | grep -v vendor | xargs go test -short
 
 race-test: vet
-	go test -race ./...
+	go list ./... | grep -v vendor | xargs go test -race ./...
 
 serve:
-	go run commands/logrole_server/main.go commands/logrole_server/config.go
+	go run commands/logrole_server/main.go
 
 vet:
 	@# We can't vet the vendor directory, it fails.

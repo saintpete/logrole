@@ -1,0 +1,15 @@
+- name: support
+  permissions:
+      can_view_num_media: false
+      can_view_calls: false
+  users:
+      - test@example.com
+      - test@example.net
+
+- name: eng
+  permissions:
+      can_view_num_media: True
+      can_view_calls: True
+  users:
+      - eng@example.com
+      - eng@example.net

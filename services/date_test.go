@@ -31,6 +31,7 @@ var dateTests = []struct {
 }
 
 func TestFriendlyDate(t *testing.T) {
+	t.Parallel()
 	for _, tt := range dateTests {
 		out := friendlyDate(tt.in, now)
 		if out != tt.expected {

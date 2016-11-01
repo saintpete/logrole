@@ -7,7 +7,7 @@ logs.
 SMS/MMS bodies, resources older than a certain age, recordings, calls, call
 from, etc. etc.
 
-- Your Account Sid is obscured from end users at all times.
+- Account Sid is hidden from end users at all times.
 
 - Easy site search - tab complete and search for a sid to go straight to the
   instance view for that resource.
@@ -49,95 +49,30 @@ GOPATH environment variable to `$HOME/go` in your .bashrc or equivalent.
 export GOPATH="$HOME/go"
 ```
 
-## Deployment
+## Configuration and Deployment
 
-There are several ways to deploy Logrole.
+There are two main ways to deploy Logrole. Either:
 
-### As a binary
+- Write all settings to a `config.yml` file (a sample is in
+config.sample.yml), then run `logrole_server --config=config.yml`.
 
-Logrole comes with a `logrole_server` binary (in commands/logrole_server) that
-can load configuration and start the server for you. The `logrole_server`
-binary parses a YAML file containing all of the server's configuration (an
-example configuration file can be found in `config.sample.yml`). By default,
-`logrole_server` looks for a file named `config.yml` in the same directory as
-its cwd. Alternatively, pass the `--config` flag to the binary.
+Or:
 
-```bash
-logrole_server --config=/path/to/myconfig.yml
-```
+- Set all configuration as environment variables. Run
+`logrole_write_config_from_env > config.yml` to write all those environment
+variables to a config.yml file. Follow the steps in (1).
 
-### Via environment variables
+For more information, please [see the Settings documentation][settings-docs].
 
-Some environments like Heroku only allow you to set production
-configuration via environment variables. Logrole has a second binary,
-`logrole_write_config_from_env`, that takes named environment variables and
-writes them to a YAML file. You can then run the `logrole_server` binary as
-described above.
+[settings-docs]: https://github.com/saintpete/logrole/blob/master/docs/settings.md
 
-```
-logrole_write_config_from_env > myconfig.yml
-logrole_server --config=myconfig.yml
-```
+## Authentication
 
-To see which environment variables are written to the file, run
-`logrole_write_config_from_env --help`. Here is an example:
+Logrole supports three authentication modes: none, basic auth,
+and Google OAuth. For more information, [see the Settings
+documentation][settings-auth-docs].
 
-```
-Supported environment variables are:
-
-PORT                   Port to listen on
-PUBLIC_HOST            Host your users will browse to to see the site
-
-TWILIO_ACCOUNT_SID     Account SID for your Twilio account
-TWILIO_AUTH_TOKEN      Auth token
-
-REALM                  Realm (either "local" or "prod")
-TZ                     Default timezone (example "America/Los_Angeles")
-EMAIL_ADDRESS          For "Contact Support" on server error pages
-PAGE_SIZE              How many resources to fetch from Twilio/display on each page
-
-SECRET_KEY             64 byte hex key - generate with "openssl rand -hex 32"
-MAX_RESOURCE_AGE       How long resources should be visible for - "720h" to hide
-                       anything older than 30 days
-SHOW_MEDIA_BY_DEFAULT  "false" to hide images behind a toggle when a user
-                       browses to a MMS message.
-
-AUTH_SCHEME            "basic", "noop", or "google"
-BASIC_AUTH_USER        For basic auth, the username
-BASIC_AUTH_PASSWORD    For basic auth, the password
-GOOGLE_CLIENT_ID       For Google OAuth
-GOOGLE_CLIENT_SECRET   For Google OAuth
-
-ERROR_REPORTER         "sentry", empty, or register your own.
-ERROR_REPORTER_TOKEN   Token for the error reporter.
-```
-
-Logrole comes with a default Procfile and a start script (`bin/serve`) for easy
-Heroku deployment. Sensitive environment variables (auth token, basic auth
-password, etc) are dropped before the server process starts.
-
-### As a Go library
-
-Follow these instructions if you want to load Logrole from other Go
-code, or create your own custom binary for running Logrole. Create [a
-`server.Settings` struct][settings-godoc]. You may want to look at
-`commands/logrole_server/config.go` for an example of how to build the Settings
-struct with reasonable defaults.
-
-```go
-settings := &server.Settings{PublicHost: "example.com", PageSize: 50}
-```
-
-Once you have a Settings object, get a Server, then you can do what you want to
-listen on ports or run tests or anything.
-
-```go
-s := server.NewServer(settings)
-http.Handle("/", s)
-http.ListenAndServe(":4114", nil)
-```
-
-[settings-godoc]: https://godoc.org/github.com/saintpete/logrole/server/#Settings
+[settings-auth-docs]: https://github.com/saintpete/logrole/blob/master/docs/settings.md#authentication
 
 ## Local Development
 
@@ -153,8 +88,8 @@ To start a development server, run `make serve`. This will start a server on
 [localhost:4114](http://localhost:4114).
 
 By default we look for a config file in `config.yml`. The values for this
-config file can be found in `commands/logrole_server/main.go`. There's an
-example config file at config.sample.yml.
+config file can be found in the FileConfig struct in `config/settings.go`.
+There's an example config file at `config.sample.yml`.
 
 ## Run the tests
 
@@ -169,7 +104,7 @@ Run `make docs`.
 
 The Twilio Dashboard displays Participants for completed Conferences, but [this
 functionality is not available via the API][issue-4]. Please [contact Support
-to request this feature][support].
+to request this feature][support] if you'd like it to be available in Logrole.
 
 [support]: mailto:help@twilio.com
 [issue-4]: https://github.com/saintpete/logrole/issues/4

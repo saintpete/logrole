@@ -23,19 +23,6 @@ import (
 // Server version, run "make release" to increase this value
 const Version = "0.57"
 
-func authUserHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r, _, err := config.AuthUser(r)
-		if err != nil {
-			rest.Forbidden(w, r, &rest.Error{
-				Title: err.Error(),
-			})
-			return
-		}
-		h.ServeHTTP(w, r)
-	})
-}
-
 func UpgradeInsecureHandler(h http.Handler, allowUnencryptedTraffic bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if allowUnencryptedTraffic == false {
@@ -99,11 +86,70 @@ type Server struct {
 }
 
 func (s *Server) Close() error {
+	s.DoneChan <- true
 	return nil
 }
 
 func (s *Server) CacheCommonQueries() {
 	go s.vc.CacheCommonQueries(s.PageSize, s.DoneChan)
+}
+
+type loginData struct {
+	baseData
+	URL string
+}
+
+func (l *loginData) Title() string {
+	return "Log In"
+}
+
+func GoogleLoginRenderer() func(http.ResponseWriter, *http.Request, string) {
+	return func(w http.ResponseWriter, r *http.Request, url string) {
+	}
+}
+
+type loginServer struct{}
+
+func (ls *loginServer) Serve(w http.ResponseWriter, r *http.Request, URL string) {
+	if r.URL.Path != "/login" {
+		http.Redirect(w, r, "/login?g="+r.URL.Path, 302)
+		return
+	}
+	bd := &baseData{
+		LoggedOut: true,
+	}
+	bd.Data = &loginData{
+		URL: URL,
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(401)
+	if err := render(w, r, loginTemplate, "base", bd); err != nil {
+		rest.ServerError(w, r, err)
+	}
+}
+
+// AddAuthenticator adds the Authenticator as a HTTP middleware. If
+// authentication is successful, we set the User in the request context and
+// continue.
+func AddAuthenticator(h http.Handler, ls *loginServer, a config.Authenticator) http.Handler {
+	// TODO
+	o, ok := a.(*config.GoogleAuthenticator)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, err := a.Authenticate(w, r)
+		if err == config.MustLogin {
+			var url string
+			if ok {
+				url = o.URL(w, r)
+			}
+			ls.Serve(w, r, url)
+			return
+		}
+		if err != nil {
+			return
+		}
+		r = config.SetUser(r, u)
+		h.ServeHTTP(w, r)
+	})
 }
 
 // NewServer returns a new Handler that can serve the website.
@@ -122,7 +168,7 @@ func NewServer(settings *config.Settings) (*Server, error) {
 		return nil, errors.New("Invalid secret key (must initialize some bytes)")
 	}
 	if settings.Authenticator == nil {
-		settings.Authenticator = &NoopAuthenticator{}
+		settings.Authenticator = &config.NoopAuthenticator{}
 	}
 
 	permission := config.NewPermission(settings.MaxResourceAge)
@@ -180,6 +226,7 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	logout := &logoutServer{
 		Authenticator: settings.Authenticator,
 	}
+	ls := &loginServer{}
 	tz := &tzServer{
 		Logger:                  handlers.Logger,
 		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
@@ -204,7 +251,7 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	authR.Handle(conferenceInstanceRoute, []string{"GET"}, confInstance)
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)
 	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)
-	authH := config.AddAuthenticator(authR, settings.Authenticator)
+	authH := AddAuthenticator(authR, ls, settings.Authenticator)
 	authH = handlers.Log(authH)
 
 	r := new(handlers.Regexp)
@@ -215,18 +262,12 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	// todo awkward using HTTP methods here
 	r.Handle(regexp.MustCompile(`^/`), []string{"GET", "POST", "PUT", "DELETE"}, authH)
 	h := UpgradeInsecureHandler(r, settings.AllowUnencryptedTraffic)
-	//if len(settings.Users) > 0 {
-	//// TODO database, remove duplication
-	//h = AuthUserHandler(h)
-	//h = handlers.BasicAuth(h, "logrole", settings.Users)
-	//}
 
 	// Innermost handlers are first.
 	h = handlers.Server(h, "logrole/"+Version)
 	h = handlers.UUID(h)
 	h = handlers.TrailingSlashRedirect(h)
 	h = handlers.Debug(h)
-	h = handlers.Log(h)
 	h = handlers.WithTimeout(h, 32*time.Second)
 	h = settings.Reporter.ReportPanics(h)
 	h = handlers.Duration(h)

@@ -20,6 +20,7 @@ func clearErrorHandlers() {
 }
 
 func TestErrorsRender(t *testing.T) {
+	t.Parallel()
 	defer clearErrorHandlers()
 	es := &errorServer{}
 	registerErrorHandlers(es)
@@ -38,6 +39,7 @@ func TestErrorsRender(t *testing.T) {
 }
 
 func Test401RendersHTML(t *testing.T) {
+	t.Parallel()
 	defer clearErrorHandlers()
 	es := &errorServer{}
 	registerErrorHandlers(es)
@@ -50,6 +52,7 @@ func Test401RendersHTML(t *testing.T) {
 }
 
 func TestErrorShowsEmail(t *testing.T) {
+	t.Parallel()
 	address, _ := mail.ParseAddress("test@example.com")
 	defer clearErrorHandlers()
 	es := &errorServer{Mailto: address}

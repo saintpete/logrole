@@ -8,6 +8,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+var DefaultUser = NewUser(AllUserSettings())
+
 type User struct {
 	canViewNumMedia       bool
 	canViewMessages       bool
@@ -28,32 +30,52 @@ type User struct {
 	canViewCallbackURLs   bool
 }
 
-// UserSettings are used to define which permissions a User has.
+// UserSettings are used to define which permissions a User has. When parsing
+// from YAML, unspecified values are set to "true".
 type UserSettings struct {
-	CanViewNumMedia     bool
-	CanViewMessages     bool
-	CanViewMessageFrom  bool
-	CanViewMessageTo    bool
-	CanViewMessageBody  bool
-	CanViewMessagePrice bool
-	CanViewMedia        bool
-	CanViewCalls        bool
-	CanViewCallFrom     bool
-	CanViewCallTo       bool
-	CanViewCallPrice    bool
+	CanViewNumMedia     bool `yaml:"can_view_num_media"`
+	CanViewMessages     bool `yaml:"can_view_messages"`
+	CanViewMessageFrom  bool `yaml:"can_view_message_from"`
+	CanViewMessageTo    bool `yaml:"can_view_message_to"`
+	CanViewMessageBody  bool `yaml:"can_view_message_body"`
+	CanViewMessagePrice bool `yaml:"can_view_message_price"`
+	CanViewMedia        bool `yaml:"can_view_media"`
+	CanViewCalls        bool `yaml:"can_view_calls"`
+	CanViewCallFrom     bool `yaml:"can_view_call_from"`
+	CanViewCallTo       bool `yaml:"can_view_call_to"`
+	CanViewCallPrice    bool `yaml:"can_view_call_price"`
 	// Can the user see whether a call has recordings attached?
-	CanViewNumRecordings bool
+	CanViewNumRecordings bool `yaml:"can_view_num_recordings"`
 	// Can the user listen to recordings?
-	CanPlayRecordings     bool
-	CanViewRecordingPrice bool
+	CanPlayRecordings     bool `yaml:"can_play_recordings"`
+	CanViewRecordingPrice bool `yaml:"can_view_recording_price"`
 	// Can the user view metadata about a conference (sid, date created,
 	// region, etc)?
-	CanViewConferences bool
+	CanViewConferences bool `yaml:"can_view_conferences"`
 	// Can the user view information about errors that occurred while routing
 	// a call? e.g. "HTTP retrieval failure" at the callback URL.
-	CanViewCallAlerts bool
+	CanViewCallAlerts bool `yaml:"can_view_call_alerts"`
 	// Can the user view a StatusCallbackURL?
-	CanViewCallbackURLs bool
+	CanViewCallbackURLs bool `yaml:"can_view_callback_urls"`
+}
+
+// An alias type to avoid infinite recursion when calling UnmarshalYAML.
+type yamlSettings UserSettings
+
+// Unmarshal YAML into the UserSettings object. By default, unspecified values
+// are set to true.
+func (us *UserSettings) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	if us == nil {
+		us = new(UserSettings)
+	}
+	// sets everything to true
+	aus := AllUserSettings()
+	ys := yamlSettings(*aus)
+	if err := unmarshal(&ys); err != nil {
+		return err
+	}
+	*us = UserSettings(ys)
+	return nil
 }
 
 // AllUserSettings returns a UserSettings value with the widest possible set of
@@ -174,16 +196,9 @@ func (u *User) CanViewCallbackURLs() bool {
 	return u.canViewCallbackURLs
 }
 
-// TODO store in database or something
+// In-memory map of users.
 var userMap = make(map[string]*User)
 var userMu sync.Mutex
-
-// TODO fix
-func AddUser(name string, u *User) {
-	userMu.Lock()
-	defer userMu.Unlock()
-	userMap[name] = u
-}
 
 type ctxVar int
 
@@ -207,6 +222,7 @@ func AuthUser(r *http.Request) (*http.Request, *User, error) {
 	}
 }
 
+// SetUser sets the User in the Request's context.
 func SetUser(r *http.Request, u *User) *http.Request {
 	return r.WithContext(context.WithValue(r.Context(), userKey, u))
 }

@@ -9,6 +9,7 @@ import (
 )
 
 func TestEncodeDecode(t *testing.T) {
+	t.Parallel()
 	mp := new(twilio.MessagePage)
 	if err := json.Unmarshal(messageBody, mp); err != nil {
 		t.Fatal(err)

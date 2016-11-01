@@ -26,6 +26,7 @@ timezones:
 `
 
 func TestWriteConfig(t *testing.T) {
+	t.Parallel()
 	e := &dummyEnvironment{
 		env: map[string]string{
 			"PORT":               "56789",
@@ -42,6 +43,7 @@ func TestWriteConfig(t *testing.T) {
 }
 
 func TestWriteCommaConfig(t *testing.T) {
+	t.Parallel()
 	e := &dummyEnvironment{
 		env: map[string]string{"PORT": "56789", "GOOGLE_ALLOWED_DOMAINS": "example.net,example.com,example.org"},
 	}
@@ -57,5 +59,47 @@ google_allowed_domains:
 `
 	if s := buf.String(); s != expected {
 		t.Errorf("expected config to be %s, got %s", expected, s)
+	}
+}
+
+func TestValidatePolicy(t *testing.T) {
+	t.Parallel()
+	e := &dummyEnvironment{
+		env: map[string]string{"POLICY_FILE": "foo", "POLICY_URL": "blah"},
+	}
+	err := validatePolicy(e)
+	if err == nil {
+		t.Fatal("expected err to be non-nil, got nil")
+	}
+	if err.Error() != "Cannot specify both POLICY_FILE and POLICY_URL" {
+		t.Errorf("expected 'Cannot specify' error, got %v", err)
+	}
+}
+
+func TestValidateSecureURL(t *testing.T) {
+	t.Parallel()
+	e := &dummyEnvironment{
+		env: map[string]string{"POLICY_URL": "http://google.com"},
+	}
+	err := validatePolicy(e)
+	if err == nil {
+		t.Fatal("expected err to be non-nil, got nil")
+	}
+	if err.Error() != "Cowardly refusing to download policy file (http://google.com) over insecure scheme. Use HTTPS" {
+		t.Errorf("Wrong error: %v", err)
+	}
+}
+
+func TestValidateUnknownURL(t *testing.T) {
+	t.Parallel()
+	e := &dummyEnvironment{
+		env: map[string]string{"POLICY_URL": "weird"},
+	}
+	err := validatePolicy(e)
+	if err == nil {
+		t.Fatal("expected err to be non-nil, got nil")
+	}
+	if err.Error() != "I don't know how to download a file from weird" {
+		t.Errorf("Wrong error: %v", err)
 	}
 }

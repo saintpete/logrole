@@ -2,12 +2,17 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
+	"github.com/kevinburke/handlers"
 	"github.com/saintpete/logrole/server"
 )
 
@@ -51,6 +56,11 @@ GOOGLE_ALLOWED_DOMAINS Comma separated list of domains to allow to
 
 ERROR_REPORTER         "sentry", empty, or register your own.
 ERROR_REPORTER_TOKEN   Token for the error reporter.
+
+POLICY_FILE            Load policy info from a file
+POLICY_URL             Download policy info from the specified URL. HTTPS only.
+                       Can be protected with Basic Auth. Consider using Dropbox
+                       or Github Gist "raw" URLs.
 
 Usage of write_config_from_env:
 `)
@@ -146,6 +156,79 @@ func writeConfig(b *bytes.Buffer, e environment) {
 	}
 	ok = writeVal(b, e, "ERROR_REPORTER", "error_reporter") || ok
 	ok = writeVal(b, e, "ERROR_REPORTER_TOKEN", "error_reporter_token") || ok
+	if ok {
+		b.WriteByte('\n')
+		ok = false
+	}
+
+	checkErr(validatePolicy(e), "loading policy from the environment")
+	ok = writeVal(b, e, "POLICY_FILE", "policy_file") || ok
+	specified, err := downloadFile(b, e, "POLICY_URL", "policy_file")
+	checkErr(err, "downloading file from URL")
+	ok = ok || specified
+}
+
+// downloadFile assumes there is a URL at varname and attempts to download
+// a file from it.
+//
+// Returns true if the env var was specified *and* downloaded successfully.
+// Returns an error if the env var was specified and errors. Returns (false,
+// nil) if not specified.
+//
+// If we successfully downloaded and wrote the file, write the relevant YAML
+// configuration to w.
+func downloadFile(w io.Writer, e environment, varname string, cfgval string) (bool, error) {
+	str, ok := e.LookupEnv(varname)
+	if !ok {
+		return false, nil
+	}
+	req, err := http.NewRequest("GET", str, nil)
+	if err != nil {
+		handlers.Logger.Warn("Error parsing URL", "err", err)
+		return false, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		handlers.Logger.Warn("Error downloading URL", "err", err)
+		return false, err
+	}
+	defer resp.Body.Close()
+	f, err := ioutil.TempFile("", "logrole-policy-")
+	if err != nil {
+		handlers.Logger.Warn("Error opening temp file", "err", err)
+		return false, err
+	}
+	defer f.Close()
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		handlers.Logger.Warn("Error writing temp file", "err", err)
+		return false, err
+	}
+	if _, err := fmt.Fprintln(w, cfgval+":", f.Name()); err != nil {
+		handlers.Logger.Warn("Error writing YAML config", "err", err)
+		return false, err
+	}
+	return true, nil
+}
+
+func validatePolicy(e environment) error {
+	_, ok1 := e.LookupEnv("POLICY_FILE")
+	str, ok2 := e.LookupEnv("POLICY_URL")
+	if ok1 && ok2 {
+		return errors.New("Cannot specify both POLICY_FILE and POLICY_URL")
+	}
+	if ok2 {
+		u, err := url.Parse(str)
+		if err != nil {
+			return err
+		}
+		if u.Scheme == "" {
+			return fmt.Errorf("I don't know how to download a file from %s", str)
+		}
+		if u.Scheme != "https" {
+			return fmt.Errorf("Cowardly refusing to download policy file (%s) over insecure scheme. Use HTTPS", str)
+		}
+	}
+	return nil
 }
 
 func main() {
