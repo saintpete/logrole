@@ -108,11 +108,11 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "c46f265c325130a7a6c7b27db8c6fe14b64f1a68"
+			"Rev": "541150ac4f433e755f5663eba5d888c2fa347343"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context/ctxhttp",
-			"Rev": "c46f265c325130a7a6c7b27db8c6fe14b64f1a68"
+			"Rev": "541150ac4f433e755f5663eba5d888c2fa347343"
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
