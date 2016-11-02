@@ -58,15 +58,19 @@ godoc.org](https://godoc.org/github.com/kevinburke/twilio-go).
 The API is open to, but unlikely to change, and currently only covers
 these resources:
 
+- Alerts
 - Applications
 - Calls
 - Conferences
 - Incoming Phone Numbers
+- Keys
 - Messages
 - Media
+- Outgoing Caller ID's
 - Queues
 - Recordings
 - Transcriptions
+- Access Tokens for IPMessaging, Video and Programmable Voice SDK
 
 ### Error Parsing
 

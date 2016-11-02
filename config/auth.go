@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kevinburke/handlers"
+	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/rest"
 	"github.com/saintpete/logrole/services"
 	"golang.org/x/net/context"
@@ -146,6 +146,7 @@ func (b *BasicAuthAuthenticator) Logout(w http.ResponseWriter, r *http.Request) 
 }
 
 type GoogleAuthenticator struct {
+	log.Logger
 	AllowUnencryptedTraffic bool
 	Conf                    *oauth2.Config
 	RenderLogin             func(http.ResponseWriter, *http.Request, string)
@@ -156,7 +157,12 @@ type GoogleAuthenticator struct {
 	mu                      sync.Mutex
 }
 
-func NewGoogleAuthenticator(clientID string, clientSecret string, baseURL string, allowedDomains []string, secretKey *[32]byte) *GoogleAuthenticator {
+// NewGoogleAuthenticator creates a new GoogleAuthenticator that can
+// authenticate requests via Google login.
+//
+// To get a clientID and clientSecret, see
+// https://github.com/saintpete/logrole/blob/master/docs/google.md
+func NewGoogleAuthenticator(logger log.Logger, clientID string, clientSecret string, baseURL string, allowedDomains []string, secretKey *[32]byte) *GoogleAuthenticator {
 	conf := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
@@ -169,6 +175,7 @@ func NewGoogleAuthenticator(clientID string, clientSecret string, baseURL string
 		Endpoint: google.Endpoint,
 	}
 	return &GoogleAuthenticator{
+		Logger:         logger,
 		Conf:           conf,
 		allowedDomains: allowedDomains,
 		secretKey:      secretKey,
@@ -268,7 +275,7 @@ func (g *GoogleAuthenticator) handleGoogleCallback(w http.ResponseWriter, r *htt
 	}
 	code := query.Get("code")
 	if code == "" {
-		handlers.Logger.Warn("Callback request has valid state, no code")
+		g.Warn("Callback request has valid state, no code")
 		http.Redirect(w, r, "/", 302)
 		return errors.New("invalid state")
 	}
@@ -372,7 +379,7 @@ func (g *GoogleAuthenticator) lookupUser(id string) (*User, error) {
 		if err := g.permitted(id); err == nil {
 			return DefaultUser, nil
 		} else {
-			handlers.Logger.Warn("User has valid login but does not have a permitted domain", "id", id)
+			g.Warn("User has valid login but does not have a permitted domain", "id", id)
 			return nil, MustLogin
 		}
 	}
@@ -385,7 +392,7 @@ func (g *GoogleAuthenticator) lookupUser(id string) (*User, error) {
 	switch {
 	case permittedErr != nil:
 		// User domain not allowed.
-		handlers.Logger.Warn("User not found by ID in policy, domain is not allowed", "id", id)
+		g.Warn("User not found by ID in policy, domain is not allowed", "id", id)
 		return nil, MustLogin
 	case err == nil:
 		// We found a default user in the policy, and they're permitted

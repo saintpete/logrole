@@ -11,10 +11,10 @@ import (
 	"github.com/saintpete/logrole/views"
 )
 
-var dlog = log.New()
+var NullLogger = log.New()
 
 func init() {
-	dlog.SetHandler(log.DiscardHandler())
+	NullLogger.SetHandler(log.DiscardHandler())
 }
 
 type ViewHarness struct {
@@ -40,5 +40,5 @@ func ViewsClient(harness ViewHarness) views.Client {
 	if harness.MaxResourceAge == 0 {
 		harness.MaxResourceAge = 720 * time.Hour
 	}
-	return views.NewClient(dlog, c, harness.SecretKey, config.NewPermission(harness.MaxResourceAge))
+	return views.NewClient(NullLogger, c, harness.SecretKey, config.NewPermission(harness.MaxResourceAge))
 }

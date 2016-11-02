@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -42,7 +43,7 @@ func TestNewSettingsFromEmptyConfig(t *testing.T) {
 		AccountSid: "AC123",
 		AuthToken:  "123",
 	}
-	settings, err := NewSettingsFromConfig(c)
+	settings, err := NewSettingsFromConfig(c, NullLogger)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func TestPolicyAndFileErrors(t *testing.T) {
 		Policy:     new(Policy),
 		PolicyFile: "/path/to/policy.yml",
 	}
-	_, err := NewSettingsFromConfig(c)
+	_, err := NewSettingsFromConfig(c, NullLogger)
 	if err == nil {
 		t.Fatal("expected NewSettingsFromConfig to error, got nil")
 	}
@@ -83,7 +84,7 @@ func TestInvalidPolicyRejected(t *testing.T) {
 			&Group{Name: ""},
 		},
 	}
-	_, err := NewSettingsFromConfig(c)
+	_, err := NewSettingsFromConfig(c, NullLogger)
 	if err == nil {
 		t.Fatal("expected NewSettingsFromConfig to error, got nil")
 	}
@@ -102,7 +103,7 @@ func TestBasicAuthNoPolicyOK(t *testing.T) {
 		AuthScheme: "basic",
 		Policy:     nil,
 	}
-	if _, err := NewSettingsFromConfig(c); err != nil {
+	if _, err := NewSettingsFromConfig(c, NullLogger); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -131,7 +132,23 @@ func TestPolicyLoadedFromFile(t *testing.T) {
 		AuthScheme: "basic",
 		PolicyFile: name,
 	}
-	if _, err := NewSettingsFromConfig(c); err != nil {
+	if _, err := NewSettingsFromConfig(c, NullLogger); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGoogleAuthNoIDOrSecretErrors(t *testing.T) {
+	t.Parallel()
+	c := &FileConfig{
+		AccountSid: "AC123",
+		AuthToken:  "123",
+		AuthScheme: "google",
+	}
+	_, err := NewSettingsFromConfig(c, NullLogger)
+	if err == nil {
+		t.Fatal("expected non-nil error, got nil")
+	}
+	if !strings.Contains(err.Error(), "google.md") {
+		t.Errorf("expected a link to google.md in the error, got %v", err)
 	}
 }

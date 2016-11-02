@@ -15,7 +15,7 @@ import (
 )
 
 // The twilio-go version. Run "make release" to bump this number.
-const Version = "0.34"
+const Version = "0.39"
 const userAgent = "twilio-go/" + Version
 
 // The base URL serving the API. Override this for testing.
@@ -42,15 +42,18 @@ type Client struct {
 	AuthToken  string
 
 	// The API Client uses these resources
-	Applications    *ApplicationService
-	Calls           *CallService
-	Conferences     *ConferenceService
-	IncomingNumbers *IncomingNumberService
-	Media           *MediaService
-	Messages        *MessageService
-	Queues          *QueueService
-	Recordings      *RecordingService
-	Transcriptions  *TranscriptionService
+	Accounts          *AccountService
+	Applications      *ApplicationService
+	Calls             *CallService
+	Conferences       *ConferenceService
+	IncomingNumbers   *IncomingNumberService
+	Keys              *KeyService
+	Media             *MediaService
+	Messages          *MessageService
+	OutgoingCallerIDs *OutgoingCallerIDService
+	Queues            *QueueService
+	Recordings        *RecordingService
+	Transcriptions    *TranscriptionService
 
 	// NewMonitorClient initializes these services
 	Alerts *AlertService
@@ -127,11 +130,14 @@ func NewClient(accountSid string, authToken string, httpClient *http.Client) *Cl
 	}
 	c.Monitor = NewMonitorClient(accountSid, authToken, httpClient)
 
+	c.Accounts = &AccountService{client: c}
 	c.Applications = &ApplicationService{client: c}
 	c.Calls = &CallService{client: c}
 	c.Conferences = &ConferenceService{client: c}
+	c.Keys = &KeyService{client: c}
 	c.Media = &MediaService{client: c}
 	c.Messages = &MessageService{client: c}
+	c.OutgoingCallerIDs = &OutgoingCallerIDService{client: c}
 	c.Queues = &QueueService{client: c}
 	c.Recordings = &RecordingService{client: c}
 	c.Transcriptions = &TranscriptionService{client: c}
@@ -154,6 +160,25 @@ func NewClient(accountSid string, authToken string, httpClient *http.Client) *Cl
 	return c
 }
 
+// RequestOnBehalfOf will make all future client requests using the same
+// Account Sid and Auth Token for Basic Auth, but will use the provided
+// subaccountSid in the URL. Use this to make requests on behalf of a
+// subaccount, using the parent account's credentials.
+//
+// RequestOnBehalfOf is *not* thread safe, and modifies the Client's behavior
+// for all requests going forward.
+//
+// RequestOnBehalfOf should only be used with api.twilio.com, not (for example)
+// Twilio Monitor.
+//
+// To authenticate using a subaccount sid / auth token, create a new Client
+// using that account's credentials.
+func (c *Client) RequestOnBehalfOf(subaccountSid string) {
+	c.FullPath = func(pathPart string) string {
+		return "/" + strings.Join([]string{"Accounts", subaccountSid, pathPart + ".json"}, "/")
+	}
+}
+
 // GetResource retrieves an instance resource with the given path part (e.g.
 // "/Messages") and sid (e.g. "SM123").
 func (c *Client) GetResource(ctx context.Context, pathPart string, sid string, v interface{}) error {
@@ -168,7 +193,7 @@ func (c *Client) CreateResource(ctx context.Context, pathPart string, data url.V
 
 func (c *Client) UpdateResource(ctx context.Context, pathPart string, sid string, data url.Values, v interface{}) error {
 	sidPart := strings.Join([]string{pathPart, sid}, "/")
-	return c.MakeRequest(ctx, "POST", sidPart, nil, v)
+	return c.MakeRequest(ctx, "POST", sidPart, data, v)
 }
 
 func (c *Client) DeleteResource(ctx context.Context, pathPart string, sid string) error {

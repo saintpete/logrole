@@ -8,6 +8,7 @@ import (
 	"net/mail"
 	"time"
 
+	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/handlers"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/services"
@@ -28,6 +29,8 @@ var DefaultTimezones = []string{
 // founded in 2008, so there should definitely be no resources created in the
 // 1980's.
 var DefaultMaxResourceAge = time.Since(time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC))
+
+var missingGoogleCredentials = errors.New("Cannot use google auth without a Client ID and Client Secret. To configure a Client ID and Secret, see https://github.com/saintpete/logrole/blob/master/docs/google.md.")
 
 // FileConfig defines the settings you can load from a YAML configuration file.
 // Load configuration from a YAML file into a FileConfig struct, then call
@@ -74,21 +77,28 @@ type FileConfig struct {
 // Settings are used to configure a Server and apply to all of the website's
 // users.
 type Settings struct {
+	Logger log.Logger
+
 	// The host the user visits to get to this site.
-	PublicHost              string
+	PublicHost string
+
+	// Whether to allow HTTP traffic.
 	AllowUnencryptedTraffic bool
 	Client                  *twilio.Client
 
+	// LocationFinder determines the correct timezone to display for a given
+	// request, based on the default and a user's TZ cookie (if present).
 	LocationFinder services.LocationFinder
 
 	// How many messages to display per page.
 	PageSize uint
 
-	// Used to encrypt next page URI's and sessions. See config.sample.yml for
-	// more information.
+	// Used to encrypt next page URI's and sessions. See
+	// https://github.com/saintpete/logrole/blob/master/docs/settings.md#secret-key
 	SecretKey *[32]byte
 
-	// Don't show resources that are older than this age.
+	// Don't show resources that are older than this age. Set to a very high
+	// value to show all resources.
 	MaxResourceAge time.Duration
 
 	// Should a user have to click a button to view media attached to a MMS?
@@ -127,7 +137,12 @@ func getSecretKey(hexKey string) (*[32]byte, error) {
 	return secretKey, nil
 }
 
-func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
+// NewSettingsFromConfig creates a new Settings object from the given
+// FileConfig, or an error.
+//
+// Pass a log.Logger to configure how messages are logged. If the Logger is
+// nil, github.com/kevinburke/handlers.Logger will be used.
+func NewSettingsFromConfig(c *FileConfig, l log.Logger) (settings *Settings, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if c.Debug {
@@ -138,7 +153,13 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 			return
 		}
 	}()
-	logger := handlers.Logger
+	if l == nil {
+		if c.Debug {
+			l = handlers.NewLoggerLevel(log.LvlDebug)
+		} else {
+			l = handlers.Logger
+		}
+	}
 	if c.Policy != nil && c.PolicyFile != "" {
 		return nil, errors.New("Cannot define both policy and a policy_file")
 	}
@@ -147,7 +168,7 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 		allowHTTP = true
 	}
 	if c.SecretKey == "" {
-		logger.Warn("No secret key provided, generating random secret key. Sessions won't persist across restarts")
+		l.Warn("No secret key provided, generating random secret key. Sessions won't persist across restarts")
 	}
 	secretKey, err := getSecretKey(c.SecretKey)
 	if err != nil {
@@ -165,7 +186,7 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 	}
 	if c.ErrorReporter != "" {
 		if !services.IsRegistered(c.ErrorReporter) {
-			logger.Warn("Unknown error reporter, using the noop reporter", "name", c.ErrorReporter)
+			l.Warn("Unknown error reporter, using the noop reporter", "name", c.ErrorReporter)
 		}
 	}
 	reporter := services.GetReporter(c.ErrorReporter, c.ErrorReporterToken)
@@ -174,12 +195,12 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 		// we checked above that Policy is nil in this case
 		data, err := ioutil.ReadFile(c.PolicyFile)
 		if err != nil {
-			logger.Error("Couldn't load permission file", "loc", c.PolicyFile)
+			l.Error("Couldn't load permission file", "loc", c.PolicyFile)
 			return nil, err
 		}
 		var policy Policy
 		if err := yaml.Unmarshal(data, &policy); err != nil {
-			logger.Error("Couldn't parse policy file", "err", err, "loc", c.PolicyFile)
+			l.Error("Couldn't parse policy file", "err", err, "loc", c.PolicyFile)
 			return nil, err
 		}
 		c.Policy = &policy
@@ -187,14 +208,14 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 
 	if c.Policy != nil {
 		if err := validatePolicy(c.Policy); err != nil {
-			logger.Error("Couldn't validate policy", "err", err)
+			l.Error("Couldn't validate policy", "err", err)
 			return nil, err
 		}
 	}
 	var authenticator Authenticator
 	switch c.AuthScheme {
 	case "":
-		logger.Warn("Disabling basic authentication")
+		l.Warn("Disabling basic authentication")
 		authenticator = &NoopAuthenticator{User: DefaultUser}
 	case "basic":
 		if c.User == "" || c.Password == "" {
@@ -204,13 +225,16 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 		ba.AddUserPassword(c.User, c.Password)
 		authenticator = ba
 	case "google":
+		if c.GoogleClientID == "" || c.GoogleClientSecret == "" {
+			return nil, missingGoogleCredentials
+		}
 		var baseURL string
 		if allowHTTP {
 			baseURL = "http://" + c.PublicHost
 		} else {
 			baseURL = "https://" + c.PublicHost
 		}
-		gauthenticator := NewGoogleAuthenticator(c.GoogleClientID, c.GoogleClientSecret, baseURL, c.GoogleAllowedDomains, secretKey)
+		gauthenticator := NewGoogleAuthenticator(l, c.GoogleClientID, c.GoogleClientSecret, baseURL, c.GoogleAllowedDomains, secretKey)
 		gauthenticator.AllowUnencryptedTraffic = allowHTTP
 		authenticator = gauthenticator
 	default:
@@ -219,7 +243,7 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 	authenticator.SetPolicy(c.Policy)
 	client := twilio.NewClient(c.AccountSid, c.AuthToken, nil)
 	if c.Timezone == "" {
-		logger.Info("No timezone provided, defaulting to UTC")
+		l.Info("No timezone provided, defaulting to UTC")
 	}
 	locationFinder, err := services.NewLocationFinder(c.Timezone)
 	if err != nil {
@@ -231,7 +255,7 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 	}
 	for _, timezone := range tzs {
 		if ok := locationFinder.AddLocation(timezone); !ok {
-			logger.Warn("Couldn't add location", "tz", timezone)
+			l.Warn("Couldn't add location", "tz", timezone)
 		}
 	}
 	// TODO
@@ -247,6 +271,7 @@ func NewSettingsFromConfig(c *FileConfig) (settings *Settings, err error) {
 	}
 
 	settings = &Settings{
+		Logger:                  l,
 		AllowUnencryptedTraffic: allowHTTP,
 		Client:                  client,
 		LocationFinder:          locationFinder,

@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/handlers"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/config"
@@ -18,6 +19,8 @@ import (
 	"github.com/saintpete/logrole/services"
 	yaml "gopkg.in/yaml.v2"
 )
+
+var logger log.Logger
 
 func init() {
 	flag.Usage = func() {
@@ -31,6 +34,8 @@ Usage of server:
 		flag.PrintDefaults()
 		os.Exit(2)
 	}
+
+	logger = handlers.Logger
 }
 
 func main() {
@@ -58,26 +63,29 @@ func main() {
 	c := new(config.FileConfig)
 	if err == nil {
 		if err := yaml.Unmarshal(data, c); err != nil {
-			handlers.Logger.Error("Couldn't parse config file", "err", err)
+			logger.Error("Couldn't parse config file", "err", err)
 			os.Exit(2)
 		}
 	} else {
 		if *cfg != "config.yml" {
-			handlers.Logger.Error("Couldn't find config file", "err", err)
+			logger.Error("Couldn't find config file", "err", err)
 			os.Exit(2)
 		}
-		handlers.Logger.Warn("Couldn't find config file, defaulting to localhost:4114")
+		logger.Warn("Couldn't find config file, defaulting to localhost:4114")
 		c.Port = config.DefaultPort
 		c.Realm = services.Local
 	}
-	settings, err := config.NewSettingsFromConfig(c)
+	if c.Debug {
+		logger = handlers.NewLoggerLevel(log.LvlDebug)
+	}
+	settings, err := config.NewSettingsFromConfig(c, logger)
 	if err != nil {
-		handlers.Logger.Error("Error loading settings from config", "err", err)
+		logger.Error("Error loading settings from config", "err", err)
 		os.Exit(2)
 	}
 	s, err := server.NewServer(settings)
 	if err != nil {
-		handlers.Logger.Error("Error creating the server", "err", err)
+		logger.Error("Error creating the server", "err", err)
 		os.Exit(2)
 	}
 	s.CacheCommonQueries()
@@ -90,12 +98,12 @@ func main() {
 	}
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", c.Port))
 	if err != nil {
-		handlers.Logger.Error("Error listening", "err", err, "port", c.Port)
+		logger.Error("Error listening", "err", err, "port", c.Port)
 		os.Exit(2)
 	}
 	go func(p string) {
 		time.Sleep(30 * time.Millisecond)
-		handlers.Logger.Info("Started server", "port", p, "public_host", settings.PublicHost)
+		logger.Info("Started server", "port", p, "public_host", settings.PublicHost)
 	}(c.Port)
 	publicServer.Serve(listener)
 }

@@ -1,4 +1,4 @@
-package test
+package test_test
 
 import (
 	"net/http"
@@ -7,10 +7,11 @@ import (
 
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/server"
+	"github.com/saintpete/logrole/test"
 )
 
 func startServer(t *testing.T, c *config.FileConfig) *server.Server {
-	settings, err := config.NewSettingsFromConfig(c)
+	settings, err := config.NewSettingsFromConfig(c, test.NullLogger)
 	if err != nil {
 		t.Fatal(err)
 	}

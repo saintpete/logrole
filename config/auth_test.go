@@ -5,15 +5,22 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	log "github.com/inconshreveable/log15"
 	"github.com/saintpete/logrole/services"
 )
+
+var NullLogger = log.New()
+
+func init() {
+	NullLogger.SetHandler(log.DiscardHandler())
+}
 
 func TestLoggedInAuthenticates(t *testing.T) {
 	t.Parallel()
 	key := services.NewRandomKey()
 	req, _ := http.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	a := NewGoogleAuthenticator("", "", "http://localhost", nil, key)
+	a := NewGoogleAuthenticator(NullLogger, "", "", "http://localhost", nil, key)
 	cookie := a.newCookie("user@example.com")
 	req.AddCookie(cookie)
 	_, err := a.Authenticate(w, req)
@@ -28,7 +35,7 @@ func TestUnknownUserWithValidDomainAllowed(t *testing.T) {
 	key := services.NewRandomKey()
 	req, _ := http.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	a := NewGoogleAuthenticator("", "", "http://localhost", []string{"example.com"}, key)
+	a := NewGoogleAuthenticator(NullLogger, "", "", "http://localhost", []string{"example.com"}, key)
 	a.SetPolicy(&Policy{})
 	cookie := a.newCookie("user@example.com")
 	req.AddCookie(cookie)
@@ -73,7 +80,7 @@ func TestGoogleAuth(t *testing.T) {
 	for _, tt := range authTests {
 		req, _ := http.NewRequest("GET", "/", nil)
 		w := httptest.NewRecorder()
-		a := NewGoogleAuthenticator("", "", "http://localhost", tt.domains, key)
+		a := NewGoogleAuthenticator(NullLogger, "", "", "http://localhost", tt.domains, key)
 		a.SetPolicy(tt.policy)
 		cookie := a.newCookie(tt.id)
 		req.AddCookie(cookie)

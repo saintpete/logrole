@@ -6,25 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	log "github.com/inconshreveable/log15"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 )
-
-//func TestUnknownUsersDenied(t *testing.T) {
-//t.Parallel()
-//settings := &Settings{
-//AllowUnencryptedTraffic: true, Users: map[string]string{"test": "test"},
-//SecretKey: services.NewRandomKey(),
-//}
-//s := NewServer(settings)
-//req, _ := http.NewRequest("GET", "http://localhost:12345/foo", nil)
-//req.SetBasicAuth("test", "wrongpassword")
-//w := httptest.NewRecorder()
-//s.ServeHTTP(w, req)
-//if w.Code != 403 {
-//t.Errorf("expected Code to be 403, got %d", w.Code)
-//}
-//}
 
 func TestRequestsUpgraded(t *testing.T) {
 	t.Parallel()
@@ -70,11 +55,17 @@ func TestIndex(t *testing.T) {
 	}
 }
 
+var NullLogger = log.New()
+
+func init() {
+	NullLogger.SetHandler(log.DiscardHandler())
+}
+
 func getGoogleAuthServer(t *testing.T) *Server {
 	key := services.NewRandomKey()
 	settings := &config.Settings{
 		SecretKey:     key,
-		Authenticator: config.NewGoogleAuthenticator("", "", "http://localhost", nil, key),
+		Authenticator: config.NewGoogleAuthenticator(NullLogger, "", "", "http://localhost", nil, key),
 	}
 	s, err := NewServer(settings)
 	if err != nil {

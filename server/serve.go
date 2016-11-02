@@ -172,32 +172,32 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	}
 
 	permission := config.NewPermission(settings.MaxResourceAge)
-	vc := views.NewClient(handlers.Logger, settings.Client, settings.SecretKey, permission)
-	mls, err := newMessageListServer(handlers.Logger, vc, settings.LocationFinder,
+	vc := views.NewClient(settings.Logger, settings.Client, settings.SecretKey, permission)
+	mls, err := newMessageListServer(settings.Logger, vc, settings.LocationFinder,
 		settings.PageSize, settings.MaxResourceAge, settings.SecretKey)
 	if err != nil {
 		return nil, err
 	}
-	mis, err := newMessageInstanceServer(handlers.Logger, vc, settings.LocationFinder, settings.ShowMediaByDefault)
+	mis, err := newMessageInstanceServer(settings.Logger, vc, settings.LocationFinder, settings.ShowMediaByDefault)
 	if err != nil {
 		return nil, err
 	}
-	cls, err := newCallListServer(handlers.Logger, vc, settings.LocationFinder,
+	cls, err := newCallListServer(settings.Logger, vc, settings.LocationFinder,
 		settings.PageSize, settings.MaxResourceAge, settings.SecretKey)
 	if err != nil {
 		return nil, err
 	}
-	cis, err := newCallInstanceServer(handlers.Logger, vc, settings.LocationFinder)
+	cis, err := newCallInstanceServer(settings.Logger, vc, settings.LocationFinder)
 	if err != nil {
 		return nil, err
 	}
-	confs, err := newConferenceListServer(handlers.Logger, vc,
+	confs, err := newConferenceListServer(settings.Logger, vc,
 		settings.LocationFinder, settings.PageSize, settings.MaxResourceAge,
 		settings.SecretKey)
 	if err != nil {
 		return nil, err
 	}
-	confInstance, err := newConferenceInstanceServer(handlers.Logger, vc,
+	confInstance, err := newConferenceInstanceServer(settings.Logger, vc,
 		settings.LocationFinder)
 	if err != nil {
 		return nil, err
@@ -228,7 +228,7 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	}
 	ls := &loginServer{}
 	tz := &tzServer{
-		Logger:                  handlers.Logger,
+		Logger:                  settings.Logger,
 		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
 		LocationFinder:          settings.LocationFinder,
 	}
