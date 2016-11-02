@@ -3,6 +3,8 @@
 Logrole is a faster, usable, fine-grained client for exploring your Twilio
 logs.
 
+<img src="https://kev.inburke.com/rawblog/images/logrole.png" />
+
 - Customizable permissions for each user browsing the site - limit access to
 SMS/MMS bodies, resources older than a certain age, recordings, calls, call
 from, etc. etc.

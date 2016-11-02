@@ -7,7 +7,7 @@ most of the details for you.
 
 Go to this URL: https://console.developers.google.com/projectselector/apis/credentials
 
-<img src="https://kev.inburke.com/blog/images/logrole-google-credentials.png" />
+<img src="https://kev.inburke.com/rawblog/images/logrole-google-credentials.png" />
 
 Create a new project. Name it whatever you want.
 
@@ -16,7 +16,7 @@ Create a new project. Name it whatever you want.
 Click the "Create Credentials" dropdown. Select "OAuth Client ID" - "for API's
 like Google Calendar".
 
-<img src="https://kev.inburke.com/blog/images/logrole-create-creds-screen.png" />
+<img src="https://kev.inburke.com/rawblog/images/logrole-create-creds-screen.png" />
 
 On the next screen select 'Web Application'. Name it whatever you want.
 
@@ -31,7 +31,7 @@ these:
 You *must* include the `/auth/callback` part, or the Google Authenticator in
 Logrole won't work properly.
 
-<img src="https://kev.inburke.com/blog/images/logrole-create-callback-url.png" />
+<img src="https://kev.inburke.com/rawblog/images/logrole-create-callback-url.png" />
 
 On the next screen, you should be presented with a client ID and a
 client secret. Put these in your `config.yml` as `google_client_id` and
