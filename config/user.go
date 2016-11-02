@@ -31,19 +31,31 @@ type User struct {
 }
 
 // UserSettings are used to define which permissions a User has. When parsing
-// from YAML, unspecified values are set to "true".
+// from YAML, any omitted fields are set to "true".
 type UserSettings struct {
-	CanViewNumMedia     bool `yaml:"can_view_num_media"`
-	CanViewMessages     bool `yaml:"can_view_messages"`
-	CanViewMessageFrom  bool `yaml:"can_view_message_from"`
-	CanViewMessageTo    bool `yaml:"can_view_message_to"`
-	CanViewMessageBody  bool `yaml:"can_view_message_body"`
+	// Can the user see whether a message had MMS attached?
+	CanViewNumMedia bool `yaml:"can_view_num_media"`
+	// Can the user view anything about a SMS/MMS message?
+	CanViewMessages bool `yaml:"can_view_messages"`
+	// Can the user view the message sender?
+	CanViewMessageFrom bool `yaml:"can_view_message_from"`
+	// Can the user view the message recipient's phone number?
+	CanViewMessageTo bool `yaml:"can_view_message_to"`
+	// Can the user view a SMS message body?
+	CanViewMessageBody bool `yaml:"can_view_message_body"`
+	// Can the user view the photos in a MMS message?
+	CanViewMedia bool `yaml:"can_view_media"`
+
+	// Can the user see how much a message cost to send?
 	CanViewMessagePrice bool `yaml:"can_view_message_price"`
-	CanViewMedia        bool `yaml:"can_view_media"`
-	CanViewCalls        bool `yaml:"can_view_calls"`
-	CanViewCallFrom     bool `yaml:"can_view_call_from"`
-	CanViewCallTo       bool `yaml:"can_view_call_to"`
-	CanViewCallPrice    bool `yaml:"can_view_call_price"`
+
+	// Can the user see any information about a call?
+	CanViewCalls bool `yaml:"can_view_calls"`
+	// Can the user view the call originator?
+	CanViewCallFrom bool `yaml:"can_view_call_from"`
+	// Can the user view the call recipient?
+	CanViewCallTo    bool `yaml:"can_view_call_to"`
+	CanViewCallPrice bool `yaml:"can_view_call_price"`
 	// Can the user see whether a call has recordings attached?
 	CanViewNumRecordings bool `yaml:"can_view_num_recordings"`
 	// Can the user listen to recordings?

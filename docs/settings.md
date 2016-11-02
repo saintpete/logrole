@@ -157,9 +157,9 @@ basic_auth_user: test
 basic_auth_password: hymanrickover
 ```
 
-You can specify permissions for the Basic Auth user by adding a policy file,
-described below. If that file is not present, permissions for the DefaultUser
-are given to all users.
+You can specify permissions for the Basic Auth user by adding a policy
+file, described below. If no policy is present, permissions for the
+[DefaultUser][default-user] are given to all users.
 
 ### Google Authentication
 
@@ -173,9 +173,9 @@ instructions][google] to get those values.
 
 #### Allowed domains
 
-You can configure an array of domains that are allowed to access the site. For
-example, if you specify "example.com", only emails that end with @example.com
-will be allowed to access the site.
+You can configure an array of domains that are allowed to access the site.
+For example, if you specify "example.com", only email addresses that end with
+@example.com will be allowed to access the site.
 
 ```yml
 google_allowed_domains:
@@ -202,9 +202,9 @@ policy:
           - test@example.com
           - test@example.net
 
-    - name: eng
+    - name: engineering
       permissions:
-          can_view_call_price: False
+          can_view_call_price: false
       users:
           - eng@example.com
           - eng@example.net
@@ -216,7 +216,8 @@ Let's walk through that:
 
 - **default:** If a user's email is in the group of allowed_domains, but they're
 not explicitly specified in a group in the policy, they'll get the permissions
-of a `default` group. Only one group can be the default.
+of a `default` group. Only one group can be the default. If no groups are
+marked as default, unknown users will not be allowed to authenticate.
 
 - **permissions:** A list of permissions that this group has. Permissions are
 **set to true by default,** so you only need to specify the permissions you
@@ -237,8 +238,9 @@ handles different cases.
 
 If a the user's email address is found in the policy, that user is used.
 
-If no policy is defined, we use google_allowed_domains to determine access,
-and return config.DefaultUser for user access for all authenticated users.
+If no policy is defined, we use google_allowed_domains to determine access, and
+return [config.DefaultUser][default-user] for user access for all authenticated
+users.
 
 If no policy is defined and google_allowed_domains is empty, we permit all
 users to access the site.
@@ -251,6 +253,7 @@ they are not in a group, we use the permissions for the default group. If no
 default group exists, the user is denied access.
 
 [user-settings]: https://godoc.org/github.com/saintpete/logrole/config#UserSettings
+[default-user]: https://godoc.org/github.com/saintpete/logrole/config#DefaultUser
 
 ### What happens to the YAML file?
 

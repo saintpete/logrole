@@ -37,15 +37,14 @@ test: vet
 	go list ./... | grep -v vendor | xargs go test -short
 
 race-test: vet
-	go list ./... | grep -v vendor | xargs go test -race ./...
+	go list ./... | grep -v vendor | xargs go test -race
 
 serve:
 	go run commands/logrole_server/main.go
 
 vet:
 	@# We can't vet the vendor directory, it fails.
-	go vet ./assets/... ./cache/... ./commands/... ./config/... \
-		./server/... ./services/... ./test/... ./views/...
+	go list ./... | grep -v vendor | xargs go vet
 
 deploy:
 	git push heroku master

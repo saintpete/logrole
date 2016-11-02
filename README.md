@@ -1,18 +1,15 @@
-# logrole
+# Logrole
 
 Logrole is a faster, usable, fine-grained client for exploring your Twilio
 logs.
 
-<img src="https://kev.inburke.com/rawblog/images/logrole.png" />
+<img alt="Picture of Logrole" src="https://kev.inburke.com/rawblog/images/logrole.png" />
 
-- Customizable permissions for each user browsing the site - limit access to
-SMS/MMS bodies, resources older than a certain age, recordings, calls, call
-from, etc. etc.
+- [Customizable permissions][user-settings] for each user browsing the site -
+limit access to SMS/MMS bodies, resources older than a certain age, recordings,
+calls, call from, etc. etc.
 
 - Account Sid is hidden from end users at all times.
-
-- Easy site search - tab complete and search for a sid to go straight to the
-  instance view for that resource.
 
 - Click-to-copy sids and phone numbers.
 
@@ -21,6 +18,10 @@ hand back insecure image links, but we rewrite URLs before fetching them.
 
 - Tab to search: start typing the URL in the tab bar, then press &lt;tab&gt;.
   Paste any SID to immediately jump to that page.
+
+<img alt="Tab to search demo" src="https://thumbs.gfycat.com/BarrenColorlessJackrabbit-size_restricted.gif" />
+
+[user-settings]: https://godoc.org/github.com/saintpete/logrole/config#UserSettings
 
 ## It Is Really Fast
 

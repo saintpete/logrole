@@ -58,6 +58,23 @@ func TestNewSettingsFromEmptyConfig(t *testing.T) {
 	}
 }
 
+func TestInvalidSecretKeysError(t *testing.T) {
+	t.Parallel()
+	c := &FileConfig{
+		AccountSid: "AC123",
+		AuthToken:  "123",
+		// example from the docs with "dontuse" in the middle of it
+		SecretKey: "73cfe0f6926d3b3600b420dontuse20dbe775c1a8e221c72070e5362516c0a34",
+	}
+	_, err := NewSettingsFromConfig(c, NullLogger)
+	if err == nil {
+		t.Fatal("expected NewSettingsFromConfig to error, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid byte") {
+		t.Errorf("unexpected error message: %v", err)
+	}
+}
+
 func TestPolicyAndFileErrors(t *testing.T) {
 	t.Parallel()
 	c := &FileConfig{

@@ -18,6 +18,8 @@ import (
 const DefaultPort = "4114"
 const DefaultPageSize = 50
 
+// DefaultTimezones are a user's options if no timezones are configured. These
+// correspond to the 4 timezones in the USA, west to east.
 var DefaultTimezones = []string{
 	"America/Los_Angeles",
 	"America/Denver",
