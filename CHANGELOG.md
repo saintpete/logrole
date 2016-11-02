@@ -1,5 +1,38 @@
 # Changes
 
+## 0.58
+
+Implement multi-user permissions
+
+Specify `policy` or `policy_file` to define permission groups, and define users
+to exist in those groups, as well as a default group for unknown users. Support
+policy in the GoogleAuthenticator and the BasicAuthAuthenticator. Document how
+policy behaves if it is/isn't specified, and how it interacts with
+allowed_domains.
+
+Moves all of the Authenticator code into the config directory. The interaction
+between GoogleAuthenticator and the server directory is a little complicated -
+we want to render a 401 error if Google auth fails, which needs to be done from
+the server directory, but GoogleAuthenticator shouldn't necessarily live there.
+We also need to get a URL from GoogleAuthenticator to show on the login page.
+We hack around this, I'm not super happy with it, but it works for the moment.
+Open to better ideas about how this should work.
+
+Move the YAML config out of the logrole_server binary and into the config
+directory. Add Policy to it, and a custom parser for UserSettings. These let
+other Go code load a Logrole YAML file, if they want.
+
+Add more documentation around possibly-confusing settings. Document how to get
+a Google client ID and client secret.
+
+Fix errors in Google authentication, and add a whole bunch of tests around
+policies, Google auth, and Basic auth. Removes some unused code that set
+a global map in the config directory.
+
+Add tools in write_config_from_env to download a policy file from a URL (for
+Heroku deployment, if you can't include the permissions as part of the Git
+repo).
+
 ## 0.56
 
 Highlight Call list rows in red if the call ended unsuccessfully.
