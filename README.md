@@ -56,7 +56,8 @@ export GOPATH="$HOME/go"
 There are two main ways to deploy Logrole. Either:
 
 - Write all settings to a `config.yml` file (a sample is in
-config.sample.yml), then run `logrole_server --config=config.yml`.
+[config.sample.yml][config-sample]), then run `logrole_server
+--config=config.yml`.
 
 Or:
 
@@ -67,6 +68,7 @@ variables to a config.yml file. Follow the steps in (1).
 For more information, please [see the Settings documentation][settings-docs].
 
 [settings-docs]: https://github.com/saintpete/logrole/blob/master/docs/settings.md
+[config-sample]: https://github.com/saintpete/logrole/blob/master/config.sample.yml
 
 ## Authentication
 
