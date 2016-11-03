@@ -19,6 +19,28 @@ type Group struct {
 // TODO naming here
 type Policy []*Group
 
+type yamlPolicy Policy
+
+// Unmarshal a YAML file into a Policy. Need a custom Unmarshaler so we can
+// detect a nil UserSettings object and replace it with one where all
+// permissions are set to true.
+func (p *Policy) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	if p == nil {
+		p = new(Policy)
+	}
+	yp := yamlPolicy(*p)
+	if err := unmarshal(&yp); err != nil {
+		return err
+	}
+	for _, group := range yp {
+		if group.Permissions == nil {
+			group.Permissions = AllUserSettings()
+		}
+	}
+	*p = Policy(yp)
+	return nil
+}
+
 // Lookup finds the User with the given id. If no user with that name is found,
 // but a default group is defined, a user from that group is returned. The
 // boolean is true if a user was found directly by id. Otherwise returns an

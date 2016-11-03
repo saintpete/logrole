@@ -23,6 +23,11 @@ var policy = []byte(`
   users:
     - eng@example.com
     - eng@example.net
+
+- name: empty
+  permissions:
+  users:
+    - empty@example.com
 `)
 
 func TestLoadPermission(t *testing.T) {
@@ -31,8 +36,8 @@ func TestLoadPermission(t *testing.T) {
 	if err := yaml.Unmarshal(policy, &p); err != nil {
 		t.Fatal(err)
 	}
-	if len(p) != 2 {
-		t.Errorf("expected 2 groups, got %d", len(p))
+	if len(p) != 3 {
+		t.Errorf("expected 3 groups, got %d", len(p))
 	}
 	if p[0].Name != "support" {
 		t.Errorf("expected name to equal 'support', got %s", p[0].Name)
@@ -51,6 +56,9 @@ func TestLoadPermission(t *testing.T) {
 	}
 	if p[1].Default == false {
 		t.Error("expected Default to be true, got false")
+	}
+	if p[2].Permissions.CanViewCalls == false {
+		t.Errorf("expected CanViewCalls to be true, got false")
 	}
 }
 
