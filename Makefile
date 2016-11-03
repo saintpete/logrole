@@ -1,8 +1,12 @@
+# would be great to make the bash location portable but not sure how
+SHELL = /bin/bash
+
 BUMP_VERSION := $(shell command -v bump_version)
 GODOCDOC := $(shell command -v godocdoc)
 GO_BINDATA := $(shell command -v go-bindata)
 GODEP := $(shell command -v godep)
 JUSTRUN := $(shell command -v justrun)
+BENCHSTAT := $(shell command -v benchstat)
 
 WATCH_TARGETS = static/css/style.css \
 	cache/cache.go \
@@ -84,4 +88,7 @@ endif
 	godocdoc
 
 bench:
-	go list ./... | grep -v vendor | xargs go test -bench=. -run='^$$' 
+ifndef BENCHSTAT
+	go get rsc.io/benchstat
+endif
+	tmp=$$(mktemp); go list ./... | grep -v vendor | xargs go test -benchtime=2s -bench=. -run='^$$' > "$$tmp" 2>&1 && benchstat "$$tmp"
