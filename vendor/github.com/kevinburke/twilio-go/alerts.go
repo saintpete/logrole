@@ -2,7 +2,9 @@ package twilio
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
+	"strings"
 
 	"golang.org/x/net/context"
 )
@@ -74,4 +76,57 @@ func (a *AlertPageIterator) Next(ctx context.Context) (*AlertPage, error) {
 	}
 	a.p.SetNextPageURI(ap.Meta.NextPageURL)
 	return ap, nil
+}
+
+func (a *Alert) description() string {
+	vals, err := url.ParseQuery(a.AlertText)
+	if err == nil && a.ErrorCode != 0 {
+		switch a.ErrorCode {
+		case CodeHTTPRetrievalFailure:
+			s := "HTTP retrieval failure"
+			if resp := vals.Get("httpResponse"); resp != "" {
+				s = fmt.Sprintf("%s: status code %s when fetching TwiML", s, resp)
+			}
+			return s
+		case CodeReplyLimitExceeded:
+			msg := vals.Get("Msg")
+			if msg == "" {
+				break
+			}
+			if idx := strings.Index(msg, "over"); idx >= 0 {
+				return msg[:idx]
+			}
+			return msg
+		case CodeDocumentParseFailure:
+			// There's a more detailed error message here but it doesn't really
+			// make sense in a sentence context: "Error on line 18 of document:
+			// Content is not allowed in trailing section."
+			return "Document parse failure"
+		case CodeSayInvalidText:
+			return "The text of the Say verb was empty or un-parsable"
+		case CodeForbiddenPhoneNumber, CodeNoInternationalAuthorization:
+			if vals.Get("Msg") != "" && vals.Get("phonenumber") != "" {
+				return strings.TrimSpace(vals.Get("Msg")) + " " + vals.Get("phonenumber")
+			}
+		default:
+			if msg := vals.Get("Msg"); msg != "" {
+				return msg
+			}
+			if a.MoreInfo != "" {
+				return fmt.Sprintf("Error %d: %s", a.ErrorCode, a.MoreInfo)
+			}
+			return fmt.Sprintf("Error %d", a.ErrorCode)
+		}
+	}
+	if a.MoreInfo != "" {
+		return "Unknown failure: " + a.MoreInfo
+	}
+	return "Unknown failure"
+}
+
+// Description tries as hard as possible to give you a one sentence description
+// of this Alert, based on its contents. Description does not include a
+// trailing period.
+func (a *Alert) Description() string {
+	return capitalize(strings.TrimSpace(strings.TrimSuffix(a.description(), ".")))
 }

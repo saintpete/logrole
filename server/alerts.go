@@ -12,6 +12,7 @@ import (
 	log "github.com/inconshreveable/log15"
 	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/rest"
+	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
@@ -29,14 +30,20 @@ type alertListServer struct {
 }
 
 type alertListData struct {
-	Err   string
-	Query url.Values
-	Page  *views.AlertPage
-	Loc   *time.Location
+	Page                  *views.AlertPage
+	EncryptedNextPage     string
+	EncryptedPreviousPage string
+	Loc                   *time.Location
+	Query                 url.Values
+	Err                   string
 }
 
 func (ad *alertListData) Title() string {
 	return "Alerts"
+}
+
+func (ad *alertListData) Path() string {
+	return "/alerts"
 }
 
 func newAlertListServer(l log.Logger, vc views.Client,
@@ -89,23 +96,40 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rest.ServerError(w, r, errors.New("No user available"))
 		return
 	}
-	//if !u.CanViewAlerts() {
-	//rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
-	//return
-	//}
+	if !u.CanViewAlerts() {
+		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
+		return
+	}
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
 	query := r.URL.Query()
+	opaqueNext := query.Get("next")
 	page := new(views.AlertPage)
 	var err error
-	vals := url.Values{}
-	vals.Set("PageSize", strconv.FormatUint(uint64(s.PageSize), 10))
-	if filterErr := setPageFilters(query, vals); filterErr != nil {
-		s.renderError(w, r, http.StatusBadRequest, query, filterErr)
-		return
-	}
 	start := time.Now()
-	page, err = s.Client.GetAlertPage(ctx, u, vals)
+	if opaqueNext != "" {
+		next, nextErr := services.Unopaque(opaqueNext, s.secretKey)
+		if nextErr != nil {
+			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
+			s.renderError(w, r, http.StatusBadRequest, query, err)
+			return
+		}
+		if !strings.HasPrefix(next, twilio.MonitorBaseURL) {
+			s.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
+			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
+			return
+		}
+		page, err = s.Client.GetNextAlertPage(ctx, u, next)
+		setNextPageValsOnQuery(next, query)
+	} else {
+		vals := url.Values{}
+		vals.Set("PageSize", strconv.FormatUint(uint64(s.PageSize), 10))
+		if filterErr := setPageFilters(query, vals); filterErr != nil {
+			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
+			return
+		}
+		page, err = s.Client.GetAlertPage(ctx, u, vals)
+	}
 	if err != nil {
 		switch terr := err.(type) {
 		case *rest.Error:
@@ -135,11 +159,11 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Duration: time.Since(start),
 	}
 	data.Data = &alertListData{
-		Page:  page,
-		Query: query,
-		Loc:   s.LocationFinder.GetLocationReq(r),
-		//EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.secretKey),
-		//EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
+		Page:                  page,
+		Query:                 query,
+		Loc:                   s.LocationFinder.GetLocationReq(r),
+		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
+		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)

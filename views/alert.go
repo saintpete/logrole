@@ -11,8 +11,9 @@ import (
 )
 
 type AlertPage struct {
-	alerts      []*Alert
-	nextPageURI types.NullString
+	alerts          []*Alert
+	nextPageURI     types.NullString
+	previousPageURI types.NullString
 }
 
 type Alert struct {
@@ -31,9 +32,9 @@ func NewAlert(alert *twilio.Alert, p *config.Permission, u *config.User) (*Alert
 	return &Alert{user: u, alert: alert}, nil
 }
 
-func NewAlertPage(cp *twilio.AlertPage, p *config.Permission, u *config.User) (*AlertPage, error) {
+func NewAlertPage(ap *twilio.AlertPage, p *config.Permission, u *config.User) (*AlertPage, error) {
 	alerts := make([]*Alert, 0)
-	for _, alert := range cp.Alerts {
+	for _, alert := range ap.Alerts {
 		cl, err := NewAlert(alert, p, u)
 		if err == config.ErrTooOld || err == config.PermissionDenied {
 			continue
@@ -45,11 +46,12 @@ func NewAlertPage(cp *twilio.AlertPage, p *config.Permission, u *config.User) (*
 	}
 	var npuri types.NullString
 	if len(alerts) > 0 {
-		npuri = cp.Meta.NextPageURL
+		npuri = ap.Meta.NextPageURL
 	}
 	return &AlertPage{
-		alerts:      alerts,
-		nextPageURI: npuri,
+		alerts:          alerts,
+		nextPageURI:     npuri,
+		previousPageURI: ap.Meta.PreviousPageURL,
 	}, nil
 }
 
@@ -61,18 +63,57 @@ func (ap *AlertPage) NextPageURI() types.NullString {
 	return ap.nextPageURI
 }
 
+func (ap *AlertPage) PreviousPageURI() types.NullString {
+	return ap.previousPageURI
+}
+
+func (ap *AlertPage) ShowHeader(fieldName string) bool {
+	if ap == nil {
+		return showAllColumnsOnEmptyPage
+	}
+	alerts := ap.Alerts()
+	if len(alerts) == 0 {
+		return showAllColumnsOnEmptyPage
+	}
+	for _, alert := range alerts {
+		var show bool
+		switch fieldName {
+		case "Description":
+			show = alert.CanViewDescription()
+		default:
+			show = alert.CanViewProperty(fieldName)
+		}
+		if show {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Alert) CanViewProperty(property string) bool {
 	if c.user == nil {
 		return false
 	}
 	switch property {
 	case "Sid", "ErrorCode", "MoreInfo", "DateCreated", "DateUpdated",
-		"ResourceSid":
+		"ResourceSid", "LogLevel":
 		return c.user.CanViewAlerts()
-	case "RequestURL", "RequestMethod":
+	case "RequestURL", "RequestMethod", "AlertText":
 		return c.user.CanViewCallbackURLs()
 	default:
 		panic("unknown property " + property)
+	}
+}
+
+func (a *Alert) CanViewDescription() bool {
+	return a.CanViewProperty("ErrorCode") && a.CanViewProperty("AlertText") && a.CanViewProperty("MoreInfo")
+}
+
+func (a *Alert) Description() (string, error) {
+	if a.CanViewDescription() {
+		return a.alert.Description(), nil
+	} else {
+		return "", config.PermissionDenied
 	}
 }
 
@@ -109,6 +150,14 @@ func (a *Alert) ResourceSid() (string, error) {
 		}
 	}
 	return "", config.PermissionDenied
+}
+
+func (a *Alert) LogLevel() (twilio.LogLevel, error) {
+	if a.CanViewProperty("Sid") {
+		return a.alert.LogLevel, nil
+	} else {
+		return "", config.PermissionDenied
+	}
 }
 
 func (a *Alert) ErrorCode() (twilio.Code, error) {

@@ -12,13 +12,24 @@
   <thead>
     <tr>
       <th>Date</th>
+      {{- if .Page.ShowHeader "ResourceSid" }}
       <th>Resource</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "LogLevel" }}
+      <th>Log Level</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "ErrorCode" }}
       <th>Error Code</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "Description" }}
+      <th>Description</th>
+      {{- end }}
     </tr>
   </thead>
   <tbody>
     {{- range .Page.Alerts }}
-      {{- if .CanViewProperty "Sid" }}
+      {{- if and (.CanViewProperty "Sid") (.CanViewProperty "ResourceSid") }}
+      {{- if gt (len .ResourceSid) 0 }}
       <tr class="alert">
         <td>
           <a href="/alerts/{{ .Sid }}" title="View more details">
@@ -29,6 +40,7 @@
             {{- end }}
           </a>
         </td>
+
         {{- if .CanViewProperty "ResourceSid" }}
         <td>
           {{- if has_prefix .ResourceSid "CA" }}
@@ -45,15 +57,48 @@
         </td>
         {{- else }}
         <td><i>hidden</i>
-        {{- end }}
-        {{- if .CanViewProperty "ErrorCode" }}
-        <td><a href="{{ .MoreInfo }}">Error {{ .ErrorCode }}</a></td>
+        {{- end -}}
+
+        {{- if .CanViewProperty "LogLevel" }}
+        <td>{{ .LogLevel.Friendly }}</td>
         {{- else }}
         <td><i>hidden</i>
-        {{- end }}
+        {{- end -}}
+
+        {{- if .CanViewProperty "ErrorCode" }}
+        <td>{{ .ErrorCode }}</td>
+        {{- else }}
+        <td><i>hidden</i>
+        {{- end -}}
+
+        {{- if .CanViewDescription }}
+          {{- if .MoreInfo }}
+          <td><a href="{{ .MoreInfo }}">{{ .Description }}</a></td>
+          {{- else }}
+          <td>{{ .Description }}</td>
+          {{- end }}
+        {{- else }}
+        <td><i>hidden</i>
+        {{- end -}}
+
       </tr>
+      {{- end }}
       {{- end }}
     {{- end }}
   </tbody>
 </table>
+{{- if eq 0 (len .Page.Alerts) }}
+  {{/* Don't need if/else with range .Page.Alerts, that will always be empty
+       if this is non-empty and vice versa */}}
+  No alerts match the search criteria
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+{{- end }}
+{{- template "paging" . }}
 {{- end }}
