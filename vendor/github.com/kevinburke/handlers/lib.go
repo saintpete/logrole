@@ -24,11 +24,12 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/rest"
 	"github.com/satori/go.uuid"
 )
 
-const Version = "0.25"
+const Version = "0.26"
 
 // All wraps h with every handler in this file.
 func All(h http.Handler, serverName string) http.Handler {
@@ -296,14 +297,15 @@ type loggingResponseWriter interface {
 
 type logHandler struct {
 	h http.Handler
+	l log.Logger
 }
 
 func (l logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t := time.Now()
-	logger := makeLogger(w)
+	logWriter := makeLogger(w)
 	u := *r.URL
-	l.h.ServeHTTP(logger, r)
-	writeLog(r, u, t, logger.Status(), logger.Size())
+	l.h.ServeHTTP(logWriter, r)
+	writeLog(l.l, r, u, t, logWriter.Status(), logWriter.Size())
 }
 
 func getRemoteIP(r *http.Request) string {
@@ -321,7 +323,7 @@ func timeSinceMs(t time.Time) int64 {
 	return ns / int64(time.Millisecond)
 }
 
-func writeLog(r *http.Request, u url.URL, t time.Time, status int, size int) {
+func writeLog(l log.Logger, r *http.Request, u url.URL, t time.Time, status int, size int) {
 	user, _, _ := r.BasicAuth()
 	args := []interface{}{
 		"method", r.Method,
@@ -336,14 +338,23 @@ func writeLog(r *http.Request, u url.URL, t time.Time, status int, size int) {
 	if user != "" {
 		args = append(args, "user", user)
 	}
-	if r.Header.Get("X-Request-Id") != "" {
-		args = append(args, "request_id", r.Header.Get("X-Request-Id"))
+	if id := r.Header.Get("X-Request-Id"); id != "" {
+		args = append(args, "request_id", id)
 	}
-	Logger.Info("", args...)
+	l.Info("", args...)
 }
 
 // Log serves the http request and writes information about the
-// request/response to w. Any errors writing to w are ignored.
+// request/response using the default Logger (handlers.Logger). Any errors
+// writing to the Logger are ignored.
 func Log(h http.Handler) http.Handler {
-	return &logHandler{h}
+	return WithLogger(h, Logger)
+}
+
+// WithLogger logs information about HTTP requests and responses to the
+// provided Logger, including a detailed timestamp, the user agent, the
+// response time, the number of bytes written, and more. Any errors writing log
+// information to the Logger are ignored.
+func WithLogger(h http.Handler, logger log.Logger) http.Handler {
+	return &logHandler{h, logger}
 }

@@ -63,7 +63,7 @@ func NewClient(l log.Logger, c *twilio.Client, secretKey *[32]byte, p *config.Pe
 	vc := &client{
 		Logger:     l,
 		group:      singleflight.Group{},
-		cache:      cache.NewCache(cacheSizeMB * 1024 * 1024 / averageCacheEntryBytes),
+		cache:      cache.NewCache(cacheSizeMB*1024*1024/averageCacheEntryBytes, l),
 		client:     c,
 		secretKey:  secretKey,
 		permission: p,

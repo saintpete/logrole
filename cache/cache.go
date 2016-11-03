@@ -20,11 +20,8 @@ import (
 
 	"github.com/golang/groupcache/lru"
 	log "github.com/inconshreveable/log15"
-	"github.com/kevinburke/handlers"
 	twilio "github.com/kevinburke/twilio-go"
 )
-
-const debug = false
 
 type Cache struct {
 	log.Logger
@@ -34,11 +31,7 @@ type Cache struct {
 
 var errNotFound = errors.New("Key not found in cache")
 
-func NewCache(size int) *Cache {
-	l := handlers.NewLogger()
-	if debug {
-		l.SetHandler(log.LvlFilterHandler(log.LvlDebug, l.GetHandler()))
-	}
+func NewCache(size int, l log.Logger) *Cache {
 	return &Cache{
 		Logger: l,
 		c:      lru.New(size),

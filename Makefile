@@ -81,3 +81,6 @@ ifndef GODOCDOC
 	go get github.com/kevinburke/godocdoc
 endif
 	godocdoc
+
+bench:
+	go list ./... | grep -v vendor | xargs go test -bench=. -run='^$$' 

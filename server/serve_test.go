@@ -13,7 +13,11 @@ import (
 
 func TestRequestsUpgraded(t *testing.T) {
 	t.Parallel()
-	settings := &config.Settings{AllowUnencryptedTraffic: false, SecretKey: key}
+	settings := &config.Settings{
+		AllowUnencryptedTraffic: false,
+		SecretKey:               key,
+		Logger:                  NullLogger,
+	}
 	s, err := NewServer(settings)
 	if err != nil {
 		t.Fatal(err)
@@ -38,6 +42,7 @@ func TestIndex(t *testing.T) {
 		AllowUnencryptedTraffic: true,
 		Authenticator:           &config.NoopAuthenticator{},
 		SecretKey:               services.NewRandomKey(),
+		Logger:                  NullLogger,
 	}
 	s, err := NewServer(settings)
 	if err != nil {
@@ -66,6 +71,7 @@ func getGoogleAuthServer(t *testing.T) *Server {
 	settings := &config.Settings{
 		SecretKey:     key,
 		Authenticator: config.NewGoogleAuthenticator(NullLogger, "", "", "http://localhost", nil, key),
+		Logger:        NullLogger,
 	}
 	s, err := NewServer(settings)
 	if err != nil {
@@ -110,6 +116,7 @@ func TestStaticPagesAvailableNoAuth(t *testing.T) {
 	settings := &config.Settings{
 		SecretKey:     services.NewRandomKey(),
 		Authenticator: a,
+		Logger:        NullLogger,
 	}
 	s, err := NewServer(settings)
 	if err != nil {

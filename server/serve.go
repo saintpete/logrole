@@ -170,6 +170,9 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	if settings.Authenticator == nil {
 		settings.Authenticator = &config.NoopAuthenticator{}
 	}
+	if settings.Logger == nil {
+		return nil, errors.New("Please configure a non-nil Logger")
+	}
 
 	permission := config.NewPermission(settings.MaxResourceAge)
 	vc := views.NewClient(settings.Logger, settings.Client, settings.SecretKey, permission)
@@ -252,7 +255,7 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)
 	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	authH := AddAuthenticator(authR, ls, settings.Authenticator)
-	authH = handlers.Log(authH)
+	authH = handlers.WithLogger(authH, settings.Logger)
 
 	r := new(handlers.Regexp)
 	// TODO - don't protect static routes with basic auth

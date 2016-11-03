@@ -12,7 +12,7 @@ import (
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
-	"github.com/saintpete/logrole/test"
+	"github.com/saintpete/logrole/test/harness"
 	"github.com/saintpete/logrole/views"
 )
 
@@ -59,8 +59,8 @@ func Test404OnResource404(t *testing.T) {
 	t.Parallel()
 	server := newServerWithResponse(404, notFoundResp)
 	defer server.Close()
-	harness := test.ViewHarness{TestServer: server}
-	vc := test.ViewsClient(harness)
+	hrns := harness.ViewHarness{TestServer: server}
+	vc := harness.ViewsClient(hrns)
 	s := &messageInstanceServer{Logger: dlog, Client: vc}
 	req, _ := http.NewRequest("GET", "/messages/MMd04242a0544234abba080942e0535505", nil)
 	req.SetBasicAuth("test", "test")
@@ -124,8 +124,8 @@ func TestNoResultsIfAllResultsOld(t *testing.T) {
 	tt := twilio.NewTwilioTime("Tue, 20 Sep 2016 22:41:38 +0000")
 	// max resource age is 1 hour newer than the message age
 	age := time.Since(tt.Time) - time.Hour
-	harness := test.ViewHarness{TestServer: server, SecretKey: key, MaxResourceAge: age}
-	vc := test.ViewsClient(harness)
+	hrns := harness.ViewHarness{TestServer: server, SecretKey: key, MaxResourceAge: age}
+	vc := harness.ViewsClient(hrns)
 	lf, _ := services.NewLocationFinder("America/Los_Angeles")
 	s, err := newMessageListServer(dlog, vc, lf, 50, time.Hour, key)
 	if err != nil {

@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/saintpete/logrole/config"
-	"github.com/saintpete/logrole/test"
+	"github.com/saintpete/logrole/test/harness"
 )
 
 func TestUnauthorizedUserCantViewConferenceList(t *testing.T) {
 	t.Parallel()
-	vc := test.ViewsClient(test.ViewHarness{})
+	vc := harness.ViewsClient(harness.ViewHarness{})
 	s, err := newConferenceListServer(dlog, vc, nil, 50, time.Hour, key)
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +30,7 @@ func TestUnauthorizedUserCantViewConferenceList(t *testing.T) {
 
 func TestUnauthorizedUserCantViewConferenceInstance(t *testing.T) {
 	t.Parallel()
-	vc := test.ViewsClient(test.ViewHarness{})
+	vc := harness.ViewsClient(harness.ViewHarness{})
 	s, err := newConferenceInstanceServer(dlog, vc, nil)
 	if err != nil {
 		t.Fatal(err)

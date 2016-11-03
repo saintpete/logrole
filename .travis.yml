@@ -9,4 +9,6 @@ go:
 before_script:
   - go get ./...
 
-script: make race-test
+script:
+    - make race-test
+    - make bench
