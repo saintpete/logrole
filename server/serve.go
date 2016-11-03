@@ -21,7 +21,7 @@ import (
 )
 
 // Server version, run "make release" to increase this value
-const Version = "0.59"
+const Version = "0.60"
 
 func UpgradeInsecureHandler(h http.Handler, allowUnencryptedTraffic bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
