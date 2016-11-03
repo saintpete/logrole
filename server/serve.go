@@ -205,6 +205,12 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	als, err := newAlertListServer(settings.Logger, vc,
+		settings.LocationFinder, settings.PageSize, settings.MaxResourceAge,
+		settings.SecretKey)
+	if err != nil {
+		return nil, err
+	}
 	ss := &searchServer{}
 	o := &openSearchXMLServer{
 		PublicHost:              settings.PublicHost,
@@ -247,9 +253,10 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	authR.Handle(imageRoute, []string{"GET"}, image)
 	authR.Handle(audioRoute, []string{"GET"}, audio)
 	authR.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
-	authR.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
-	authR.Handle(regexp.MustCompile(`^/conferences$`), []string{"GET"}, confs)
 	authR.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
+	authR.Handle(regexp.MustCompile(`^/conferences$`), []string{"GET"}, confs)
+	authR.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
+	authR.Handle(regexp.MustCompile(`^/alerts$`), []string{"GET"}, als)
 	authR.Handle(regexp.MustCompile(`^/tz$`), []string{"POST"}, tz)
 	authR.Handle(conferenceInstanceRoute, []string{"GET"}, confInstance)
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)

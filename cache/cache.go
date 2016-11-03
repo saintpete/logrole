@@ -29,6 +29,7 @@ type Cache struct {
 	mu sync.RWMutex
 }
 
+var expired = errors.New("expired")
 var errNotFound = errors.New("Key not found in cache")
 
 func NewCache(size int, l log.Logger) *Cache {
@@ -38,50 +39,77 @@ func NewCache(size int, l log.Logger) *Cache {
 	}
 }
 
-func (c *Cache) ConferencePagePrefix() string {
-	return "conferences"
+// enc gob.Encodes + gzips data. do not try to gob.Encode an interface
+func enc(data interface{}) []byte {
+	var buf bytes.Buffer
+	writer := gzip.NewWriter(&buf)
+	ec := gob.NewEncoder(writer)
+	if err := ec.Encode(data); err != nil {
+		panic(err)
+	}
+	if err := writer.Close(); err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
 }
 
-func (c *Cache) MessagePagePrefix() string {
-	return "messages"
+func (c *Cache) store(key string, e *ExpiringData) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.c.Add(key, e)
+	c.Debug("stored data in cache", "key", key, "size", len(e.Data), "cache_size", c.c.Len())
 }
 
-func (c *Cache) CallPagePrefix() string {
-	return "calls"
+func (c *Cache) decodeValueAtKey(key string, i interface{}) error {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	val, ok := c.c.Get(key)
+	if !ok {
+		return errNotFound
+	}
+	e, ok := val.(*ExpiringData)
+	if !ok {
+		c.Warn("Invalid value in cache", "val", val, "key", key)
+		return errors.New("could not cast value to ExpiringData")
+	}
+	if since := time.Since(e.Expires); since > 0 {
+		c.Debug("found expired value in cache", "key", key, "expired_ago", since)
+		c.c.Remove(key)
+		return expired
+	}
+	c.Debug("found value in cache", "key", key, "size", len(e.Data))
+	reader, err := gzip.NewReader(bytes.NewReader(e.Data))
+	if err != nil {
+		panic(err)
+	}
+	defer reader.Close()
+	dec := gob.NewDecoder(reader)
+	return dec.Decode(i)
 }
 
-type ExpiringMessagePage struct {
-	Expiry time.Time
-	Page   *twilio.MessagePage
-}
+var alertPagePrefix = "alerts"
+var callPagePrefix = "calls"
+var messagePagePrefix = "messages"
+var conferencePagePrefix = "conferences"
 
-type ExpiringCallPage struct {
-	Expiry time.Time
-	Page   *twilio.CallPage
-}
-
-type ExpiringConferencePage struct {
-	Expiry time.Time
-	Page   *twilio.ConferencePage
+type ExpiringData struct {
+	Expires time.Time
+	Data    []byte // call enc() to get an encoded value
 }
 
 // GetMessagePageByValues retrieves messages for given set of query values.
 func (c *Cache) GetMessagePageByValues(data url.Values) (*twilio.MessagePage, bool) {
 	key := "expiring_messages." + data.Encode()
-	e := new(ExpiringMessagePage)
+	e := new(twilio.MessagePage)
 	if err := c.decodeValueAtKey(key, e); err != nil {
 		return nil, false
 	}
-	if time.Since(e.Expiry) > 0 {
-		c.remove(key)
-		return nil, false
-	}
-	return e.Page, true
+	return e, true
 }
 
 func (c *Cache) GetConferencePageByURL(nextPage string) (*twilio.ConferencePage, bool) {
 	cp := new(twilio.ConferencePage)
-	if err := c.decodeValueAtKey(c.ConferencePagePrefix()+"."+nextPage, cp); err != nil {
+	if err := c.decodeValueAtKey(conferencePagePrefix+"."+nextPage, cp); err != nil {
 		return nil, false
 	}
 	return cp, true
@@ -89,7 +117,7 @@ func (c *Cache) GetConferencePageByURL(nextPage string) (*twilio.ConferencePage,
 
 func (c *Cache) GetMessagePageByURL(nextPage string) (*twilio.MessagePage, bool) {
 	mp := new(twilio.MessagePage)
-	if err := c.decodeValueAtKey(c.MessagePagePrefix()+"."+nextPage, mp); err != nil {
+	if err := c.decodeValueAtKey(messagePagePrefix+"."+nextPage, mp); err != nil {
 		return nil, false
 	}
 	return mp, true
@@ -97,119 +125,120 @@ func (c *Cache) GetMessagePageByURL(nextPage string) (*twilio.MessagePage, bool)
 
 func (c *Cache) GetCallPageByURL(nextPage string) (*twilio.CallPage, bool) {
 	cp := new(twilio.CallPage)
-	if err := c.decodeValueAtKey(c.MessagePagePrefix()+"."+nextPage, cp); err != nil {
+	if err := c.decodeValueAtKey(callPagePrefix+"."+nextPage, cp); err != nil {
 		return nil, false
 	}
 	return cp, true
 }
 
+func (c *Cache) GetAlertPageByURL(nextPage string) (*twilio.AlertPage, bool) {
+	ap := new(twilio.AlertPage)
+	if err := c.decodeValueAtKey(alertPagePrefix+"."+nextPage, ap); err != nil {
+		return nil, false
+	}
+	return ap, true
+}
+
 func (c *Cache) GetCallPageByValues(data url.Values) (*twilio.CallPage, bool) {
 	key := "expiring_calls." + data.Encode()
-	e := new(ExpiringCallPage)
-	if err := c.decodeValueAtKey(key, e); err != nil {
+	cp := new(twilio.CallPage)
+	if err := c.decodeValueAtKey(key, cp); err != nil {
 		return nil, false
 	}
-	if time.Since(e.Expiry) > 0 {
-		c.remove(key)
+	return cp, true
+}
+
+func (c *Cache) GetAlertPageByValues(data url.Values) (*twilio.AlertPage, bool) {
+	key := "expiring_alerts." + data.Encode()
+	ap := new(twilio.AlertPage)
+	if err := c.decodeValueAtKey(key, ap); err != nil {
 		return nil, false
 	}
-	return e.Page, true
-}
-
-func (c *Cache) remove(key string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.c.Remove(key)
-}
-
-func (c *Cache) decodeValueAtKey(key string, e interface{}) error {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	val, ok := c.c.Get(key)
-	if !ok {
-		return errNotFound
-	}
-	bits, ok := val.([]byte)
-	if !ok {
-		c.Warn("Invalid value in cache", "val", val, "key", key)
-		return errors.New("could not cast value to []byte")
-	}
-	c.Debug("found value in cache", "key", key, "size", len(bits))
-	reader, err := gzip.NewReader(bytes.NewReader(bits))
-	if err != nil {
-		panic(err)
-	}
-	defer reader.Close()
-	dec := gob.NewDecoder(reader)
-	return dec.Decode(e)
+	return ap, true
 }
 
 // GetConferencePageByValues retrieves messages for given set of query values.
 func (c *Cache) GetConferencePageByValues(data url.Values) (*twilio.ConferencePage, bool) {
 	key := "expiring_conferences." + data.Encode()
-	e := new(ExpiringConferencePage)
-	if err := c.decodeValueAtKey(key, e); err != nil {
+	cp := new(twilio.ConferencePage)
+	if err := c.decodeValueAtKey(key, cp); err != nil {
 		return nil, false
 	}
-	if time.Since(e.Expiry) > 0 {
-		c.remove(key)
-		return nil, false
-	}
-	return e.Page, true
+	return cp, true
 }
 
 // AddExpiringMessagePage caches mp at the given key for the provided duration.
 // Use GetMessagePageByValues to retrieve it.
-func (c *Cache) AddExpiringMessagePage(key string, valid time.Duration, mp *twilio.MessagePage) {
-	e := &ExpiringMessagePage{
-		Expiry: time.Now().UTC().Add(valid),
-		Page:   mp,
+func (c *Cache) AddExpiringMessagePage(key string, mp *twilio.MessagePage, valid time.Duration) {
+	bits := enc(mp)
+	e := &ExpiringData{
+		Expires: time.Now().UTC().Add(valid),
+		Data:    bits,
 	}
-	c.encAndStore("expiring_messages."+key, e)
+	c.store("expiring_messages."+key, e)
 }
 
-func (c *Cache) AddExpiringConferencePage(key string, valid time.Duration, mp *twilio.ConferencePage) {
-	e := &ExpiringConferencePage{
-		Expiry: time.Now().UTC().Add(valid),
-		Page:   mp,
+func (c *Cache) AddExpiringAlertPage(key string, mp *twilio.AlertPage, valid time.Duration) {
+	bits := enc(mp)
+	e := &ExpiringData{
+		Expires: time.Now().UTC().Add(valid),
+		Data:    bits,
 	}
-	c.encAndStore("expiring_conferences."+key, e)
+	c.store("expiring_alerts."+key, e)
+}
+
+func (c *Cache) AddExpiringConferencePage(key string, cp *twilio.ConferencePage, valid time.Duration) {
+	bits := enc(cp)
+	e := &ExpiringData{
+		Expires: time.Now().UTC().Add(valid),
+		Data:    bits,
+	}
+	c.store("expiring_conferences."+key, e)
 }
 
 // AddExpiringCallPage caches mp at the given key for the provided duration.
 // Use GetCallPageByValues to retrieve it.
-func (c *Cache) AddExpiringCallPage(key string, valid time.Duration, cp *twilio.CallPage) {
-	e := &ExpiringCallPage{
-		Expiry: time.Now().UTC().Add(valid),
-		Page:   cp,
+func (c *Cache) AddExpiringCallPage(key string, cp *twilio.CallPage, valid time.Duration) {
+	bits := enc(cp)
+	e := &ExpiringData{
+		Expires: time.Now().UTC().Add(valid),
+		Data:    bits,
 	}
-	c.encAndStore("expiring_calls."+key, e)
+	c.store("expiring_calls."+key, e)
 }
 
-func (c *Cache) encAndStore(key string, data interface{}) {
-	var buf bytes.Buffer
-	writer := gzip.NewWriter(&buf)
-	enc := gob.NewEncoder(writer)
-	if err := enc.Encode(data); err != nil {
-		panic(err)
+func (c *Cache) AddAlertPage(npuri string, mp *twilio.AlertPage, valid time.Duration) {
+	bits := enc(mp)
+	e := &ExpiringData{
+		Expires: time.Now().UTC().Add(valid),
+		Data:    bits,
 	}
-	if err := writer.Close(); err != nil {
-		panic(err)
+	c.store(alertPagePrefix+"."+npuri, e)
+}
+
+func (c *Cache) AddMessagePage(npuri string, mp *twilio.MessagePage, valid time.Duration) {
+	bits := enc(mp)
+	e := &ExpiringData{
+		Expires: time.Now().UTC().Add(valid),
+		Data:    bits,
 	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.c.Add(key, buf.Bytes())
-	c.Debug("stored data in cache", "key", key, "size", buf.Len(), "cache_size", c.c.Len())
+	c.store(messagePagePrefix+"."+npuri, e)
 }
 
-func (c *Cache) AddMessagePage(npuri string, mp *twilio.MessagePage) {
-	c.encAndStore(c.MessagePagePrefix()+"."+npuri, mp)
+func (c *Cache) AddCallPage(npuri string, cp *twilio.CallPage, valid time.Duration) {
+	bits := enc(cp)
+	e := &ExpiringData{
+		Expires: time.Now().UTC().Add(valid),
+		Data:    bits,
+	}
+	c.store(callPagePrefix+"."+npuri, e)
 }
 
-func (c *Cache) AddCallPage(npuri string, cp *twilio.CallPage) {
-	c.encAndStore(c.CallPagePrefix()+"."+npuri, cp)
-}
-
-func (c *Cache) AddConferencePage(npuri string, cp *twilio.ConferencePage) {
-	c.encAndStore(c.ConferencePagePrefix()+"."+npuri, cp)
+func (c *Cache) AddConferencePage(npuri string, cp *twilio.ConferencePage, valid time.Duration) {
+	bits := enc(cp)
+	e := &ExpiringData{
+		Expires: time.Now().UTC().Add(valid),
+		Data:    bits,
+	}
+	c.store(conferencePagePrefix+"."+npuri, e)
 }

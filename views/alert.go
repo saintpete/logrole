@@ -2,6 +2,7 @@ package views
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	types "github.com/kevinburke/go-types"
@@ -56,13 +57,18 @@ func (a *AlertPage) Alerts() []*Alert {
 	return a.alerts
 }
 
+func (ap *AlertPage) NextPageURI() types.NullString {
+	return ap.nextPageURI
+}
+
 func (c *Alert) CanViewProperty(property string) bool {
 	if c.user == nil {
 		return false
 	}
 	switch property {
-	case "Sid", "ErrorCode", "MoreInfo":
-		return c.user.CanViewCallAlerts()
+	case "Sid", "ErrorCode", "MoreInfo", "DateCreated", "DateUpdated",
+		"ResourceSid":
+		return c.user.CanViewAlerts()
 	case "RequestURL", "RequestMethod":
 		return c.user.CanViewCallbackURLs()
 	default:
@@ -76,6 +82,33 @@ func (a *Alert) Sid() (string, error) {
 	} else {
 		return "", config.PermissionDenied
 	}
+}
+
+func (a *Alert) ResourceSid() (string, error) {
+	if a.CanViewProperty("ResourceSid") {
+		// If you can't see the resource you shouldn't be able to get the sid.
+		// Note alert sids are covered by CanViewAlerts
+		sid := a.alert.ResourceSid
+		switch {
+		case strings.HasPrefix(sid, "CA"):
+			if a.user.CanViewCalls() {
+				return sid, nil
+			}
+		case strings.HasPrefix(sid, "SM") || strings.HasPrefix(sid, "MM"):
+			if a.user.CanViewMessages() {
+				return sid, nil
+			}
+		case strings.HasPrefix(sid, "CF"):
+			if a.user.CanViewConferences() {
+				return sid, nil
+			}
+		default:
+			// if we don't know the sid, return it. the fallthrough cases above
+			// won't hit this line
+			return sid, nil
+		}
+	}
+	return "", config.PermissionDenied
 }
 
 func (a *Alert) ErrorCode() (twilio.Code, error) {
@@ -107,5 +140,21 @@ func (a *Alert) MoreInfo() (string, error) {
 		return a.alert.MoreInfo, nil
 	} else {
 		return "", config.PermissionDenied
+	}
+}
+
+func (a *Alert) DateCreated() (twilio.TwilioTime, error) {
+	if a.CanViewProperty("DateCreated") {
+		return a.alert.DateCreated, nil
+	} else {
+		return twilio.TwilioTime{}, config.PermissionDenied
+	}
+}
+
+func (a *Alert) DateUpdated() (twilio.TwilioTime, error) {
+	if a.CanViewProperty("DateUpdated") {
+		return a.alert.DateUpdated, nil
+	} else {
+		return twilio.TwilioTime{}, config.PermissionDenied
 	}
 }

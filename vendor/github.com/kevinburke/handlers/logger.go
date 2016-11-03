@@ -50,12 +50,13 @@ func NewLogger() log15.Logger {
 // messages at or more critical than the given level.
 func NewLoggerLevel(lvl log15.Lvl) log15.Logger {
 	l := log15.New()
-	l.SetHandler(log15.LvlFilterHandler(lvl, l.GetHandler()))
+	var h log15.Handler
 	if term.IsTty(os.Stdout.Fd()) {
-		l.SetHandler(log15.StreamHandler(colorable.NewColorableStdout(), termFormat()))
+		h = log15.StreamHandler(colorable.NewColorableStdout(), termFormat())
 	} else {
-		l.SetHandler(log15.StreamHandler(os.Stdout, logfmtFormat()))
+		h = log15.StreamHandler(os.Stdout, logfmtFormat())
 	}
+	l.SetHandler(log15.LvlFilterHandler(lvl, h))
 	return l
 }
 

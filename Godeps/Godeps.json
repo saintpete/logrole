@@ -55,8 +55,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/handlers",
-			"Comment": "0.26",
-			"Rev": "71e37a56ce89ee9effcbe4dfc8acc89ffa70d2dd"
+			"Comment": "0.27",
+			"Rev": "2ea5ccc3d822eb515c76f3fb9fd7d243e7f0bd48"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/raven-go",
@@ -69,8 +69,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/twilio-go",
-			"Comment": "0.39",
-			"Rev": "2071032f6646f931d7dcaa11b49af5e1ab343567"
+			"Comment": "0.40",
+			"Rev": "346d7b57f3af1ece9139dccee57f172bf8c741e0"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",

@@ -127,7 +127,7 @@ func (c *Call) CanViewNumRecordings() bool {
 }
 
 func (c *Call) CanViewCallAlerts() bool {
-	return c.user.CanViewCallAlerts()
+	return c.user.CanViewAlerts()
 }
 
 func (c *Call) EndedUnsuccessfully() (bool, error) {

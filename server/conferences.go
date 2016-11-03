@@ -148,6 +148,10 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		}
 		page, err = c.Client.GetConferencePage(ctx, u, data)
 	}
+	if err != nil {
+		rest.ServerError(w, r, err)
+		return
+	}
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString) {
 		if n.Valid {
@@ -156,10 +160,6 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			}
 		}
 	}(u, page.NextPageURI())
-	if err != nil {
-		rest.ServerError(w, r, err)
-		return
-	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = render(w, r, c.tpl, "base", &baseData{
 		LF:       c.LocationFinder,

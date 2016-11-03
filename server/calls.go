@@ -174,6 +174,7 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(200)
 	if err := render(w, r, c.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}

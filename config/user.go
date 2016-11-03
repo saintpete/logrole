@@ -1,9 +1,7 @@
 package config
 
 import (
-	"errors"
 	"net/http"
-	"sync"
 
 	"golang.org/x/net/context"
 )
@@ -26,7 +24,7 @@ type User struct {
 	canPlayRecordings     bool
 	canViewRecordingPrice bool
 	canViewConferences    bool
-	canViewCallAlerts     bool
+	canViewAlerts         bool
 	canViewCallbackURLs   bool
 }
 
@@ -66,7 +64,7 @@ type UserSettings struct {
 	CanViewConferences bool `yaml:"can_view_conferences"`
 	// Can the user view information about errors that occurred while routing
 	// a call? e.g. "HTTP retrieval failure" at the callback URL.
-	CanViewCallAlerts bool `yaml:"can_view_call_alerts"`
+	CanViewAlerts bool `yaml:"can_view_alerts"`
 	// Can the user view a StatusCallbackURL?
 	CanViewCallbackURLs bool `yaml:"can_view_callback_urls"`
 }
@@ -109,7 +107,7 @@ func AllUserSettings() *UserSettings {
 		CanPlayRecordings:     true,
 		CanViewRecordingPrice: true,
 		CanViewConferences:    true,
-		CanViewCallAlerts:     true,
+		CanViewAlerts:         true,
 		CanViewCallbackURLs:   true,
 	}
 }
@@ -135,7 +133,7 @@ func NewUser(us *UserSettings) *User {
 		canPlayRecordings:     us.CanPlayRecordings,
 		canViewRecordingPrice: us.CanViewRecordingPrice,
 		canViewConferences:    us.CanViewConferences,
-		canViewCallAlerts:     us.CanViewCallAlerts,
+		canViewAlerts:         us.CanViewAlerts,
 		canViewCallbackURLs:   us.CanViewCallbackURLs,
 	}
 }
@@ -200,39 +198,17 @@ func (u *User) CanViewConferences() bool {
 	return u.canViewConferences
 }
 
-func (u *User) CanViewCallAlerts() bool {
-	return u.canViewCallAlerts
+func (u *User) CanViewAlerts() bool {
+	return u.canViewAlerts
 }
 
 func (u *User) CanViewCallbackURLs() bool {
 	return u.canViewCallbackURLs
 }
 
-// In-memory map of users.
-var userMap = make(map[string]*User)
-var userMu sync.Mutex
-
 type ctxVar int
 
 var userKey ctxVar = 0
-
-// Auth finds the authenticating User for the request, or returns an error if
-// none could be found. Auth also sets the user in the request's context and
-// returns it.
-func AuthUser(r *http.Request) (*http.Request, *User, error) {
-	user, _, ok := r.BasicAuth()
-	if !ok {
-		return r, nil, errors.New("No user provided")
-	}
-	userMu.Lock()
-	defer userMu.Unlock()
-	if u, ok := userMap[user]; ok {
-		r = SetUser(r, u)
-		return r, u, nil
-	} else {
-		return r, nil, errors.New("No user named " + user)
-	}
-}
 
 // SetUser sets the User in the Request's context.
 func SetUser(r *http.Request, u *User) *http.Request {

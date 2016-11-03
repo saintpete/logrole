@@ -16,9 +16,6 @@ func (l *logoutServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	l.Authenticator.Logout(w, r)
 }
 
-// TODO add different users, or pull from database
-//var theUser = config.NewUser(config.AllUserSettings())
-
 var theUser = config.NewUser(&config.UserSettings{
 	CanViewNumMedia:       true,
 	CanViewMessages:       true,
@@ -35,5 +32,5 @@ var theUser = config.NewUser(&config.UserSettings{
 	CanPlayRecordings:     true,
 	CanViewRecordingPrice: false,
 	CanViewConferences:    true,
-	CanViewCallAlerts:     true,
+	CanViewAlerts:         true,
 })

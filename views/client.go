@@ -22,6 +22,13 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Front page of messages should be changing
+var frontPageTimeout = 30 * time.Second
+
+// Next page == all resources "older" than a resource that exists, less likely
+// to be changing.
+var nextPageTimeout = 5 * time.Minute
+
 // A Client retrieves resources from a backend API, and hides information that
 // shouldn't be seen before returning them to the caller.
 type Client interface {
@@ -32,9 +39,11 @@ type Client interface {
 	GetMediaURLs(context.Context, *config.User, string) ([]*url.URL, error)
 	GetMessagePage(context.Context, *config.User, url.Values) (*MessagePage, error)
 	GetCallPage(context.Context, *config.User, url.Values) (*CallPage, error)
+	GetAlertPage(context.Context, *config.User, url.Values) (*AlertPage, error)
 	GetNextMessagePage(context.Context, *config.User, string) (*MessagePage, error)
 	GetNextCallPage(context.Context, *config.User, string) (*CallPage, error)
 	GetNextConferencePage(context.Context, *config.User, string) (*ConferencePage, error)
+	GetNextAlertPage(context.Context, *config.User, string) (*AlertPage, error)
 	GetNextRecordingPage(context.Context, *config.User, string) (*RecordingPage, error)
 	GetCallRecordings(context.Context, *config.User, string, url.Values) (*RecordingPage, error)
 	GetConferencePage(context.Context, *config.User, url.Values) (*ConferencePage, error)
@@ -174,7 +183,7 @@ func (vc *client) getAndCacheMessage(ctx context.Context, data url.Values) (*twi
 	if err != nil {
 		return nil, err
 	}
-	vc.cache.AddExpiringMessagePage(data.Encode(), 30*time.Second, page)
+	vc.cache.AddExpiringMessagePage(data.Encode(), page, frontPageTimeout)
 	return page, nil
 }
 
@@ -183,7 +192,16 @@ func (vc *client) getAndCacheConference(ctx context.Context, data url.Values) (*
 	if err != nil {
 		return nil, err
 	}
-	vc.cache.AddExpiringConferencePage(data.Encode(), 30*time.Second, page)
+	vc.cache.AddExpiringConferencePage(data.Encode(), page, frontPageTimeout)
+	return page, nil
+}
+
+func (vc *client) getAndCacheAlert(ctx context.Context, data url.Values) (*twilio.AlertPage, error) {
+	page, err := vc.client.Monitor.Alerts.GetPage(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	vc.cache.AddExpiringAlertPage(data.Encode(), page, frontPageTimeout)
 	return page, nil
 }
 
@@ -192,7 +210,7 @@ func (vc *client) getAndCacheCall(ctx context.Context, data url.Values) (*twilio
 	if err != nil {
 		return nil, err
 	}
-	vc.cache.AddExpiringCallPage(data.Encode(), 30*time.Second, page)
+	vc.cache.AddExpiringCallPage(data.Encode(), page, frontPageTimeout)
 	return page, nil
 }
 
@@ -244,7 +262,7 @@ func (vc *client) GetNextMessagePage(ctx context.Context, user *config.User, nex
 		if page == nil {
 			panic("nil page")
 		}
-		vc.cache.AddMessagePage(nextPage, page)
+		vc.cache.AddMessagePage(nextPage, page, nextPageTimeout)
 		return page, nil
 	})
 	if err != nil {
@@ -275,6 +293,24 @@ func (vc *client) GetCallPage(ctx context.Context, user *config.User, data url.V
 	return NewCallPage(page, vc.permission, user)
 }
 
+func (vc *client) GetAlertPage(ctx context.Context, user *config.User, data url.Values) (*AlertPage, error) {
+	val, err := vc.group.Do("alerts."+data.Encode(), func() (interface{}, error) {
+		if page, ok := vc.cache.GetAlertPageByValues(data); ok {
+			return page, nil
+		}
+		page, err := vc.getAndCacheAlert(ctx, data)
+		return page, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	page, ok := val.(*twilio.AlertPage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a AlertPage")
+	}
+	return NewAlertPage(page, vc.permission, user)
+}
+
 func (vc *client) GetNextConferencePage(ctx context.Context, user *config.User, nextPage string) (*ConferencePage, error) {
 	val, err := vc.group.Do("conferences."+nextPage, func() (interface{}, error) {
 		if page, ok := vc.cache.GetConferencePageByURL(nextPage); ok {
@@ -287,7 +323,7 @@ func (vc *client) GetNextConferencePage(ctx context.Context, user *config.User, 
 		if page == nil {
 			panic("nil page")
 		}
-		vc.cache.AddConferencePage(nextPage, page)
+		vc.cache.AddConferencePage(nextPage, page, nextPageTimeout)
 		return page, nil
 	})
 	if err != nil {
@@ -312,7 +348,7 @@ func (vc *client) GetNextCallPage(ctx context.Context, user *config.User, nextPa
 		if page == nil {
 			panic("nil page")
 		}
-		vc.cache.AddCallPage(nextPage, page)
+		vc.cache.AddCallPage(nextPage, page, nextPageTimeout)
 		return page, nil
 	})
 	if err != nil {
@@ -323,6 +359,31 @@ func (vc *client) GetNextCallPage(ctx context.Context, user *config.User, nextPa
 		return nil, errors.New("Could not cast fetch result to a CallPage")
 	}
 	return NewCallPage(page, vc.permission, user)
+}
+
+func (vc *client) GetNextAlertPage(ctx context.Context, user *config.User, nextPage string) (*AlertPage, error) {
+	val, err := vc.group.Do("alerts."+nextPage, func() (interface{}, error) {
+		if page, ok := vc.cache.GetAlertPageByURL(nextPage); ok {
+			return page, nil
+		}
+		page := new(twilio.AlertPage)
+		if err := vc.client.Monitor.GetNextPage(ctx, nextPage, page); err != nil {
+			return nil, err
+		}
+		if page == nil {
+			panic("nil page")
+		}
+		vc.cache.AddAlertPage(nextPage, page, nextPageTimeout)
+		return page, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	page, ok := val.(*twilio.AlertPage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a AlertPage")
+	}
+	return NewAlertPage(page, vc.permission, user)
 }
 
 func (vc *client) GetNextRecordingPage(ctx context.Context, user *config.User, nextPage string) (*RecordingPage, error) {

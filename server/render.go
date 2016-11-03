@@ -17,6 +17,7 @@ import (
 
 var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
 	callInstanceTpl, callListTpl, conferenceListTpl, conferenceInstanceTpl,
+	alertListTpl,
 	indexTpl, loginTpl, recordingTpl, pagingTpl, openSearchTpl, errorTpl string
 
 // TODO move these to newServer() constructors with an error handler
@@ -36,6 +37,7 @@ func init() {
 	callListTpl = assets.MustAssetString("templates/calls/list.html")
 	conferenceInstanceTpl = assets.MustAssetString("templates/conferences/instance.html")
 	conferenceListTpl = assets.MustAssetString("templates/conferences/list.html")
+	alertListTpl = assets.MustAssetString("templates/alerts/list.html")
 	indexTpl = assets.MustAssetString("templates/index.html")
 	loginTpl = assets.MustAssetString("templates/login.html")
 	recordingTpl = assets.MustAssetString("templates/calls/recordings.html")

@@ -1,0 +1,59 @@
+{{- define "content" }}
+{{- if .Err }}
+<div class="row">
+  <div class="col-md-12">
+    <div class="alert alert-danger">
+      <p>{{ .Err }}</p>
+    </div>
+  </div>
+</div>
+{{- end }}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Resource</th>
+      <th>Error Code</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{- range .Page.Alerts }}
+      {{- if .CanViewProperty "Sid" }}
+      <tr class="alert">
+        <td>
+          <a href="/alerts/{{ .Sid }}" title="View more details">
+            {{- if .CanViewProperty "DateCreated" }}
+              {{ friendly_date (.DateCreated.Time.In $.Loc) }}
+            {{- else }}
+            View more details
+            {{- end }}
+          </a>
+        </td>
+        {{- if .CanViewProperty "ResourceSid" }}
+        <td>
+          {{- if has_prefix .ResourceSid "CA" }}
+          <a href="/calls/{{ .ResourceSid }}">Call</a>
+          {{- else if has_prefix .ResourceSid "SM" }}
+          <a href="/messages/{{ .ResourceSid }}">SMS</a>
+          {{- else if has_prefix .ResourceSid "MM" }}
+          <a href="/messages/{{ .ResourceSid }}">MMS</a>
+          {{- else if has_prefix .ResourceSid "CF" }}
+          <a href="/conferences/{{ .ResourceSid }}">Conference</a>
+          {{- else }}
+          Resource {{ .ResourceSid }}
+          {{- end }}
+        </td>
+        {{- else }}
+        <td><i>hidden</i>
+        {{- end }}
+        {{- if .CanViewProperty "ErrorCode" }}
+        <td><a href="{{ .MoreInfo }}">Error {{ .ErrorCode }}</a></td>
+        {{- else }}
+        <td><i>hidden</i>
+        {{- end }}
+      </tr>
+      {{- end }}
+    {{- end }}
+  </tbody>
+</table>
+{{- end }}
