@@ -65,6 +65,7 @@ func whitelistIPs(h http.Handler, l log.Logger, nets []*net.IPNet) http.Handler 
 		if !found {
 			l.Warn("Denying access to request based on IP", "ip", ipStr, "subnets", nets)
 			rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
+			return
 		}
 		h.ServeHTTP(w, r)
 	})
