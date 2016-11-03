@@ -7,6 +7,7 @@ import (
 
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/server"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func startBenchServer(b *testing.B, c *config.FileConfig) *server.Server {
@@ -21,7 +22,45 @@ func startBenchServer(b *testing.B, c *config.FileConfig) *server.Server {
 	return s
 }
 
+var yml = []byte(`
+twilio_account_sid: AC123
+twilio_auth_token: 123
+
+auth_scheme: basic
+
+basic_auth_user: test
+basic_auth_password: password
+
+secret_key: e277a736fe487cb9f04c626ebeadc8a95101d7f703a242abac8badf0018355bc
+
+default_timezone: Asia/Singapore
+max_resource_age: 720h
+email_address: test@example.net
+`)
+
+var benchStartServer *server.Server
+
+func BenchmarkStartServer(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		c := new(config.FileConfig)
+		if err := yaml.Unmarshal(yml, c); err != nil {
+			b.Fatal(err)
+		}
+		settings, err := config.NewSettingsFromConfig(c, NullLogger)
+		if err != nil {
+			b.Fatal(err)
+		}
+		benchStartServer, err = server.NewServer(settings)
+		if err != nil {
+			b.Fatal(err)
+		}
+		benchStartServer.Close()
+	}
+}
+
 func BenchmarkRenderLoginPage(b *testing.B) {
+	b.ReportAllocs()
 	c := &config.FileConfig{
 		AccountSid: "AC123",
 		AuthToken:  "123",
@@ -45,6 +84,7 @@ func BenchmarkRenderLoginPage(b *testing.B) {
 }
 
 func BenchmarkRenderMessageList(b *testing.B) {
+	b.ReportAllocs()
 	c := &config.FileConfig{
 		AccountSid: "AC123",
 		AuthToken:  "123",
