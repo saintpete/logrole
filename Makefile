@@ -92,3 +92,6 @@ ifndef BENCHSTAT
 	go get rsc.io/benchstat
 endif
 	tmp=$$(mktemp); go list ./... | grep -v vendor | xargs go test -benchtime=2s -bench=. -run='^$$' > "$$tmp" 2>&1 && benchstat "$$tmp"
+
+loc:
+	cloc --exclude-dir=.git,tmp,vendor --not-match-f='bootstrap.min.css|all.css|bindata.go' .
