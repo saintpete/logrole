@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
 	"github.com/saintpete/logrole/assets"
@@ -24,17 +25,48 @@ import (
 // Server version, run "make release" to increase this value
 const Version = "0.61"
 
-// WhitelistIPs checks whether the request's IP address was made from an IP
+func getRemoteIP(r *http.Request) string {
+	fwd := r.Header.Get("X-Forwarded-For")
+	if fwd == "" {
+		return r.RemoteAddr
+	}
+	return strings.Split(fwd, ",")[0]
+}
+
+// whitelistIPs checks whether the request's IP address was made from an IP
 // inside the provided ranges of ips. WhitelistIPs uses the first value in the
 // request's X-Forwarded-For header (if one is present), or r.RemoteAddr if an
 // X-Forwarded-For header is not present.
 //
-// Note it is possible to spoof IP addresses or construct an X-Forwarded-For
-// header that contains a different IP address than the request's originating
-// address.
-func WhitelistIPs(h http.Handler, ips []*net.IPNet) http.Handler {
+// THIS IS NOT A SECURITY FEATURE. It is possible to spoof IP addresses or
+// construct an X-Forwarded-For header that contains a different IP address
+// than the request's originating address.
+func whitelistIPs(h http.Handler, l log.Logger, nets []*net.IPNet) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		ipStr := getRemoteIP(r)
+		// RemoteHost reports both
+		host, _, err := net.SplitHostPort(ipStr)
+		if err == nil {
+			ipStr = host
+		}
+		ip := net.ParseIP(ipStr)
+		found := false
+		if ip == nil {
+			l.Warn("Could not parse X-Forwarded-For header or RemoteHost as IP address. Allowing access", "ip", ipStr)
+			found = true
+		} else {
+			for _, n := range nets {
+				if n.Contains(ip) {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			l.Warn("Denying access to request based on IP", "ip", ipStr, "subnets", nets)
+			rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
+		}
+		h.ServeHTTP(w, r)
 	})
 }
 
@@ -188,7 +220,6 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	if settings.Logger == nil {
 		return nil, errors.New("Please configure a non-nil Logger")
 	}
-
 	permission := config.NewPermission(settings.MaxResourceAge)
 	vc := views.NewClient(settings.Logger, settings.Client, settings.SecretKey, permission)
 	mls, err := newMessageListServer(settings.Logger, vc, settings.LocationFinder,
@@ -278,6 +309,9 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)
 	authH := AddAuthenticator(authR, ls, settings.Authenticator)
 	authH = handlers.WithLogger(authH, settings.Logger)
+	if len(settings.IPSubnets) > 0 {
+		authH = whitelistIPs(authH, settings.Logger, settings.IPSubnets)
+	}
 
 	r := new(handlers.Regexp)
 	// TODO - don't protect static routes with basic auth

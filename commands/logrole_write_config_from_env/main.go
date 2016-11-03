@@ -118,6 +118,7 @@ func writeConfig(b *bytes.Buffer, e environment) {
 	var ok bool
 	ok = writeVal(b, e, "PORT", "port") || ok
 	ok = writeVal(b, e, "PUBLIC_HOST", "public_host") || ok
+	ok = writeCommaSeparatedVal(b, e, "IP_SUBNETS", "ip_subnets") || ok
 	if ok {
 		b.WriteByte('\n')
 		ok = false

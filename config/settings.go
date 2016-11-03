@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/mail"
 	"time"
 
@@ -40,15 +41,26 @@ var missingGoogleCredentials = errors.New("Cannot use google auth without a Clie
 //
 // All of the types and values here should be representable in a YAML file.
 type FileConfig struct {
-	Port       string       `yaml:"port"`
-	AccountSid string       `yaml:"twilio_account_sid"`
-	AuthToken  string       `yaml:"twilio_auth_token"`
-	Realm      services.Rlm `yaml:"realm"`
+	Port       string `yaml:"port"`
+	AccountSid string `yaml:"twilio_account_sid"`
+	AuthToken  string `yaml:"twilio_auth_token"`
+
+	Realm services.Rlm `yaml:"realm"`
 	// Default timezone for dates/times in the UI
 	Timezone string `yaml:"default_timezone"`
 	// List of timezones a user can choose in the UI
-	Timezones      []string      `yaml:"timezones"`
-	PublicHost     string        `yaml:"public_host"`
+	Timezones  []string `yaml:"timezones"`
+	PublicHost string   `yaml:"public_host"`
+
+	// IP subnets that are allowed to visit the site. THIS IS NOT A SECURITY
+	// FEATURE. IP ADDRESSES ARE EASILY SPOOFED, AND YOUR IP ADDRESS IS EASILY
+	// DISCOVERABLE. To determine a user's ip address, we check the first value
+	// in a X-Forwarded-For header, or the RemoteHost value of a http.Request.
+	//
+	// If you have an IPv4 address, the subnet for *only* that address is
+	// "A.B.C.D/32". The recommended smallest subnet for IPv6 is /64.
+	IPSubnets []string `yaml:"ip_subnets"`
+
 	PageSize       uint          `yaml:"page_size"`
 	SecretKey      string        `yaml:"secret_key"`
 	MaxResourceAge time.Duration `yaml:"max_resource_age"`
@@ -115,6 +127,10 @@ type Settings struct {
 
 	// The authentication scheme.
 	Authenticator Authenticator
+
+	// THIS IS NOT A SECURITY FEATURE AND SHOULD NOT BE RELIED ON FOR IP
+	// WHITELISTING.
+	IPSubnets []*net.IPNet
 }
 
 var errWrongLength = errors.New("Secret key has wrong length. Should be a 64-byte hex string")
@@ -260,6 +276,21 @@ func NewSettingsFromConfig(c *FileConfig, l log.Logger) (settings *Settings, err
 			l.Warn("Couldn't add location", "tz", timezone)
 		}
 	}
+	var nets []*net.IPNet
+	if c.IPSubnets == nil {
+		nets = make([]*net.IPNet, 0)
+	} else {
+		nets = make([]*net.IPNet, len(c.IPSubnets))
+		for i, ipStr := range c.IPSubnets {
+			_, n, err := net.ParseCIDR(ipStr)
+			if err != nil {
+				l.Error("Couldn't parse IP subnet", "err", err, "ip", ipStr)
+				return nil, err
+			}
+			nets[i] = n
+		}
+	}
+
 	// TODO
 	if c.PageSize == 0 {
 		c.PageSize = DefaultPageSize
@@ -285,6 +316,7 @@ func NewSettingsFromConfig(c *FileConfig, l log.Logger) (settings *Settings, err
 		Mailto:                  address,
 		Reporter:                reporter,
 		Authenticator:           authenticator,
+		IPSubnets:               nets,
 	}
 	return
 }

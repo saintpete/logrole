@@ -169,3 +169,26 @@ func TestGoogleAuthNoIDOrSecretErrors(t *testing.T) {
 		t.Errorf("expected a link to google.md in the error, got %v", err)
 	}
 }
+
+func TestIPAddressParse(t *testing.T) {
+	t.Parallel()
+	c := &FileConfig{
+		AccountSid: "AC123",
+		AuthToken:  "123",
+		IPSubnets:  []string{"5.6.7.8/24"},
+	}
+	settings, err := NewSettingsFromConfig(c, NullLogger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(settings.IPSubnets) != 1 {
+		t.Errorf("expected 1 IP Subnet, got %d", len(settings.IPSubnets))
+	}
+	n := settings.IPSubnets[0]
+	if n.IP.String() != "5.6.7.0" {
+		t.Errorf("bad IP: %v", n.IP)
+	}
+	if n.Mask.String() != "ffffff00" {
+		t.Errorf("bad mask: %s", n.Mask.String())
+	}
+}
