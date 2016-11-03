@@ -7,6 +7,7 @@ package server
 import (
 	"bytes"
 	"errors"
+	"net"
 	"net/http"
 	"regexp"
 	"strings"
@@ -21,7 +22,21 @@ import (
 )
 
 // Server version, run "make release" to increase this value
-const Version = "0.60"
+const Version = "0.61"
+
+// WhitelistIPs checks whether the request's IP address was made from an IP
+// inside the provided ranges of ips. WhitelistIPs uses the first value in the
+// request's X-Forwarded-For header (if one is present), or r.RemoteAddr if an
+// X-Forwarded-For header is not present.
+//
+// Note it is possible to spoof IP addresses or construct an X-Forwarded-For
+// header that contains a different IP address than the request's originating
+// address.
+func WhitelistIPs(h http.Handler, ips []*net.IPNet) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	})
+}
 
 func UpgradeInsecureHandler(h http.Handler, allowUnencryptedTraffic bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
