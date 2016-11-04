@@ -113,6 +113,10 @@ pre, code {
     min-width: 195px;
 }
 
+.direction {
+    min-width: 135px;
+}
+
 .pn {
     min-width: 155px;
 }
