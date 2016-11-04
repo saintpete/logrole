@@ -67,15 +67,15 @@
         {{- end -}}
 
         {{- if .CanViewProperty "ErrorCode" }}
-        <td>{{ .ErrorCode }}</td>
-        {{- end -}}
+          {{- if .MoreInfo }}
+          <td><a href="{{ .MoreInfo }}">{{ .ErrorCode }}</a></td>
+          {{- else }}
+          <td>{{ .ErrorCode }}</td>
+          {{- end }}
+        {{- end }}
 
         {{- if .CanViewDescription }}
-          {{- if .MoreInfo }}
-          <td><a href="{{ .MoreInfo }}">{{ .Description }}</a></td>
-          {{- else }}
-          <td>{{ .Description }}</td>
-          {{- end }}
+        <td><a href="https://www.twilio.com/console/dev-tools/debugger/{{ .Sid }}">{{ .Description }}</a></td>
         {{- end -}}
 
       </tr>
