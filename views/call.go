@@ -130,9 +130,9 @@ func (c *Call) CanViewCallAlerts() bool {
 	return c.user.CanViewAlerts()
 }
 
-func (c *Call) EndedUnsuccessfully() (bool, error) {
+func (c *Call) Failed() (bool, error) {
 	if c.CanViewProperty("Status") {
-		return c.call.EndedUnsuccessfully(), nil
+		return c.call.Status == twilio.StatusFailed, nil
 	} else {
 		return false, config.PermissionDenied
 	}
