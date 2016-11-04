@@ -8,6 +8,11 @@
   </div>
 </div>
 {{- end }}
+{{- if .Freq }}
+  {{- range .Freq }}
+  <p>{{ .Count }} alerts in the last {{ .Name }}</p>
+  {{- end }}
+{{- end }}
 <table class="table table-striped">
   <thead>
     <tr>

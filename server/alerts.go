@@ -36,6 +36,7 @@ type alertListData struct {
 	Loc                   *time.Location
 	Query                 url.Values
 	Err                   string
+	Freq                  []*alertFrequency
 }
 
 func (ad *alertListData) Title() string {
@@ -44,6 +45,27 @@ func (ad *alertListData) Title() string {
 
 func (ad *alertListData) Path() string {
 	return "/alerts"
+}
+
+type alertFrequency struct {
+	Since time.Duration
+	Name  string
+	Count uint
+}
+
+func getAlertFrequency(alerts []*views.Alert, name string, since time.Duration) *alertFrequency {
+	now := time.Now()
+	count := uint(0)
+	for _, alert := range alerts {
+		createdAt, err := alert.DateCreated()
+		if err != nil {
+			continue
+		}
+		if createdAt.Valid && now.Sub(createdAt.Time) < since {
+			count++
+		}
+	}
+	return &alertFrequency{Name: name, Count: count, Since: since}
 }
 
 func newAlertListServer(l log.Logger, vc views.Client,
@@ -158,13 +180,23 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		LF:       s.LocationFinder,
 		Duration: time.Since(start),
 	}
-	data.Data = &alertListData{
+	ad := &alertListData{
 		Page:                  page,
 		Query:                 query,
 		Loc:                   s.LocationFinder.GetLocationReq(r),
 		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
 		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
 	}
+	if opaqueNext == "" {
+		alerts := page.Alerts()
+		freq := []*alertFrequency{
+			getAlertFrequency(alerts, "5 minutes", 5*time.Minute),
+			getAlertFrequency(alerts, "hour", time.Hour),
+			getAlertFrequency(alerts, "day", 24*time.Hour),
+		}
+		ad.Freq = freq
+	}
+	data.Data = ad
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
 	if err := render(w, r, s.tpl, "base", data); err != nil {
