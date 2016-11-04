@@ -79,7 +79,7 @@ func newConferenceListServer(l log.Logger, vc views.Client,
 	tpl, err := newTpl(template.FuncMap{
 		"min": minFunc(s.MaxResourceAge),
 		"max": max,
-	}, base+conferenceListTpl+pagingTpl)
+	}, base+conferenceListTpl+copyScript+pagingTpl)
 	if err != nil {
 		return nil, err
 	}

@@ -55,20 +55,14 @@
           Resource {{ .ResourceSid }}
           {{- end }}
         </td>
-        {{- else }}
-        <td><i>hidden</i>
         {{- end -}}
 
         {{- if .CanViewProperty "LogLevel" }}
         <td>{{ .LogLevel.Friendly }}</td>
-        {{- else }}
-        <td><i>hidden</i>
         {{- end -}}
 
         {{- if .CanViewProperty "ErrorCode" }}
         <td>{{ .ErrorCode }}</td>
-        {{- else }}
-        <td><i>hidden</i>
         {{- end -}}
 
         {{- if .CanViewDescription }}
@@ -77,8 +71,6 @@
           {{- else }}
           <td>{{ .Description }}</td>
           {{- end }}
-        {{- else }}
-        <td><i>hidden</i>
         {{- end -}}
 
       </tr>

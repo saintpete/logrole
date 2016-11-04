@@ -428,6 +428,7 @@ func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {
 			go vc.getAndCacheMessage(ctx, data)
 			go vc.getAndCacheCall(ctx, data)
 			go vc.getAndCacheConference(ctx, data)
+			go vc.getAndCacheAlert(ctx, data)
 		case <-doneCh:
 			return
 		}

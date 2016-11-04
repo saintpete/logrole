@@ -67,7 +67,11 @@
           </a>
         </td>
         {{- if .CanViewProperty "FriendlyName" }}
-        <td>{{ .FriendlyName }}</td>
+        <td>
+          {{ .FriendlyName }}
+          <a title="Click to copy" class="clipboard">&#x1f4cb;</a>
+          <form class="copy-form"><input class="copy-target" type="text" value="{{ .FriendlyName }}" /></form>
+        </td>
         {{- end }}
         {{- if .CanViewProperty "Status" }}
         <td>{{ .Status.Friendly }}</td>
@@ -94,4 +98,5 @@
   <br>
 {{- end }}
 {{- template "paging" . }}
+{{- template "copy-phonenumber" }}
 {{- end }}
