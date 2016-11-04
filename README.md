@@ -111,6 +111,12 @@ The Twilio Dashboard displays Participants for completed Conferences, but [this
 functionality is not available via the API][issue-4]. Please [contact Support
 to request this feature][support] if you'd like it to be available in Logrole.
 
+The Twilio Dashboard lets you search Calls and Messages with up-to-the minute
+precision, with timezone support. The public API only supports UTC, and only
+supports searching for resources in a particular date range. Please [contact
+Support to request this feature][support] if you'd like it to be available in
+Logrole.
+
 [support]: mailto:help@twilio.com
 [issue-4]: https://github.com/saintpete/logrole/issues/4
 
