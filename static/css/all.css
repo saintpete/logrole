@@ -109,6 +109,10 @@ pre, code {
     background-color: #FDDFDA;
 }
 
+.friendly-date {
+    min-width: 195px;
+}
+
 .pn {
     min-width: 155px;
 }

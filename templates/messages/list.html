@@ -58,7 +58,7 @@
     {{- range .Page.Messages }}
       {{ if .CanViewProperty "Sid" }}
       <tr class="message {{ if .CanViewProperty "ErrorCode" }}{{ if gt .ErrorCode 0 }}list-error{{ end }}{{ end }}">
-        <td>
+        <td class="friendly-date">
           <a href="/messages/{{ .Sid }}" title="View more details">
             {{- if .CanViewProperty "DateCreated" }}
               {{ friendly_date (.DateCreated.Time.In $.Loc) }}

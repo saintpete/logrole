@@ -36,7 +36,7 @@
       {{- if and (.CanViewProperty "Sid") (.CanViewProperty "ResourceSid") }}
       {{- if gt (len .ResourceSid) 0 }}
       <tr class="alert">
-        <td>
+        <td class="friendly-date">
           <a href="/alerts/{{ .Sid }}" title="View more details">
             {{- if .CanViewProperty "DateCreated" }}
               {{ friendly_date (.DateCreated.Time.In $.Loc) }}

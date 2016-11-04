@@ -58,7 +58,7 @@
     {{- range .Page.Calls }}
       {{- if .CanViewProperty "Sid" }}
       <tr class="call {{ if .CanViewProperty "Status" }}{{ if .EndedUnsuccessfully }}list-error{{ end }}{{ end }}">
-        <td>
+        <td class="friendly-date">
           <a href="/calls/{{ .Sid }}" title="View more details">
             {{- if .CanViewProperty "DateCreated" }}
               {{ friendly_date (.DateCreated.Time.In $.Loc) }}
