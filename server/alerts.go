@@ -48,9 +48,10 @@ func (ad *alertListData) Path() string {
 }
 
 type alertFrequency struct {
-	Since time.Duration
-	Name  string
-	Count uint
+	Since    time.Duration
+	Name     string
+	Count    uint
+	HaveMore bool
 }
 
 func getAlertFrequency(alerts []*views.Alert, name string, since time.Duration) *alertFrequency {
@@ -65,7 +66,12 @@ func getAlertFrequency(alerts []*views.Alert, name string, since time.Duration) 
 			count++
 		}
 	}
-	return &alertFrequency{Name: name, Count: count, Since: since}
+	return &alertFrequency{
+		Name:     name,
+		Count:    count,
+		Since:    since,
+		HaveMore: count > 0 && int(count) >= len(alerts),
+	}
 }
 
 func newAlertListServer(l log.Logger, vc views.Client,
@@ -193,6 +199,7 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			getAlertFrequency(alerts, "5 minutes", 5*time.Minute),
 			getAlertFrequency(alerts, "hour", time.Hour),
 			getAlertFrequency(alerts, "day", 24*time.Hour),
+			getAlertFrequency(alerts, "3 days", 24*time.Hour),
 		}
 		ad.Freq = freq
 	}

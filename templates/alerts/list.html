@@ -10,7 +10,7 @@
 {{- end }}
 {{- if .Freq }}
   {{- range .Freq }}
-  <p>{{ .Count }} alerts in the last {{ .Name }}</p>
+  <p>{{ if .HaveMore }}At least {{ end }}<span class="lead {{ if eq .Count 0 }}text-success{{ end }}" style="margin-right: 5px;">{{ .Count }}</span> alerts in the last {{ .Name }}</p>
   {{- end }}
 {{- end }}
 <table class="table table-striped">
