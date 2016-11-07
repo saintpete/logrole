@@ -9,12 +9,10 @@ logs.
 limit access to SMS/MMS bodies, resources older than a certain age, recordings,
 calls, call from, etc. etc.
 
-- Account Sid is hidden from end users at all times.
+- Account Sid and image/recording URLs are hidden from end users at all times,
+  and require specific permissions to access.
 
 - Click-to-copy sids and phone numbers.
-
-- MMS messages are always fetched over HTTPS. The default Twilio API/libraries
-hand back insecure image links, but we rewrite URLs before fetching them.
 
 - Tab to search: start typing the URL in the tab bar, then press &lt;tab&gt;.
   Paste any SID to immediately jump to that page.
