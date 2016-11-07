@@ -1,7 +1,8 @@
 # Logrole
 
 Logrole is a faster, usable, fine-grained client for exploring your Twilio
-logs.
+logs. If you need to search your Twilio Logs, this is the tool you should be
+using.
 
 <img alt="Picture of Logrole" src="https://kev.inburke.com/rawblog/images/logrole.png" />
 
