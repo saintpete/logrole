@@ -37,16 +37,16 @@ type Client interface {
 	GetCall(context.Context, *config.User, string) (*Call, error)
 	GetConference(context.Context, *config.User, string) (*Conference, error)
 	GetMediaURLs(context.Context, *config.User, string) ([]*url.URL, error)
-	GetMessagePage(context.Context, *config.User, url.Values) (*MessagePage, error)
-	GetCallPage(context.Context, *config.User, url.Values) (*CallPage, error)
 	GetAlertPage(context.Context, *config.User, url.Values) (*AlertPage, error)
-	GetNextMessagePage(context.Context, *config.User, string) (*MessagePage, error)
-	GetNextCallPage(context.Context, *config.User, string) (*CallPage, error)
-	GetNextConferencePage(context.Context, *config.User, string) (*ConferencePage, error)
+	GetMessagePageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*MessagePage, error)
+	GetCallPageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*CallPage, error)
+	GetConferencePageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*ConferencePage, error)
+	GetNextMessagePageInRange(context.Context, *config.User, time.Time, time.Time, string) (*MessagePage, error)
+	GetNextCallPageInRange(context.Context, *config.User, time.Time, time.Time, string) (*CallPage, error)
+	GetNextConferencePageInRange(context.Context, *config.User, time.Time, time.Time, string) (*ConferencePage, error)
 	GetNextAlertPage(context.Context, *config.User, string) (*AlertPage, error)
 	GetNextRecordingPage(context.Context, *config.User, string) (*RecordingPage, error)
 	GetCallRecordings(context.Context, *config.User, string, url.Values) (*RecordingPage, error)
-	GetConferencePage(context.Context, *config.User, url.Values) (*ConferencePage, error)
 	GetCallAlerts(context.Context, *config.User, string) (*AlertPage, error)
 	CacheCommonQueries(uint, <-chan bool)
 	IsTwilioNumber(num twilio.PhoneNumber) bool
@@ -69,7 +69,7 @@ const averageCacheEntryBytes = 3000
 
 // NewClient creates a new Client encapsulating the provided values.
 func NewClient(l log.Logger, c *twilio.Client, secretKey *[32]byte, p *config.Permission) Client {
-	vc := &client{
+	return &client{
 		Logger:     l,
 		group:      singleflight.Group{},
 		cache:      cache.NewCache(cacheSizeMB*1024*1024/averageCacheEntryBytes, l),
@@ -77,12 +77,6 @@ func NewClient(l log.Logger, c *twilio.Client, secretKey *[32]byte, p *config.Pe
 		secretKey:  secretKey,
 		permission: p,
 	}
-	// TODO - would prefer to have another way to start this
-	if vc.client != nil {
-		go vc.getNumbers()
-		go vc.refreshNumberMap(30 * time.Second)
-	}
-	return vc
 }
 
 func (vc *client) getNumbers() {
@@ -107,13 +101,6 @@ func (vc *client) getNumbers() {
 	vc.numbers = mp
 	vc.numbersMu.Unlock()
 	vc.Debug("Updated phone number map", "size", size)
-}
-
-func (vc *client) refreshNumberMap(interval time.Duration) {
-	tick := time.NewTicker(interval)
-	for range tick.C {
-		go vc.getNumbers()
-	}
 }
 
 // SetBasicAuth sets the Twilio AccountSid and AuthToken on the given request.
@@ -214,84 +201,84 @@ func (vc *client) getAndCacheCall(ctx context.Context, data url.Values) (*twilio
 	return page, nil
 }
 
-func (vc *client) GetMessagePage(ctx context.Context, user *config.User, data url.Values) (*MessagePage, error) {
-	val, err := vc.group.Do("messages."+data.Encode(), func() (interface{}, error) {
-		if page, ok := vc.cache.GetMessagePageByValues(data); ok {
-			return page, nil
-		}
-		page, err := vc.getAndCacheMessage(ctx, data)
-		return page, err
-	})
-	if err != nil {
-		return nil, err
-	}
-	page, ok := val.(*twilio.MessagePage)
-	if !ok {
-		return nil, errors.New("Could not cast fetch result to a MessagePage")
-	}
-	return NewMessagePage(page, vc.permission, user)
-}
+//func (vc *client) GetMessagePage(ctx context.Context, user *config.User, data url.Values) (*MessagePage, error) {
+//val, err := vc.group.Do("messages."+data.Encode(), func() (interface{}, error) {
+//if page, ok := vc.cache.GetMessagePageByValues(data); ok {
+//return page, nil
+//}
+//page, err := vc.getAndCacheMessage(ctx, data)
+//return page, err
+//})
+//if err != nil {
+//return nil, err
+//}
+//page, ok := val.(*twilio.MessagePage)
+//if !ok {
+//return nil, errors.New("Could not cast fetch result to a MessagePage")
+//}
+//return NewMessagePage(page, vc.permission, user)
+//}
 
-func (vc *client) GetConferencePage(ctx context.Context, user *config.User, data url.Values) (*ConferencePage, error) {
-	val, err := vc.group.Do("conferences."+data.Encode(), func() (interface{}, error) {
-		if page, ok := vc.cache.GetConferencePageByValues(data); ok {
-			return page, nil
-		}
-		page, err := vc.getAndCacheConference(ctx, data)
-		return page, err
-	})
-	if err != nil {
-		return nil, err
-	}
-	page, ok := val.(*twilio.ConferencePage)
-	if !ok {
-		return nil, errors.New("Could not cast fetch result to a ConferencePage")
-	}
-	return NewConferencePage(page, vc.permission, user)
-}
+//func (vc *client) GetConferencePage(ctx context.Context, user *config.User, data url.Values) (*ConferencePage, error) {
+//val, err := vc.group.Do("conferences."+data.Encode(), func() (interface{}, error) {
+//if page, ok := vc.cache.GetConferencePageByValues(data); ok {
+//return page, nil
+//}
+//page, err := vc.getAndCacheConference(ctx, data)
+//return page, err
+//})
+//if err != nil {
+//return nil, err
+//}
+//page, ok := val.(*twilio.ConferencePage)
+//if !ok {
+//return nil, errors.New("Could not cast fetch result to a ConferencePage")
+//}
+//return NewConferencePage(page, vc.permission, user)
+//}
 
-func (vc *client) GetNextMessagePage(ctx context.Context, user *config.User, nextPage string) (*MessagePage, error) {
-	val, err := vc.group.Do("messages."+nextPage, func() (interface{}, error) {
-		if page, ok := vc.cache.GetMessagePageByURL(nextPage); ok {
-			return page, nil
-		}
-		page := new(twilio.MessagePage)
-		if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
-			return nil, err
-		}
-		if page == nil {
-			panic("nil page")
-		}
-		vc.cache.AddMessagePage(nextPage, page, nextPageTimeout)
-		return page, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	page, ok := val.(*twilio.MessagePage)
-	if !ok {
-		return nil, errors.New("Could not cast fetch result to a MessagePage")
-	}
-	return NewMessagePage(page, vc.permission, user)
-}
+//func (vc *client) GetNextMessagePage(ctx context.Context, user *config.User, nextPage string) (*MessagePage, error) {
+//val, err := vc.group.Do("messages."+nextPage, func() (interface{}, error) {
+//if page, ok := vc.cache.GetMessagePageByURL(nextPage); ok {
+//return page, nil
+//}
+//page := new(twilio.MessagePage)
+//if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
+//return nil, err
+//}
+//if page == nil {
+//panic("nil page")
+//}
+//vc.cache.AddMessagePage(nextPage, page, nextPageTimeout)
+//return page, nil
+//})
+//if err != nil {
+//return nil, err
+//}
+//page, ok := val.(*twilio.MessagePage)
+//if !ok {
+//return nil, errors.New("Could not cast fetch result to a MessagePage")
+//}
+//return NewMessagePage(page, vc.permission, user)
+//}
 
-func (vc *client) GetCallPage(ctx context.Context, user *config.User, data url.Values) (*CallPage, error) {
-	val, err := vc.group.Do("calls."+data.Encode(), func() (interface{}, error) {
-		if page, ok := vc.cache.GetCallPageByValues(data); ok {
-			return page, nil
-		}
-		page, err := vc.getAndCacheCall(ctx, data)
-		return page, err
-	})
-	if err != nil {
-		return nil, err
-	}
-	page, ok := val.(*twilio.CallPage)
-	if !ok {
-		return nil, errors.New("Could not cast fetch result to a CallPage")
-	}
-	return NewCallPage(page, vc.permission, user)
-}
+//func (vc *client) GetCallPage(ctx context.Context, user *config.User, data url.Values) (*CallPage, error) {
+//val, err := vc.group.Do("calls."+data.Encode(), func() (interface{}, error) {
+//if page, ok := vc.cache.GetCallPageByValues(data); ok {
+//return page, nil
+//}
+//page, err := vc.getAndCacheCall(ctx, data)
+//return page, err
+//})
+//if err != nil {
+//return nil, err
+//}
+//page, ok := val.(*twilio.CallPage)
+//if !ok {
+//return nil, errors.New("Could not cast fetch result to a CallPage")
+//}
+//return NewCallPage(page, vc.permission, user)
+//}
 
 func (vc *client) GetAlertPage(ctx context.Context, user *config.User, data url.Values) (*AlertPage, error) {
 	val, err := vc.group.Do("alerts."+data.Encode(), func() (interface{}, error) {
@@ -311,52 +298,113 @@ func (vc *client) GetAlertPage(ctx context.Context, user *config.User, data url.
 	return NewAlertPage(page, vc.permission, user)
 }
 
-func (vc *client) GetNextConferencePage(ctx context.Context, user *config.User, nextPage string) (*ConferencePage, error) {
-	val, err := vc.group.Do("conferences."+nextPage, func() (interface{}, error) {
-		if page, ok := vc.cache.GetConferencePageByURL(nextPage); ok {
-			return page, nil
-		}
-		page := new(twilio.ConferencePage)
-		if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
-			return nil, err
-		}
-		if page == nil {
-			panic("nil page")
-		}
-		vc.cache.AddConferencePage(nextPage, page, nextPageTimeout)
-		return page, nil
-	})
+//func (vc *client) GetNextConferencePage(ctx context.Context, user *config.User, nextPage string) (*ConferencePage, error) {
+//val, err := vc.group.Do("conferences."+nextPage, func() (interface{}, error) {
+//if page, ok := vc.cache.GetConferencePageByURL(nextPage); ok {
+//return page, nil
+//}
+//page := new(twilio.ConferencePage)
+//if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
+//return nil, err
+//}
+//if page == nil {
+//panic("nil page")
+//}
+//vc.cache.AddConferencePage(nextPage, page, nextPageTimeout)
+//return page, nil
+//})
+//if err != nil {
+//return nil, err
+//}
+//page, ok := val.(*twilio.ConferencePage)
+//if !ok {
+//return nil, errors.New("Could not cast fetch result to a ConferencePage")
+//}
+//return NewConferencePage(page, vc.permission, user)
+//}
+
+//func (vc *client) GetNextCallPage(ctx context.Context, user *config.User, nextPage string) (*CallPage, error) {
+//val, err := vc.group.Do("calls."+nextPage, func() (interface{}, error) {
+//if page, ok := vc.cache.GetCallPageByURL(nextPage); ok {
+//return page, nil
+//}
+//page := new(twilio.CallPage)
+//if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
+//return nil, err
+//}
+//if page == nil {
+//panic("nil page")
+//}
+//vc.cache.AddCallPage(nextPage, page, nextPageTimeout)
+//return page, nil
+//})
+//if err != nil {
+//return nil, err
+//}
+//page, ok := val.(*twilio.CallPage)
+//if !ok {
+//return nil, errors.New("Could not cast fetch result to a CallPage")
+//}
+//return NewCallPage(page, vc.permission, user)
+//}
+
+func (vc *client) GetConferencePageInRange(ctx context.Context, user *config.User, start time.Time, end time.Time, data url.Values) (*ConferencePage, error) {
+	// TODO: caching. A little nervous about this since twilio-go does some
+	// filtering under the hood.
+	page, err := vc.client.Conferences.GetConferencesInRange(start, end, data).Next(ctx)
 	if err != nil {
 		return nil, err
-	}
-	page, ok := val.(*twilio.ConferencePage)
-	if !ok {
-		return nil, errors.New("Could not cast fetch result to a ConferencePage")
 	}
 	return NewConferencePage(page, vc.permission, user)
 }
 
-func (vc *client) GetNextCallPage(ctx context.Context, user *config.User, nextPage string) (*CallPage, error) {
-	val, err := vc.group.Do("calls."+nextPage, func() (interface{}, error) {
-		if page, ok := vc.cache.GetCallPageByURL(nextPage); ok {
-			return page, nil
-		}
-		page := new(twilio.CallPage)
-		if err := vc.client.GetNextPage(ctx, nextPage, page); err != nil {
-			return nil, err
-		}
-		if page == nil {
-			panic("nil page")
-		}
-		vc.cache.AddCallPage(nextPage, page, nextPageTimeout)
-		return page, nil
-	})
+func (vc *client) GetNextConferencePageInRange(ctx context.Context, user *config.User, start time.Time, end time.Time, nextPage string) (*ConferencePage, error) {
+	// TODO: caching. A little nervous about this since twilio-go does some
+	// filtering under the hood.
+	page, err := vc.client.Conferences.GetNextConferencesInRange(start, end, nextPage).Next(ctx)
 	if err != nil {
 		return nil, err
 	}
-	page, ok := val.(*twilio.CallPage)
-	if !ok {
-		return nil, errors.New("Could not cast fetch result to a CallPage")
+	return NewConferencePage(page, vc.permission, user)
+}
+
+func (vc *client) GetMessagePageInRange(ctx context.Context, user *config.User, start time.Time, end time.Time, data url.Values) (*MessagePage, error) {
+	// TODO: caching. A little nervous about this since twilio-go does some
+	// filtering under the hood.
+	page, err := vc.client.Messages.GetMessagesInRange(start, end, data).Next(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return NewMessagePage(page, vc.permission, user)
+}
+
+func (vc *client) GetNextMessagePageInRange(ctx context.Context, user *config.User, start time.Time, end time.Time, nextPage string) (*MessagePage, error) {
+	// TODO: caching. A little nervous about this since twilio-go does some
+	// filtering under the hood.
+	page, err := vc.client.Messages.GetNextMessagesInRange(start, end, nextPage).Next(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return NewMessagePage(page, vc.permission, user)
+}
+
+func (vc *client) GetCallPageInRange(ctx context.Context, user *config.User, start time.Time, end time.Time, data url.Values) (*CallPage, error) {
+	// TODO: caching. A little nervous about this since twilio-go does some
+	// filtering under the hood.
+	iter := vc.client.Calls.GetCallsInRange(start, end, data)
+	page, err := iter.Next(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return NewCallPage(page, vc.permission, user)
+}
+
+func (vc *client) GetNextCallPageInRange(ctx context.Context, user *config.User, start time.Time, end time.Time, nextPage string) (*CallPage, error) {
+	// TODO caching. Note also `nextPage` has query filters attached that
+	// *should* match start and end, but may not.
+	page, err := vc.client.Calls.GetNextCallsInRange(start, end, nextPage).Next(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return NewCallPage(page, vc.permission, user)
 }
@@ -429,6 +477,7 @@ func (vc *client) CacheCommonQueries(pageSize uint, doneCh <-chan bool) {
 			go vc.getAndCacheCall(ctx, data)
 			go vc.getAndCacheConference(ctx, data)
 			go vc.getAndCacheAlert(ctx, data)
+			go vc.getNumbers()
 		case <-doneCh:
 			return
 		}

@@ -114,17 +114,29 @@ func tzTime(now time.Time, lf services.LocationFinder, loc string) string {
 	return services.FriendlyDate(now.In(l))
 }
 
+func min(age time.Duration) string {
+	return time.Now().Add(-age).Truncate(time.Hour).Format(HTML5DatetimeLocalFormat)
+}
+
+func minLoc(age time.Duration, l *time.Location) string {
+	return time.Now().In(l).Add(-age).Truncate(time.Hour).Format(HTML5DatetimeLocalFormat)
+}
+
 // minFunc returns a function that, when called, returns the minimum acceptable
-// age for a resource, formatted as "YYYY-MM-DD".
+// age for a resource, formatted using the HTML5 Datetime format.
 func minFunc(age time.Duration) func() string {
 	return func() string {
-		return time.Now().UTC().Add(-age).Format("2006-01-02")
+		return min(age)
 	}
 }
 
 // max returns the current time in UTC, formatted as YYYY-MM-DD.
 func max() string {
-	return time.Now().UTC().Format("2006-01-02")
+	return time.Now().Add(1 * time.Hour).Truncate(time.Hour).Format(HTML5DatetimeLocalFormat)
+}
+
+func maxLoc(l *time.Location) string {
+	return time.Now().In(l).Add(1 * time.Hour).Truncate(time.Hour).Format(HTML5DatetimeLocalFormat)
 }
 
 // Render renders the given template to a bytes.Buffer. If the template renders

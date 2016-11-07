@@ -1214,3 +1214,117 @@ var MessageBody = []byte(`
     "uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?PageSize=50&Page=0"
 }
 `)
+
+var OldMessageBody = []byte(`
+{
+    "end": 1,
+    "first_page_uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?From=%2B19252717005&PageSize=1&Page=0",
+    "messages": [
+        {
+            "account_sid": "AC58f1e8f2b1c6b88ca90a012a4be0c279",
+            "api_version": "2010-04-01",
+            "body": "Hello",
+            "date_created": "Tue, 20 Sep 2016 22:41:38 +0000",
+            "date_sent": "Tue, 20 Sep 2016 22:41:39 +0000",
+            "date_updated": "Tue, 20 Sep 2016 22:41:39 +0000",
+            "direction": "inbound",
+            "error_code": null,
+            "error_message": null,
+            "from": "+19252717005",
+            "messaging_service_sid": null,
+            "num_media": "0",
+            "num_segments": "1",
+            "price": "-0.00750",
+            "price_unit": "USD",
+            "sid": "SMcc61f9140a65752eadf1351d6ccd0f15",
+            "status": "received",
+            "subresource_uris": {
+                "media": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages/SMcc61f9140a65752eadf1351d6ccd0f15/Media.json"
+            },
+            "to": "+19253920364",
+            "uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages/SMcc61f9140a65752eadf1351d6ccd0f15.json"
+        }
+    ],
+    "next_page_uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?From=%2B19252717005&PageSize=1&Page=2&PageToken=PASMcc61f9140a65752eadf1351d6ccd0f15",
+    "page": 1,
+    "page_size": 1,
+    "previous_page_uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?From=%2B19252717005&PageSize=1&Page=0&PageToken=PBSMcc61f9140a65752eadf1351d6ccd0f15",
+    "start": 1,
+    "uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?From=%2B19252717005&PageSize=1&Page=1&PageToken=PAMM89a8c4a6891c53054e9cd604922bfb61"
+}
+`)
+
+var CallListBody = []byte(`
+{
+    "calls": [
+        {
+            "account_sid": "AC58f1e8f2b1c6b88ca90a012a4be0c279",
+            "annotation": null,
+            "answered_by": null,
+            "api_version": "2010-04-01",
+            "caller_name": "",
+            "date_created": "Thu, 27 Oct 2016 23:27:03 +0000",
+            "date_updated": "Thu, 27 Oct 2016 23:27:25 +0000",
+            "direction": "outbound-api",
+            "duration": "17",
+            "end_time": "Thu, 27 Oct 2016 23:27:25 +0000",
+            "forwarded_from": null,
+            "from": "+19253920364",
+            "from_formatted": "(925) 392-0364",
+            "group_sid": null,
+            "parent_call_sid": null,
+            "phone_number_sid": "PN5fb9ed903e184c8baa86c1fb7544ca0f",
+            "price": "-0.01500",
+            "price_unit": "USD",
+            "sid": "CA14b8432d941d883a9b69e2598b0e57ba",
+            "start_time": "Thu, 27 Oct 2016 23:27:08 +0000",
+            "status": "completed",
+            "subresource_uris": {
+                "notifications": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Calls/CA14b8432d941d883a9b69e2598b0e57ba/Notifications.json",
+                "recordings": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Calls/CA14b8432d941d883a9b69e2598b0e57ba/Recordings.json"
+            },
+            "to": "+16103317238",
+            "to_formatted": "(610) 331-7238",
+            "uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Calls/CA14b8432d941d883a9b69e2598b0e57ba.json"
+        },
+        {
+            "account_sid": "AC58f1e8f2b1c6b88ca90a012a4be0c279",
+            "annotation": null,
+            "answered_by": null,
+            "api_version": "2010-04-01",
+            "caller_name": "",
+            "date_created": "Thu, 27 Oct 2016 23:26:31 +0000",
+            "date_updated": "Thu, 27 Oct 2016 23:28:30 +0000",
+            "direction": "outbound-api",
+            "duration": "112",
+            "end_time": "Thu, 27 Oct 2016 23:28:30 +0000",
+            "forwarded_from": null,
+            "from": "+19253920364",
+            "from_formatted": "(925) 392-0364",
+            "group_sid": null,
+            "parent_call_sid": null,
+            "phone_number_sid": "PN5fb9ed903e184c8baa86c1fb7544ca0f",
+            "price": "-0.03000",
+            "price_unit": "USD",
+            "sid": "CAa5eba990e09906eedad4b80dc35893a4",
+            "start_time": "Thu, 27 Oct 2016 23:26:38 +0000",
+            "status": "completed",
+            "subresource_uris": {
+                "notifications": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Calls/CAa5eba990e09906eedad4b80dc35893a4/Notifications.json",
+                "recordings": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Calls/CAa5eba990e09906eedad4b80dc35893a4/Recordings.json"
+            },
+            "to": "+19252717005",
+            "to_formatted": "(925) 271-7005",
+            "uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Calls/CAa5eba990e09906eedad4b80dc35893a4.json"
+        }
+    ],
+    "end": 1,
+    "first_page_uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Calls.json?StartTime%3E=2016-10-27&StartTime%3C=2016-10-28&PageSize=2&Page=0",
+    "next_page_uri": null,
+    "page": 0,
+    "page_size": 2,
+    "previous_page_uri": null,
+    "start": 0,
+    "uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Calls.json?StartTime%3E=2016-10-27&StartTime%3C=2016-10-28&PageSize=2&Page=0"
+}
+`)

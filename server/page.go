@@ -1,12 +1,16 @@
 package server
 
 import (
+	"net/http"
 	"net/url"
+	"time"
 
 	types "github.com/kevinburke/go-types"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/services"
 )
+
+const HTML5DatetimeLocalFormat = "2006-01-02T15:04"
 
 // Code that's shared across list views
 
@@ -15,6 +19,49 @@ func getEncryptedPage(npuri types.NullString, secretKey *[32]byte) string {
 		return ""
 	}
 	return services.Opaque(npuri.String, secretKey)
+}
+
+func getNext(query url.Values, secretKey *[32]byte) (string, error) {
+	if query == nil {
+		return "", nil
+	}
+	if opaqueNext := query.Get("next"); opaqueNext == "" {
+		return "", nil
+	} else {
+		return services.Unopaque(opaqueNext, secretKey)
+	}
+}
+
+type errorRenderer interface {
+	renderError(http.ResponseWriter, *http.Request, int, url.Values, error)
+}
+
+func getTimes(w http.ResponseWriter, r *http.Request, startVal, endVal string, loc *time.Location, query url.Values, renderer errorRenderer) (time.Time, time.Time, bool) {
+	var startTime, endTime time.Time
+	var err error
+	start := query.Get(startVal)
+	if start == "" {
+		startTime = twilio.Epoch
+	} else {
+		startTime, err = time.ParseInLocation(HTML5DatetimeLocalFormat, start, loc)
+		if err != nil {
+			renderer.renderError(w, r, http.StatusBadRequest, query, err)
+			return startTime, endTime, true
+		}
+		startTime = startTime.In(loc)
+	}
+	end := query.Get(endVal)
+	if end == "" {
+		endTime = twilio.HeatDeath
+	} else {
+		endTime, err = time.ParseInLocation(HTML5DatetimeLocalFormat, end, loc)
+		if err != nil {
+			renderer.renderError(w, r, http.StatusBadRequest, query, err)
+			return startTime, endTime, true
+		}
+		endTime = endTime.In(loc)
+	}
+	return startTime, endTime, false
 }
 
 // setNextPageValsOnQuery takes query values that have been sent to the Twilio
@@ -26,18 +73,6 @@ func setNextPageValsOnQuery(nextpageuri string, query url.Values) {
 		return
 	}
 	nq := u.Query()
-	if start := nq.Get("DateSent>"); start != "" {
-		query.Set("start", start)
-	}
-	if start := nq.Get("StartTime>"); start != "" {
-		query.Set("start-after", start)
-	}
-	if start := nq.Get("StartTime<"); start != "" {
-		query.Set("start-before", start)
-	}
-	if end := nq.Get("DateSent<"); end != "" {
-		query.Set("end", end)
-	}
 	if from := nq.Get("From"); from != "" {
 		query.Set("from", from)
 	}
@@ -71,31 +106,12 @@ func setPageFilters(query url.Values, pageFilters url.Values) error {
 	}
 	// NB - we purposely don't do date validation here since we filter out
 	// older messages as part of the message view.
-	if startDate := query.Get("start"); startDate != "" {
-		pageFilters.Set("DateSent>", startDate)
-	}
-	if end := query.Get("end"); end != "" {
-		pageFilters.Set("DateSent<", end)
-	}
-	// calls
-	if startDate := query.Get("start-after"); startDate != "" {
-		pageFilters.Set("StartTime>", startDate)
-	}
-	if startDate := query.Get("start-before"); startDate != "" {
-		pageFilters.Set("StartTime<", startDate)
-	}
 	// conferences
 	if friendlyName := query.Get("friendly-name"); friendlyName != "" {
 		pageFilters.Set("FriendlyName", friendlyName)
 	}
 	if status := query.Get("status"); status != "" {
 		pageFilters.Set("Status", status)
-	}
-	if createdDate := query.Get("created-after"); createdDate != "" {
-		pageFilters.Set("DateCreated>", createdDate)
-	}
-	if createdDate := query.Get("created-before"); createdDate != "" {
-		pageFilters.Set("DateCreated<", createdDate)
 	}
 	return nil
 }

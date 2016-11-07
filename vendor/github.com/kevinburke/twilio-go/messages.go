@@ -1,8 +1,10 @@
 package twilio
 
 import (
+	"fmt"
 	"net/url"
 	"sync"
+	"time"
 
 	types "github.com/kevinburke/go-types"
 	"golang.org/x/net/context"
@@ -109,13 +111,20 @@ func (m *MessageService) SendMessage(from string, to string, body string, mediaU
 	return m.Create(context.Background(), v)
 }
 
-type MessagePageIterator struct {
+// MessagePageIterator lets you retrieve consecutive pages of resources.
+type MessagePageIterator interface {
+	// Next returns the next page of resources. If there are no more resources,
+	// NoMoreResults is returned.
+	Next(context.Context) (*MessagePage, error)
+}
+
+type messagePageIterator struct {
 	p *PageIterator
 }
 
 // Next returns the next page of resources. If there are no more resources,
 // NoMoreResults is returned.
-func (m *MessagePageIterator) Next(ctx context.Context) (*MessagePage, error) {
+func (m *messagePageIterator) Next(ctx context.Context) (*MessagePage, error) {
 	mp := new(MessagePage)
 	err := m.p.Next(ctx, mp)
 	if err != nil {
@@ -126,9 +135,9 @@ func (m *MessagePageIterator) Next(ctx context.Context) (*MessagePage, error) {
 }
 
 // GetPageIterator returns an iterator which can be used to retrieve pages.
-func (m *MessageService) GetPageIterator(data url.Values) *MessagePageIterator {
+func (m *MessageService) GetPageIterator(data url.Values) MessagePageIterator {
 	iter := NewPageIterator(m.client, data, messagesPathPart)
-	return &MessagePageIterator{
+	return &messagePageIterator{
 		p: iter,
 	}
 }
@@ -142,9 +151,122 @@ func (m *MessageService) Get(ctx context.Context, sid string) (*Message, error) 
 // GetPage returns a single page of resources. To retrieve multiple pages, use
 // GetPageIterator.
 func (m *MessageService) GetPage(ctx context.Context, data url.Values) (*MessagePage, error) {
-	mp := new(MessagePage)
-	err := m.client.ListResource(ctx, messagesPathPart, data, mp)
-	return mp, err
+	iter := m.GetPageIterator(data)
+	return iter.Next(ctx)
+}
+
+// GetMessagesInRange gets an Iterator containing calls in the range [start,
+// end), optionally further filtered by data. GetMessagesInRange panics if
+// start is not before end. Any date filters provided in data will be ignored.
+// If you have an end, but don't want to specify a start, use twilio.Epoch for
+// start. If you have a start, but don't want to specify an end, use
+// twilio.HeatDeath for end.
+//
+// Assumes that Twilio returns resources in chronological order, latest
+// first. If this assumption is incorrect, your results will not be correct.
+//
+// Returned MessagePages will have at most PageSize results, but may have
+// fewer, based on filtering.
+func (c *MessageService) GetMessagesInRange(start time.Time, end time.Time, data url.Values) MessagePageIterator {
+	if start.After(end) {
+		panic("start date is after end date")
+	}
+	if data == nil {
+		data = url.Values{}
+	}
+	data.Del("DateSent")
+	data.Del("Page") // just in case
+	// Omit these parameters if they are the sentinel values, since I think
+	// that API paging will be faster.
+	if start != Epoch {
+		startFormat := start.UTC().Format(APISearchLayout)
+		data.Set("DateSent>", startFormat)
+	}
+	if end != HeatDeath {
+		// If you specify "DateSent<=YYYY-MM-DD", the *latest* result returned
+		// will be midnight (the earliest possible second) on DD. We want all of
+		// the results for DD so we need to specify DD+1 in the API.
+		//
+		// TODO validate midnight-instant math more closely, since I don't think
+		// Twilio returns the correct results for that instant.
+		endFormat := end.UTC().Add(24 * time.Hour).Format(APISearchLayout)
+		data.Set("DateSent<", endFormat)
+	}
+	iter := NewPageIterator(c.client, data, messagesPathPart)
+	return &messageDateIterator{
+		start: start,
+		end:   end,
+		p:     iter,
+	}
+}
+
+// GetNextMessagesInRange retrieves the page at the nextPageURI and continues
+// retrieving pages until any results are found in the range given by start or
+// end, or we determine there are no more records to be found in that range.
+//
+// If MessagePage is non-nil, it will have at least one result.
+func (c *MessageService) GetNextMessagesInRange(start time.Time, end time.Time, nextPageURI string) MessagePageIterator {
+	if nextPageURI == "" {
+		panic("nextpageuri is empty")
+	}
+	iter := NewNextPageIterator(c.client, messagesPathPart)
+	iter.SetNextPageURI(types.NullString{Valid: true, String: nextPageURI})
+	return &messageDateIterator{
+		start: start,
+		end:   end,
+		p:     iter,
+	}
+}
+
+type messageDateIterator struct {
+	p     *PageIterator
+	start time.Time
+	end   time.Time
+}
+
+// Next returns the next page of resources. We may need to fetch multiple
+// pages from the Twilio API before we find one in the right date range, so
+// latency may be higher than usual.
+func (c *messageDateIterator) Next(ctx context.Context) (*MessagePage, error) {
+	var page *MessagePage
+	for {
+		// just wipe it clean every time to avoid remnants hanging around
+		page = new(MessagePage)
+		if err := c.p.Next(ctx, page); err != nil {
+			return nil, err
+		}
+		if len(page.Messages) == 0 {
+			return nil, NoMoreResults
+		}
+		times := make([]time.Time, len(page.Messages), len(page.Messages))
+		for i, message := range page.Messages {
+
+			if !message.DateCreated.Valid {
+				// we really should not ever hit this case but if we can't parse
+				// a date, better to give you back an error than to give you back
+				// a list of messages that may or may not be in the time range
+				return nil, fmt.Errorf("Couldn't verify the date of message: %#v", message)
+			}
+			times[i] = message.DateCreated.Time
+		}
+		if containsResultsInRange(c.start, c.end, times) {
+			indexesToDelete := indexesOutsideRange(c.start, c.end, times)
+			// reverse order so we don't delete the wrong index
+			for i := len(indexesToDelete) - 1; i >= 0; i-- {
+				index := indexesToDelete[i]
+				page.Messages = append(page.Messages[:index], page.Messages[index+1:]...)
+			}
+			c.p.SetNextPageURI(page.NextPageURI)
+			return page, nil
+		}
+		if shouldContinuePaging(c.start, times) {
+			c.p.SetNextPageURI(page.NextPageURI)
+			continue
+		} else {
+			// should not continue paging and no results in range, stop
+			return nil, NoMoreResults
+		}
+	}
 }
 
 // GetMediaURLs gets the URLs of any media for this message. This uses threads

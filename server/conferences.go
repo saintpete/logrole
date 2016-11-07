@@ -58,6 +58,21 @@ type conferenceInstanceServer struct {
 	tpl            *template.Template
 }
 
+func newConferenceInstanceServer(l log.Logger, vc views.Client,
+	lf services.LocationFinder) (*conferenceInstanceServer, error) {
+	c := &conferenceInstanceServer{
+		Logger:         l,
+		Client:         vc,
+		LocationFinder: lf,
+	}
+	tpl, err := newTpl(template.FuncMap{}, base+conferenceInstanceTpl+sidTpl)
+	if err != nil {
+		return nil, err
+	}
+	c.tpl = tpl
+	return c, nil
+}
+
 // Not putting this in the twilio-go library since Twilio might add more
 // statuses later.
 var validConferenceStatuses = []twilio.Status{twilio.StatusInProgress, twilio.StatusCompleted}
@@ -70,6 +85,7 @@ func newConferenceListServer(l log.Logger, vc views.Client,
 	lf services.LocationFinder, pageSize uint, maxResourceAge time.Duration,
 	secretKey *[32]byte) (*conferenceListServer, error) {
 	s := &conferenceListServer{
+		Logger:         l,
 		Client:         vc,
 		PageSize:       pageSize,
 		LocationFinder: lf,
@@ -77,14 +93,63 @@ func newConferenceListServer(l log.Logger, vc views.Client,
 		secretKey:      secretKey,
 	}
 	tpl, err := newTpl(template.FuncMap{
-		"min": minFunc(s.MaxResourceAge),
-		"max": max,
+		"min":       minFunc(s.MaxResourceAge),
+		"max":       maxLoc,
+		"start_val": s.StartSearchVal,
+		"end_val":   s.EndSearchVal,
 	}, base+conferenceListTpl+copyScript+pagingTpl)
 	if err != nil {
 		return nil, err
 	}
 	s.tpl = tpl
 	return s, nil
+}
+
+func (c *conferenceListData) NextQuery() template.URL {
+	data := url.Values{}
+	if c.EncryptedNextPage != "" {
+		data.Set("next", c.EncryptedNextPage)
+	}
+	if end, ok := c.Query["created-before"]; ok {
+		data.Set("created-before", end[0])
+	}
+	if start, ok := c.Query["created-after"]; ok {
+		data.Set("created-after", start[0])
+	}
+	return template.URL(data.Encode())
+}
+
+func (c *conferenceListData) PreviousQuery() template.URL {
+	data := url.Values{}
+	if c.EncryptedPreviousPage != "" {
+		data.Set("next", c.EncryptedPreviousPage)
+	}
+	if end, ok := c.Query["created-before"]; ok {
+		data.Set("created-before", end[0])
+	}
+	if start, ok := c.Query["created-after"]; ok {
+		data.Set("created-after", start[0])
+	}
+	return template.URL(data.Encode())
+}
+
+func (s *conferenceListServer) StartSearchVal(query url.Values, loc *time.Location) string {
+	if start, ok := query["created-after"]; ok {
+		return start[0]
+	}
+	if s.MaxResourceAge == config.DefaultMaxResourceAge {
+		// one week ago, arbitrary
+		return minLoc(7*24*time.Hour, loc)
+	} else {
+		return minLoc(s.MaxResourceAge, loc)
+	}
+}
+
+func (s *conferenceListServer) EndSearchVal(query url.Values, loc *time.Location) string {
+	if end, ok := query["created-before"]; ok {
+		return end[0]
+	}
+	return maxLoc(loc)
 }
 
 func (c *conferenceListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
@@ -97,6 +162,7 @@ func (c *conferenceListServer) renderError(w http.ResponseWriter, r *http.Reques
 		Data: &conferenceListData{
 			Err:   str,
 			Query: query,
+			Loc:   c.LocationFinder.GetLocationReq(r),
 			Page:  new(views.ConferencePage),
 		},
 	}
@@ -118,26 +184,32 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
 		return
 	}
+	var err error
+	query := r.URL.Query()
+	loc := c.LocationFinder.GetLocationReq(r)
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	query := r.URL.Query()
+	// We always set startTime and endTime on the request, though they may end
+	// up just being sentinels
+	startTime, endTime, wroteError := getTimes(w, r, "created-after", "created-before", loc, query, c)
+	if wroteError {
+		return
+	}
+	next, nextErr := getNext(query, c.secretKey)
+	if nextErr != nil {
+		err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
+		c.renderError(w, r, http.StatusBadRequest, query, err)
+		return
+	}
 	page := new(views.ConferencePage)
-	var err error
-	opaqueNext := query.Get("next")
 	start := time.Now()
-	if opaqueNext != "" {
-		next, nextErr := services.Unopaque(opaqueNext, c.secretKey)
-		if nextErr != nil {
-			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
-			c.renderError(w, r, http.StatusBadRequest, query, err)
-			return
-		}
+	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
-			c.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
+			c.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
 			c.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = c.Client.GetNextConferencePage(ctx, u, next)
+		page, err = c.Client.GetNextConferencePageInRange(ctx, u, startTime, endTime, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		data := url.Values{}
@@ -146,20 +218,24 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			c.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = c.Client.GetConferencePage(ctx, u, data)
+		page, err = c.Client.GetConferencePageInRange(ctx, u, startTime, endTime, data)
+	}
+	if err == twilio.NoMoreResults {
+		page = new(views.ConferencePage)
+		err = nil
 	}
 	if err != nil {
 		rest.ServerError(w, r, err)
 		return
 	}
 	// Fetch the next page into the cache
-	go func(u *config.User, n types.NullString) {
+	go func(u *config.User, n types.NullString, start, end time.Time) {
 		if n.Valid {
-			if _, err := c.Client.GetNextConferencePage(context.Background(), u, n.String); err != nil {
+			if _, err := c.Client.GetNextConferencePageInRange(context.Background(), u, start, end, n.String); err != nil {
 				c.Debug("Error fetching next page", "err", err)
 			}
 		}
-	}(u, page.NextPageURI())
+	}(u, page.NextPageURI(), startTime, endTime)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = render(w, r, c.tpl, "base", &baseData{
 		LF:       c.LocationFinder,
@@ -167,7 +243,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		Data: &conferenceListData{
 			Query:                 r.URL.Query(),
 			Page:                  page,
-			Loc:                   c.LocationFinder.GetLocationReq(r),
+			Loc:                   loc,
 			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.secretKey),
 			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
 		},
@@ -232,19 +308,4 @@ type conferenceInstanceData struct {
 
 func (c *conferenceInstanceData) Title() string {
 	return "Conference Details"
-}
-
-func newConferenceInstanceServer(l log.Logger, vc views.Client,
-	lf services.LocationFinder) (*conferenceInstanceServer, error) {
-	c := &conferenceInstanceServer{
-		Logger:         l,
-		Client:         vc,
-		LocationFinder: lf,
-	}
-	tpl, err := newTpl(template.FuncMap{}, base+conferenceInstanceTpl+sidTpl)
-	if err != nil {
-		return nil, err
-	}
-	c.tpl = tpl
-	return c, nil
 }

@@ -50,15 +50,18 @@ func (a *AlertService) Get(ctx context.Context, sid string) (*Alert, error) {
 }
 
 func (a *AlertService) GetPage(ctx context.Context, data url.Values) (*AlertPage, error) {
-	page := new(AlertPage)
-	err := a.client.ListResource(ctx, alertPathPart, data, page)
-	return page, err
+	iter := a.GetPageIterator(data)
+	return iter.Next(ctx)
 }
 
+// AlertPageIterator lets you retrieve consecutive pages of resources.
 type AlertPageIterator struct {
 	p *PageIterator
 }
 
+// GetPageIterator returns a AlertPageIterator with the given page
+// filters. Call iterator.Next() to get the first page of resources (and again
+// to retrieve subsequent pages).
 func (a *AlertService) GetPageIterator(data url.Values) *AlertPageIterator {
 	iter := NewPageIterator(a.client, data, alertPathPart)
 	return &AlertPageIterator{

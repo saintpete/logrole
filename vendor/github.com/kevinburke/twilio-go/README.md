@@ -4,7 +4,7 @@ A client for accessing the Twilio API with several nice features:
 
 - Easy-to-use helpers for purchasing phone numbers and sending MMS messages
 
-- E.164 support and other smart types.
+- E.164 support, times that are parsed into a time.Time, and other smart types.
 
 - Finer grained control over timeouts with a Context, and the library uses
   wall-clock HTTP timeouts, not socket timeouts.
@@ -12,13 +12,19 @@ A client for accessing the Twilio API with several nice features:
 - Easy debugging network traffic by setting DEBUG_HTTP_TRAFFIC=true in your
   environment.
 
-- Clarity; it's clear when the library will make a network request, there's no
-  unexpected giant latency spikes when paging through resources.
+- Easily find calls and messages that occurred between a particular
+set of `time.Time`s, down to the nanosecond, with GetCallsInRange /
+GetMessagesInRange.
+
+- It's clear when the library will make a network request, there are no
+unexpected latency spikes when paging from one resource to the next.
 
 - Uses threads to fetch resources concurrently; for example, has methods to
 fetch all Media for a Message concurrently.
 
-- Usable descriptions of Alerts.
+- Usable, [one sentence descriptions of Alerts][alert-descriptions].
+
+[alert-descriptions]: https://godoc.org/github.com/kevinburke/twilio-go#Alert.Description
 
 Here are some example use cases:
 
@@ -101,3 +107,24 @@ responses from proxies) may also be returned as plain Go errors.
 There are no plans to support Twiml generation in this library. It may be
 more readable and maintainable to manually write the XML involved in a Twiml
 response.
+
+### API Problems this Library Solves For You
+
+- Media URL's are returned over HTTP. twilio-go rewrites these URL's to be
+  HTTPS before returning them to you.
+
+- A subset of Notifications returned code 4107, which doesn't exist. These
+  notifications should have error code 14107. We rewrite the error code
+  internally before returning it to you.
+
+- The only provided API for filtering calls or messages by date grabs all
+messages for an entire day, and the day ranges are only available for UTC. Use
+GetCallsInRange or GetMessagesInRange to do timezone-aware, finer-grained date
+filtering.
+
+### Errata
+
+You can get Alerts for a given Call or MMS by passing `ResourceSid=CA123` as
+a filter to Alerts.GetPage. This functionality is not documented in the API.
+
+[zero-results]: https://github.com/kevinburke/twilio-go/issues/8

@@ -3,12 +3,12 @@
   <div class="row">
     <div class="col-md-2">
       {{- if .EncryptedPreviousPage }}
-      <a class="btn btn-info btn-lg btn-default btn-previous" href="{{ .Path }}?next={{ .EncryptedPreviousPage }}">Previous</a>
+      <a class="btn btn-info btn-lg btn-default btn-previous" href="{{ .Path }}?{{ .PreviousQuery }}">Previous</a>
       {{- end }}
     </div>
     <div class="col-md-2 col-md-offset-8">
       {{- if .EncryptedNextPage }}
-      <a class="btn btn-info btn-lg btn-default btn-next" href="{{ .Path }}?next={{ .EncryptedNextPage }}">Next</a>
+      <a class="btn btn-info btn-lg btn-default btn-next" href="{{ .Path }}?{{ .NextQuery }}">Next</a>
       {{- end }}
     </div>
   </div>

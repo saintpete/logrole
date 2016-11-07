@@ -31,7 +31,7 @@ var DefaultTimezones = []string{
 // DefaultMaxResourceAge allows all resources to be fetched. The company was
 // founded in 2008, so there should definitely be no resources created in the
 // 1980's.
-var DefaultMaxResourceAge = time.Since(time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC))
+var DefaultMaxResourceAge = time.Since(twilio.Epoch)
 
 var missingGoogleCredentials = errors.New("Cannot use google auth without a Client ID and Client Secret. To configure a Client ID and Secret, see https://github.com/saintpete/logrole/blob/master/docs/google.md.")
 

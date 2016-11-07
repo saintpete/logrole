@@ -49,7 +49,9 @@ func newCallListServer(l log.Logger, vc views.Client, lf services.LocationFinder
 	tpl, err := newTpl(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
 		"min":       minFunc(cs.MaxResourceAge),
-		"max":       max,
+		"max":       maxLoc,
+		"start_val": cs.StartSearchVal,
+		"end_val":   cs.EndSearchVal,
 	}, base+callListTpl+pagingTpl+phoneTpl+copyScript)
 	if err != nil {
 		return nil, err
@@ -107,7 +109,54 @@ func (c *callListData) Path() string {
 	return "/calls"
 }
 
-func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *callListData) NextQuery() template.URL {
+	data := url.Values{}
+	if c.EncryptedNextPage != "" {
+		data.Set("next", c.EncryptedNextPage)
+	}
+	if end, ok := c.Query["start-before"]; ok {
+		data.Set("start-before", end[0])
+	}
+	if start, ok := c.Query["start-after"]; ok {
+		data.Set("start-after", start[0])
+	}
+	return template.URL(data.Encode())
+}
+
+func (c *callListData) PreviousQuery() template.URL {
+	data := url.Values{}
+	if c.EncryptedPreviousPage != "" {
+		data.Set("next", c.EncryptedPreviousPage)
+	}
+	if end, ok := c.Query["start-before"]; ok {
+		data.Set("start-before", end[0])
+	}
+	if start, ok := c.Query["start-after"]; ok {
+		data.Set("start-after", start[0])
+	}
+	return template.URL(data.Encode())
+}
+
+func (s *callListServer) StartSearchVal(query url.Values, loc *time.Location) string {
+	if start, ok := query["start-after"]; ok {
+		return start[0]
+	}
+	if s.MaxResourceAge == config.DefaultMaxResourceAge {
+		// one week ago, arbitrary
+		return minLoc(7*24*time.Hour, loc)
+	} else {
+		return minLoc(s.MaxResourceAge, loc)
+	}
+}
+
+func (s *callListServer) EndSearchVal(query url.Values, loc *time.Location) string {
+	if end, ok := query["start-before"]; ok {
+		return end[0]
+	}
+	return maxLoc(loc)
+}
+
+func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, ok := config.GetUser(r)
 	if !ok {
 		rest.ServerError(w, r, errors.New("No user available"))
@@ -121,61 +170,71 @@ func (c *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// if they are present in the next page URI.
 	query := r.URL.Query()
 	page := new(views.CallPage)
+	loc := s.LocationFinder.GetLocationReq(r)
 	var err error
-	opaqueNext := query.Get("next")
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	start := time.Now()
-	if opaqueNext != "" {
-		next, nextErr := services.Unopaque(opaqueNext, c.secretKey)
-		if nextErr != nil {
-			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
-			c.renderError(w, r, http.StatusBadRequest, query, err)
-			return
-		}
+	// We always set startTime and endTime on the request, though they may end
+	// up just being sentinels
+	startTime, endTime, wroteError := getTimes(w, r, "start-after", "start-before", loc, query, s)
+	if wroteError {
+		return
+	}
+	next, nextErr := getNext(query, s.secretKey)
+	if nextErr != nil {
+		err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
+		s.renderError(w, r, http.StatusBadRequest, query, err)
+		return
+	}
+	queryStart := time.Now()
+	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
-			c.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
-			c.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
+			s.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
+			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = c.Client.GetNextCallPage(ctx, u, next)
+		page, err = s.Client.GetNextCallPageInRange(ctx, u, startTime, endTime, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
-		// valid values: https://www.twilio.com/docs/api/rest/message#list
+		// valid values: https://www.twilio.com/docs/api/rest/call#list
 		data := url.Values{}
-		data.Set("PageSize", strconv.FormatUint(uint64(c.PageSize), 10))
+		data.Set("PageSize", strconv.FormatUint(uint64(s.PageSize), 10))
 		if filterErr := setPageFilters(query, data); filterErr != nil {
-			c.renderError(w, r, http.StatusBadRequest, query, filterErr)
+			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = c.Client.GetCallPage(ctx, u, data)
+		page, err = s.Client.GetCallPageInRange(ctx, u, startTime, endTime, data)
+	}
+	if err == twilio.NoMoreResults {
+		page = new(views.CallPage)
+		err = nil
 	}
 	if err != nil {
-		c.renderError(w, r, http.StatusInternalServerError, query, err)
+		s.renderError(w, r, http.StatusInternalServerError, query, err)
 		return
 	}
 	// Fetch the next page into the cache
-	go func(u *config.User, n types.NullString) {
+	go func(u *config.User, n types.NullString, startTime, endTime time.Time) {
 		if n.Valid {
-			if _, err := c.Client.GetNextCallPage(context.Background(), u, n.String); err != nil {
-				c.Debug("Error fetching next page", "err", err)
+			if _, err := s.Client.GetNextCallPageInRange(context.Background(), u, startTime, endTime, n.String); err != nil {
+				s.Debug("Error fetching next page", "err", err)
 			}
 		}
-	}(u, page.NextPageURI())
+	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
-		LF:       c.LocationFinder,
-		Duration: time.Since(start),
+		LF:       s.LocationFinder,
+		Duration: time.Since(queryStart),
 	}
 	data.Data = &callListData{
 		Page:                  page,
-		Loc:                   c.LocationFinder.GetLocationReq(r),
+		Loc:                   loc,
 		Query:                 query,
-		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.secretKey),
-		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
+		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
+		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
-	if err := render(w, r, c.tpl, "base", data); err != nil {
+	if err := render(w, r, s.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -189,10 +248,17 @@ func (c *callListServer) renderError(w http.ResponseWriter, r *http.Request, cod
 		LF: c.LocationFinder,
 		Data: &callListData{
 			Err:   str,
+			Loc:   c.LocationFinder.GetLocationReq(r),
 			Query: query,
 			Page:  new(views.CallPage),
 		},
 	}
+	if code >= 500 {
+		c.Error("Error responding to request", "status", code, "url", r.URL.String(), "err", err)
+	} else {
+		c.Warn("Error responding to request", "status", code, "url", r.URL.String(), "err", err)
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
 	if err := render(w, r, c.tpl, "base", data); err != nil {

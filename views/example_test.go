@@ -2,7 +2,6 @@ package views_test
 
 import (
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/kevinburke/handlers"
@@ -21,9 +20,7 @@ func Example() {
 
 	vc := views.NewClient(handlers.Logger, c, key, permission)
 
-	page, _ := vc.GetMessagePage(context.TODO(), user, url.Values{})
-	for _, msg := range page.Messages() {
-		sid, _ := msg.Sid()
-		fmt.Println(sid)
-	}
+	message, _ := vc.GetMessage(context.TODO(), user, "SM123")
+	sid, _ := message.Sid()
+	fmt.Println(sid)
 }

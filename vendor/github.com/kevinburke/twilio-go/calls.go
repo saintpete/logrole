@@ -2,7 +2,9 @@ package twilio
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
+	"time"
 
 	types "github.com/kevinburke/go-types"
 	"golang.org/x/net/context"
@@ -135,26 +137,144 @@ func (c *CallService) MakeCall(from string, to string, u *url.URL) (*Call, error
 }
 
 func (c *CallService) GetPage(ctx context.Context, data url.Values) (*CallPage, error) {
-	cp := new(CallPage)
-	err := c.client.ListResource(ctx, callsPathPart, data, cp)
-	return cp, err
+	iter := c.GetPageIterator(data)
+	return iter.Next(ctx)
 }
 
-type CallPageIterator struct {
+// GetCallsInRange gets an Iterator containing calls in the range [start, end),
+// optionally further filtered by data. GetCallsInRange panics if start is not
+// before end. Any date filters provided in data will be ignored. If you have
+// an end, but don't want to specify a start, use twilio.Epoch for start. If
+// you have a start, but don't want to specify an end, use twilio.HeatDeath for
+// end.
+//
+// Assumes that Twilio returns resources in chronological order, latest
+// first. If this assumption is incorrect, your results will not be correct.
+//
+// Returned CallPages will have at most PageSize results, but may have fewer,
+// based on filtering.
+func (c *CallService) GetCallsInRange(start time.Time, end time.Time, data url.Values) CallPageIterator {
+	if start.After(end) {
+		panic("start date is after end date")
+	}
+	if data == nil {
+		data = url.Values{}
+	}
+	data.Del("StartTime")
+	data.Del("Page") // just in case
+	if start != Epoch {
+		startFormat := start.UTC().Format(APISearchLayout)
+		data.Set("StartTime>", startFormat)
+	}
+	if end != HeatDeath {
+		// If you specify "StartTime<=YYYY-MM-DD", the *latest* result returned
+		// will be midnight (the earliest possible second) on DD. We want all
+		// of the results for DD so we need to specify DD+1 in the API.
+		//
+		// TODO validate midnight-instant math more closely, since I don't think
+		// Twilio returns the correct results for that instant.
+		endFormat := end.UTC().Add(24 * time.Hour).Format(APISearchLayout)
+		data.Set("StartTime<", endFormat)
+	}
+	iter := NewPageIterator(c.client, data, callsPathPart)
+	return &callDateIterator{
+		start: start,
+		end:   end,
+		p:     iter,
+	}
+}
+
+// GetNextCallsInRange retrieves the page at the nextPageURI and continues
+// retrieving pages until any results are found in the range given by start or
+// end, or we determine there are no more records to be found in that range.
+//
+// If CallPage is non-nil, it will have at least one result.
+func (c *CallService) GetNextCallsInRange(start time.Time, end time.Time, nextPageURI string) CallPageIterator {
+	if nextPageURI == "" {
+		panic("nextpageuri is empty")
+	}
+	iter := NewNextPageIterator(c.client, callsPathPart)
+	iter.SetNextPageURI(types.NullString{Valid: true, String: nextPageURI})
+	return &callDateIterator{
+		start: start,
+		end:   end,
+		p:     iter,
+	}
+}
+
+type callDateIterator struct {
+	p     *PageIterator
+	start time.Time
+	end   time.Time
+}
+
+// Next returns the next page of resources. We may need to fetch multiple
+// pages from the Twilio API before we find one in the right date range, so
+// latency may be higher than usual. If page is non-nil, it contains at least
+// one result.
+func (c *callDateIterator) Next(ctx context.Context) (*CallPage, error) {
+	var page *CallPage
+	for {
+		// just wipe it clean every time to avoid remnants hanging around
+		page = new(CallPage)
+		if err := c.p.Next(ctx, page); err != nil {
+			return nil, err
+		}
+		if len(page.Calls) == 0 {
+			return nil, NoMoreResults
+		}
+		times := make([]time.Time, len(page.Calls), len(page.Calls))
+		for i, call := range page.Calls {
+			if !call.DateCreated.Valid {
+				// we really should not ever hit this case but if we can't parse
+				// a date, better to give you back an error than to give you back
+				// a list of calls that may or may not be in the time range
+				return nil, fmt.Errorf("Couldn't verify the date of call: %#v", call)
+			}
+			times[i] = call.DateCreated.Time
+		}
+		if containsResultsInRange(c.start, c.end, times) {
+			indexesToDelete := indexesOutsideRange(c.start, c.end, times)
+			// reverse order so we don't delete the wrong index
+			for i := len(indexesToDelete) - 1; i >= 0; i-- {
+				index := indexesToDelete[i]
+				page.Calls = append(page.Calls[:index], page.Calls[index+1:]...)
+			}
+			c.p.SetNextPageURI(page.NextPageURI)
+			return page, nil
+		}
+		if shouldContinuePaging(c.start, times) {
+			c.p.SetNextPageURI(page.NextPageURI)
+			continue
+		} else {
+			// should not continue paging and no results in range, stop
+			return nil, NoMoreResults
+		}
+	}
+}
+
+// CallPageIterator lets you retrieve consecutive pages of resources.
+type CallPageIterator interface {
+	// Next returns the next page of resources. If there are no more resources,
+	// NoMoreResults is returned.
+	Next(context.Context) (*CallPage, error)
+}
+
+type callPageIterator struct {
 	p *PageIterator
 }
 
 // GetPageIterator returns an iterator which can be used to retrieve pages.
-func (c *CallService) GetPageIterator(data url.Values) *CallPageIterator {
+func (c *CallService) GetPageIterator(data url.Values) CallPageIterator {
 	iter := NewPageIterator(c.client, data, callsPathPart)
-	return &CallPageIterator{
+	return &callPageIterator{
 		p: iter,
 	}
 }
 
 // Next returns the next page of resources. If there are no more resources,
 // NoMoreResults is returned.
-func (c *CallPageIterator) Next(ctx context.Context) (*CallPage, error) {
+func (c *callPageIterator) Next(ctx context.Context) (*CallPage, error) {
 	cp := new(CallPage)
 	err := c.p.Next(ctx, cp)
 	if err != nil {

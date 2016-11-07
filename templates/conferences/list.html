@@ -25,12 +25,12 @@
         <input type="text" class="form-control" name="friendly-name" id="friendly-name" placeholder="(Exact Match)" value="{{ (.Query.Get "friendly-name") }}">
       </div>
       <div class="form-group">
-        <label for="created-before">At or before</label>
-        <input type="date" class="form-control" name="created-before" id="created-before" min="{{ min }}" max="{{ max }}" placeholder="Started at or before" value="{{ (.Query.Get "created-before") }}">
+        <label for="created-after">On or after</label>
+        <input type="datetime-local" class="form-control" name="created-after" id="created-after" min="{{ min }}" max="{{ max .Loc }}" step=3600 value="{{ start_val .Query .Loc }}">
       </div>
       <div class="form-group">
-        <label for="created-after">On or after</label>
-        <input type="date" class="form-control" name="created-after" id="created-after" min="{{ min }}" max="{{ max }}" placeholder="Started at or after" value="{{ (.Query.Get "created-after") }}">
+        <label for="created-before">Before</label>
+        <input type="datetime-local" class="form-control" name="created-before" id="created-before" min="{{ min }}" max="{{ max .Loc }}" step=3600 value="{{ end_val .Query .Loc }}">
       </div>
     </div>
     <div class="col-md-2">

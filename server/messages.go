@@ -140,6 +140,25 @@ type messageListServer struct {
 	tpl            *template.Template
 }
 
+func (s *messageListServer) StartSearchVal(query url.Values, loc *time.Location) string {
+	if start, ok := query["start"]; ok {
+		return start[0]
+	}
+	if s.MaxResourceAge == config.DefaultMaxResourceAge {
+		// one week ago, arbitrary
+		return minLoc(7*24*time.Hour, loc)
+	} else {
+		return minLoc(s.MaxResourceAge, loc)
+	}
+}
+
+func (s *messageListServer) EndSearchVal(query url.Values, loc *time.Location) string {
+	if end, ok := query["end"]; ok {
+		return end[0]
+	}
+	return maxLoc(loc)
+}
+
 func newMessageListServer(l log.Logger, vc views.Client, lf services.LocationFinder, pageSize uint, maxResourceAge time.Duration, secretKey *[32]byte) (*messageListServer, error) {
 	s := &messageListServer{
 		Logger:         l,
@@ -152,7 +171,9 @@ func newMessageListServer(l log.Logger, vc views.Client, lf services.LocationFin
 	tpl, err := newTpl(template.FuncMap{
 		"is_our_pn": vc.IsTwilioNumber,
 		"min":       minFunc(s.MaxResourceAge),
-		"max":       max,
+		"max":       maxLoc,
+		"start_val": s.StartSearchVal,
+		"end_val":   s.EndSearchVal,
 	}, base+messageListTpl+pagingTpl+phoneTpl+copyScript)
 	if err != nil {
 		return nil, err
@@ -179,6 +200,34 @@ func (m *messageListData) Path() string {
 	return "/messages"
 }
 
+func (m *messageListData) NextQuery() template.URL {
+	data := url.Values{}
+	if m.EncryptedNextPage != "" {
+		data.Set("next", m.EncryptedNextPage)
+	}
+	if end, ok := m.Query["end"]; ok {
+		data.Set("end", end[0])
+	}
+	if start, ok := m.Query["start"]; ok {
+		data.Set("start", start[0])
+	}
+	return template.URL(data.Encode())
+}
+
+func (m *messageListData) PreviousQuery() template.URL {
+	data := url.Values{}
+	if m.EncryptedPreviousPage != "" {
+		data.Set("next", m.EncryptedPreviousPage)
+	}
+	if end, ok := m.Query["end"]; ok {
+		data.Set("end", end[0])
+	}
+	if start, ok := m.Query["start"]; ok {
+		data.Set("start", start[0])
+	}
+	return template.URL(data.Encode())
+}
+
 func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
 	if err == nil {
 		panic("called renderError with a nil error")
@@ -187,10 +236,17 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 	data := &baseData{LF: s.LocationFinder,
 		Data: &messageListData{
 			Err:            str,
+			Loc:            s.LocationFinder.GetLocationReq(r),
 			Query:          query,
 			Page:           new(views.MessagePage),
 			MaxResourceAge: s.MaxResourceAge,
 		}}
+	if code >= 500 {
+		s.Error("Error responding to request", "status", code, "url", r.URL.String(), "err", err)
+	} else {
+		s.Warn("Error responding to request", "status", code, "url", r.URL.String(), "err", err)
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
 	if err := render(w, r, s.tpl, "base", data); err != nil {
@@ -212,24 +268,28 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// if they are present in the next page URI.
 	query := r.URL.Query()
 	page := new(views.MessagePage)
+	loc := s.LocationFinder.GetLocationReq(r)
 	var err error
-	opaqueNext := query.Get("next")
+	startTime, endTime, wroteError := getTimes(w, r, "start", "end", loc, query, s)
+	if wroteError {
+		return
+	}
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
+	next, nextErr := getNext(query, s.secretKey)
+	if nextErr != nil {
+		err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
+		s.renderError(w, r, http.StatusBadRequest, query, err)
+		return
+	}
 	start := time.Now()
-	if opaqueNext != "" {
-		next, nextErr := services.Unopaque(opaqueNext, s.secretKey)
-		if nextErr != nil {
-			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
-			s.renderError(w, r, http.StatusBadRequest, query, err)
-			return
-		}
+	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
-			s.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
+			s.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = s.Client.GetNextMessagePage(ctx, u, next)
+		page, err = s.Client.GetNextMessagePageInRange(ctx, u, startTime, endTime, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		// valid values: https://www.twilio.com/docs/api/rest/message#list
@@ -239,7 +299,11 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = s.Client.GetMessagePage(ctx, u, data)
+		page, err = s.Client.GetMessagePageInRange(ctx, u, startTime, endTime, data)
+	}
+	if err == twilio.NoMoreResults {
+		page = new(views.MessagePage)
+		err = nil
 	}
 	if err != nil {
 		switch terr := err.(type) {
@@ -258,18 +322,18 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Fetch the next page into the cache
-	go func(u *config.User, n types.NullString) {
+	go func(u *config.User, n types.NullString, start, end time.Time) {
 		if n.Valid {
-			if _, err := s.Client.GetNextMessagePage(context.Background(), u, n.String); err != nil {
+			if _, err := s.Client.GetNextMessagePageInRange(context.Background(), u, start, end, n.String); err != nil {
 				s.Debug("Error fetching next page", "err", err)
 			}
 		}
-	}(u, page.NextPageURI())
+	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF: s.LocationFinder,
 		Data: &messageListData{
 			Page:                  page,
-			Loc:                   s.LocationFinder.GetLocationReq(r),
+			Loc:                   loc,
 			Query:                 query,
 			MaxResourceAge:        s.MaxResourceAge,
 			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),

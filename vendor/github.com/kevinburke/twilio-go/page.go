@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 	"strings"
+	"time"
 
 	types "github.com/kevinburke/go-types"
 	"golang.org/x/net/context"
@@ -55,12 +56,13 @@ func (p *PageIterator) SetNextPageURI(npuri types.NullString) {
 // Next asks for the next page of resources and decodes the results into v.
 func (p *PageIterator) Next(ctx context.Context, v interface{}) error {
 	var err error
-	if p.count == 0 {
-		err = p.client.ListResource(ctx, p.pathPart, p.data, v)
-	} else if p.nextPageURI.Valid == false {
-		return NoMoreResults
-	} else {
+	switch {
+	case p.nextPageURI.Valid:
 		err = p.client.GetNextPage(ctx, p.nextPageURI.String, v)
+	case p.count == 0:
+		err = p.client.ListResource(ctx, p.pathPart, p.data, v)
+	default:
+		return NoMoreResults
 	}
 	if err != nil {
 		return err
@@ -69,6 +71,9 @@ func (p *PageIterator) Next(ctx context.Context, v interface{}) error {
 	return nil
 }
 
+// NewPageIterator returns a PageIterator that can be used to iterate through
+// values. Call Next() to get the first page of values (and again to get
+// subsequent pages). If there are no more results, NoMoreResults is returned.
 func NewPageIterator(client *Client, data url.Values, pathPart string) *PageIterator {
 	return &PageIterator{
 		data:        data,
@@ -77,4 +82,67 @@ func NewPageIterator(client *Client, data url.Values, pathPart string) *PageIter
 		nextPageURI: types.NullString{},
 		pathPart:    pathPart,
 	}
+}
+
+// NewNextPageIterator returns a PageIterator based on the provided
+// nextPageURI, and is designed for iterating if you have a nextPageURI and not
+// a list of query values.
+//
+// NewNextPageIterator panics if nextPageURI is empty.
+func NewNextPageIterator(client *Client, nextPageURI string) *PageIterator {
+	if nextPageURI == "" {
+		panic("nextpageuri is empty")
+	}
+	return &PageIterator{
+		data:        url.Values{},
+		client:      client,
+		nextPageURI: types.NullString{Valid: true, String: nextPageURI},
+		pathPart:    "",
+		count:       0,
+	}
+}
+
+// containsResultsInRange returns true if any results are in the range
+// [start, end).
+func containsResultsInRange(start time.Time, end time.Time, results []time.Time) bool {
+	for _, result := range results {
+		if (result.Equal(start) || result.After(start)) && result.Before(end) {
+			return true
+		}
+	}
+	return false
+}
+
+// shouldContinuePaging returns true if fetching more results (that have
+// earlier timestamps than the provided results) could possibly return results
+// in the range. shouldContinuePaging assumes results is sorted so the first
+// result in the slice has the latest timestamp, and the last result in the
+// slice has the earliest timestamp. shouldContinuePaging panics if results is
+// empty.
+func shouldContinuePaging(start time.Time, results []time.Time) bool {
+	// the last result in results is the earliest. if the earliest result is
+	// before the start, fetching more resources may return more results.
+	if len(results) == 0 {
+		panic("zero length result set")
+	}
+	last := results[len(results)-1]
+	return last.After(start)
+}
+
+// indexesOutsideRange returns the indexes of times in results that are outside
+// of [start, end). indexesOutsideRange panics if start is later than end.
+func indexesOutsideRange(start time.Time, end time.Time, results []time.Time) []int {
+	if start.After(end) {
+		panic("start date is after end date")
+	}
+	indexes := make([]int, 0, len(results))
+	for i, result := range results {
+		if result.Equal(end) || result.After(end) {
+			indexes = append(indexes, i)
+		}
+		if result.Before(start) {
+			indexes = append(indexes, i)
+		}
+	}
+	return indexes
 }

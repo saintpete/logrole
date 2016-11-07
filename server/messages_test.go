@@ -12,21 +12,27 @@ import (
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
+	"github.com/saintpete/logrole/test"
 	"github.com/saintpete/logrole/test/harness"
-	"github.com/saintpete/logrole/views"
 )
 
 var dlog = log.New()
 var key = services.NewRandomKey()
+var lf services.LocationFinder
 
 func init() {
 	dlog.SetHandler(log.DiscardHandler())
+	var err error
+	lf, err = services.NewLocationFinder("America/New_York")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestInvalidNext(t *testing.T) {
 	t.Parallel()
-	vc := views.NewClient(dlog, nil, nil, nil)
-	s, err := newMessageListServer(dlog, vc, nil, 50, time.Hour, key)
+	vc := harness.ViewsClient(harness.ViewHarness{SecretKey: key})
+	s, err := newMessageListServer(dlog, vc, lf, 50, time.Hour, key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,45 +78,6 @@ func Test404OnResource404(t *testing.T) {
 	}
 }
 
-var oldResults = []byte(`
-{
-    "end": 1,
-    "first_page_uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?From=%2B19252717005&PageSize=1&Page=0",
-    "messages": [
-        {
-            "account_sid": "AC58f1e8f2b1c6b88ca90a012a4be0c279",
-            "api_version": "2010-04-01",
-            "body": "Hello",
-            "date_created": "Tue, 20 Sep 2016 22:41:38 +0000",
-            "date_sent": "Tue, 20 Sep 2016 22:41:39 +0000",
-            "date_updated": "Tue, 20 Sep 2016 22:41:39 +0000",
-            "direction": "inbound",
-            "error_code": null,
-            "error_message": null,
-            "from": "+19252717005",
-            "messaging_service_sid": null,
-            "num_media": "0",
-            "num_segments": "1",
-            "price": "-0.00750",
-            "price_unit": "USD",
-            "sid": "SMcc61f9140a65752eadf1351d6ccd0f15",
-            "status": "received",
-            "subresource_uris": {
-                "media": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages/SMcc61f9140a65752eadf1351d6ccd0f15/Media.json"
-            },
-            "to": "+19253920364",
-            "uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages/SMcc61f9140a65752eadf1351d6ccd0f15.json"
-        }
-    ],
-    "next_page_uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?From=%2B19252717005&PageSize=1&Page=2&PageToken=PASMcc61f9140a65752eadf1351d6ccd0f15",
-    "page": 1,
-    "page_size": 1,
-    "previous_page_uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?From=%2B19252717005&PageSize=1&Page=0&PageToken=PBSMcc61f9140a65752eadf1351d6ccd0f15",
-    "start": 1,
-    "uri": "/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?From=%2B19252717005&PageSize=1&Page=1&PageToken=PAMM89a8c4a6891c53054e9cd604922bfb61"
-}
-`)
-
 var uris = []string{
 	"/messages",
 	"/messages?next=" + services.Opaque("/2010-04-01/Accounts/AC58f1e8f2b1c6b88ca90a012a4be0c279/Messages.json?PageSize=50&Page=1&PageToken=PASM0ea5868a88542cc21fd0f85c4daa6c33", key),
@@ -118,7 +85,7 @@ var uris = []string{
 
 func TestNoResultsIfAllResultsOld(t *testing.T) {
 	t.Parallel()
-	server := newServerWithResponse(200, oldResults)
+	server := newServerWithResponse(200, test.OldMessageBody)
 	defer server.Close()
 	// date_created above
 	tt := twilio.NewTwilioTime("Tue, 20 Sep 2016 22:41:38 +0000")
@@ -139,7 +106,7 @@ func TestNoResultsIfAllResultsOld(t *testing.T) {
 		s.ServeHTTP(w, req)
 		if w.Code != 200 {
 			fmt.Printf("%#v\n", w.Header())
-			fmt.Println(w.Body.String())
+			//fmt.Println(w.Body.String())
 			t.Errorf("expected Code to be 200, got %d", w.Code)
 		}
 	}
