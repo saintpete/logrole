@@ -10,8 +10,10 @@ using.
 limit access to SMS/MMS bodies, resources older than a certain age, recordings,
 calls, call from, etc. etc.
 
+- To-the-hour, timezone-aware resource search, specific to each user.
+
 - Account Sid and image/recording URLs are hidden from end users at all times,
-  and require specific permissions to access.
+  and MMS/recordings require specific permissions to access.
 
 - Click-to-copy sids and phone numbers.
 

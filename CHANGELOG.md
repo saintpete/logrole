@@ -1,5 +1,18 @@
 # Changes
 
+## 0.67
+
+Switch the date filtering system from day-and-UTC based to timezone aware, to
+the hour filtering of calls, messages, and conferences.
+
+## 0.66
+
+Cosmetic changes - changing "redacted" to "hidden" and reordering some filters.
+
+## 0.61
+
+Implement an Alerts list view.
+
 ## 0.58
 
 Implement multi-user permissions
