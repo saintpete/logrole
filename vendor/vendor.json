@@ -1,5 +1,10 @@
 {
 	"comment": "",
+	"heroku": {
+		"install": [
+			"./commands/..."
+		]
+	},
 	"ignore": "test appengine appengine_internal",
 	"package": [
 		{
@@ -45,7 +50,7 @@
 			"revisionTime": "2016-11-03T22:44:32Z"
 		},
 		{
-			"checksumSHA1": "mrmfY0cVu7jvgoIuTRaR8yVVh/M=",
+			"checksumSHA1": "N1DR/GS+xQn4Mu99EPZcxuLaU1s=",
 			"path": "github.com/inconshreveable/log15",
 			"revision": "46a701a619de90c65a78c04d1a58bf02585e9701",
 			"revisionTime": "2016-10-26T22:19:13Z"
@@ -249,10 +254,5 @@
 			"revisionTime": "2016-09-28T15:37:09Z"
 		}
 	],
-	"rootPath": "github.com/saintpete/logrole",
-	"heroku": {
-		"install": [
-			"./commands/..."
-		]
-	}
+	"rootPath": "github.com/saintpete/logrole"
 }
