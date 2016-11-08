@@ -1,6 +1,6 @@
 {
-	"ImportPath": "github.com/saintpete/logrole",
-	"GoVersion": "go1.7",
+	"ImportPath": "github.com/saintpete/logrole/commands",
+	"GoVersion": "devel-ec77b8e",
 	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
@@ -80,6 +80,36 @@
 		{
 			"ImportPath": "github.com/mattn/go-isatty",
 			"Rev": "56b76bdf51f7708750eac80fa38b952bb9f32639"
+		},
+		{
+			"ImportPath": "github.com/saintpete/logrole/assets",
+			"Comment": "0.71-1-g4b033d1",
+			"Rev": "4b033d14330f5ccb153c82522172382343a2cd61"
+		},
+		{
+			"ImportPath": "github.com/saintpete/logrole/cache",
+			"Comment": "0.71-1-g4b033d1",
+			"Rev": "4b033d14330f5ccb153c82522172382343a2cd61"
+		},
+		{
+			"ImportPath": "github.com/saintpete/logrole/config",
+			"Comment": "0.71-1-g4b033d1",
+			"Rev": "4b033d14330f5ccb153c82522172382343a2cd61"
+		},
+		{
+			"ImportPath": "github.com/saintpete/logrole/server",
+			"Comment": "0.71-1-g4b033d1",
+			"Rev": "4b033d14330f5ccb153c82522172382343a2cd61"
+		},
+		{
+			"ImportPath": "github.com/saintpete/logrole/services",
+			"Comment": "0.71-1-g4b033d1",
+			"Rev": "4b033d14330f5ccb153c82522172382343a2cd61"
+		},
+		{
+			"ImportPath": "github.com/saintpete/logrole/views",
+			"Comment": "0.71-1-g4b033d1",
+			"Rev": "4b033d14330f5ccb153c82522172382343a2cd61"
 		},
 		{
 			"ImportPath": "github.com/satori/go.uuid",

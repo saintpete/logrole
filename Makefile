@@ -73,7 +73,7 @@ deps:
 ifndef GODEP
 	go get -u github.com/tools/godep
 endif
-	godep save ./...
+	cd commands && godep save ./...
 
 release: race-test
 ifndef BUMP_VERSION
