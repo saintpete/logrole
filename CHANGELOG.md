@@ -1,5 +1,13 @@
 # Changes
 
+## 0.72
+
+Reject invalid query parameters on list views
+
+Implement per-user/group MaxResourceAge settings.
+
+Refactor template generation a little bit.
+
 ## 0.71
 
 Implement caching for Messages
