@@ -21,7 +21,7 @@ func TestEncodeDecode(t *testing.T) {
 	c := NewCache(1, test.NullLogger)
 	c.Set("npuri", mp, time.Hour)
 	mp2 := new(twilio.MessagePage)
-	err := c.Get("npuri", mp2)
+	_, err := c.Get("npuri", mp2)
 	if err != nil {
 		t.Errorf("couldn't retrieve message page from cache: %#v", err)
 	}
@@ -39,7 +39,7 @@ func TestValueNotFound(t *testing.T) {
 	c := NewCache(1, test.NullLogger)
 	c.Set("npuri", mp, time.Hour)
 	mp2 := new(twilio.MessagePage)
-	err := c.Get("npuri+badcacheget", mp2)
+	_, err := c.Get("npuri+badcacheget", mp2)
 	if err != errNotFound {
 		t.Errorf("retrieved message page from cache, should have got false: %#v", err)
 	}
@@ -55,7 +55,7 @@ func TestExpiredValueNotFound(t *testing.T) {
 	c = NewCache(1, handlers.NewLoggerLevel(log15.LvlDebug))
 	c.Set("npuri", mp, time.Nanosecond)
 	mp2 := new(twilio.MessagePage)
-	err := c.Get("npuri", mp2)
+	_, err := c.Get("npuri", mp2)
 	if err != expired {
 		t.Errorf("retrieved message page from cache, it should have expired: %#v", err)
 	}

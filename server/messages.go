@@ -282,6 +282,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
+	cachedAt := time.Time{}
 	start := time.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
@@ -289,7 +290,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = s.Client.GetNextMessagePageInRange(ctx, u, startTime, endTime, next)
+		page, cachedAt, err = s.Client.GetNextMessagePageInRange(ctx, u, startTime, endTime, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		// valid values: https://www.twilio.com/docs/api/rest/message#list
@@ -299,7 +300,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = s.Client.GetMessagePageInRange(ctx, u, startTime, endTime, data)
+		page, cachedAt, err = s.Client.GetMessagePageInRange(ctx, u, startTime, endTime, data)
 	}
 	if err == twilio.NoMoreResults {
 		page = new(views.MessagePage)
@@ -324,13 +325,15 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString, start, end time.Time) {
 		if n.Valid {
-			if _, err := s.Client.GetNextMessagePageInRange(context.Background(), u, start, end, n.String); err != nil {
+			if _, _, err := s.Client.GetNextMessagePageInRange(context.Background(), u, start, end, n.String); err != nil {
 				s.Debug("Error fetching next page", "err", err)
 			}
 		}
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
-		LF: s.LocationFinder,
+		LF:       s.LocationFinder,
+		Duration: time.Since(start),
+		CachedAt: cachedAt,
 		Data: &messageListData{
 			Page:                  page,
 			Loc:                   loc,
@@ -338,7 +341,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			MaxResourceAge:        s.MaxResourceAge,
 			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
 			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
-		}, Duration: time.Since(start)}
+		}}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := render(w, r, s.tpl, "base", data); err != nil {
 		s.renderError(w, r, http.StatusInternalServerError, query, err)

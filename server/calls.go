@@ -186,6 +186,7 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	page := new(views.CallPage)
+	cachedAt := time.Time{}
 	queryStart := time.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
@@ -193,7 +194,7 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = s.Client.GetNextCallPageInRange(ctx, u, startTime, endTime, next)
+		page, cachedAt, err = s.Client.GetNextCallPageInRange(ctx, u, startTime, endTime, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		// valid values: https://www.twilio.com/docs/api/rest/call#list
@@ -203,7 +204,7 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = s.Client.GetCallPageInRange(ctx, u, startTime, endTime, data)
+		page, cachedAt, err = s.Client.GetCallPageInRange(ctx, u, startTime, endTime, data)
 	}
 	if err == twilio.NoMoreResults {
 		page = new(views.CallPage)
@@ -216,13 +217,14 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString, startTime, endTime time.Time) {
 		if n.Valid {
-			if _, err := s.Client.GetNextCallPageInRange(context.Background(), u, startTime, endTime, n.String); err != nil {
+			if _, _, err := s.Client.GetNextCallPageInRange(context.Background(), u, startTime, endTime, n.String); err != nil {
 				s.Debug("Error fetching next page", "err", err)
 			}
 		}
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
+		CachedAt: cachedAt,
 		Duration: time.Since(queryStart),
 	}
 	data.Data = &callListData{

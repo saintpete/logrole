@@ -95,6 +95,7 @@ var templatePool = sync.Pool{
 type baseData struct {
 	Duration  time.Duration
 	ReqStart  time.Time
+	CachedAt  time.Time
 	Start     time.Time
 	Path      string
 	LoggedOut bool
@@ -124,9 +125,9 @@ func minLoc(age time.Duration, l *time.Location) string {
 
 // minFunc returns a function that, when called, returns the minimum acceptable
 // age for a resource, formatted using the HTML5 Datetime format.
-func minFunc(age time.Duration) func() string {
-	return func() string {
-		return min(age)
+func minFunc(age time.Duration) func(*time.Location) string {
+	return func(loc *time.Location) string {
+		return minLoc(age, loc)
 	}
 }
 

@@ -12,13 +12,11 @@ import (
 	"compress/gzip"
 	"encoding/gob"
 	"errors"
-	"net/url"
 	"sync"
 	"time"
 
 	"github.com/golang/groupcache/lru"
 	log "github.com/inconshreveable/log15"
-	twilio "github.com/kevinburke/twilio-go"
 )
 
 type Cache struct {
@@ -51,93 +49,55 @@ func enc(data interface{}) []byte {
 	return buf.Bytes()
 }
 
-func (c *Cache) store(key string, e *ExpiringData) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.c.Add(key, e)
-	c.Debug("stored data in cache", "key", key, "size", len(e.Data), "cache_size", c.c.Len())
-}
-
-func (c *Cache) Get(key string, val interface{}) error {
-	return c.decodeValueAtKey(key, val)
-}
-
-func (c *Cache) Set(key string, val interface{}, timeout time.Duration) {
-	c.store(key, &ExpiringData{
-		Expires: time.Now().UTC().Add(timeout),
-		Data:    enc(val),
-	})
-}
-
-func (c *Cache) decodeValueAtKey(key string, i interface{}) error {
+// Get gets the value at the key and decodes it into val. Returns the time the
+// value was stored in the cache, or an error, if the value was not found,
+// expired, or could not be decoded into val.
+func (c *Cache) Get(key string, val interface{}) (time.Time, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	val, ok := c.c.Get(key)
+	cacheVal, ok := c.c.Get(key)
 	if !ok {
 		c.Debug("cache miss", "key", key)
-		return errNotFound
+		return time.Time{}, errNotFound
 	}
-	e, ok := val.(*ExpiringData)
+	e, ok := cacheVal.(*expiringBits)
 	if !ok {
-		c.Warn("Invalid value in cache", "val", val, "key", key)
-		return errors.New("could not cast value to ExpiringData")
+		c.Warn("Invalid value in cache", "val", cacheVal, "key", key)
+		return time.Time{}, errors.New("could not cast value to expiringBits")
 	}
 	if since := time.Since(e.Expires); since > 0 {
 		c.Debug("found expired value in cache", "key", key, "expired_ago", since)
 		c.c.Remove(key)
-		return expired
+		return time.Time{}, expired
 	}
-	c.Debug("cache hit", "key", key, "size", len(e.Data))
-	reader, err := gzip.NewReader(bytes.NewReader(e.Data))
+	reader, err := gzip.NewReader(bytes.NewReader(e.Bits))
 	if err != nil {
 		panic(err)
 	}
 	defer reader.Close()
 	dec := gob.NewDecoder(reader)
-	return dec.Decode(i)
+	if err := dec.Decode(val); err != nil {
+		return time.Time{}, err
+	}
+	c.Debug("cache hit", "key", key, "size", len(e.Bits))
+	return e.Set, nil
 }
 
-var alertPagePrefix = "alerts"
-var callPagePrefix = "calls"
-var messagePagePrefix = "messages"
-var conferencePagePrefix = "conferences"
+func (c *Cache) Set(key string, val interface{}, timeout time.Duration) {
+	now := time.Now().UTC()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	e := &expiringBits{
+		Set:     now,
+		Expires: now.Add(timeout),
+		Bits:    enc(val),
+	}
+	c.c.Add(key, e)
+	c.Debug("stored data in cache", "key", key, "size", len(e.Bits), "cache_size", c.c.Len())
+}
 
-type ExpiringData struct {
+type expiringBits struct {
+	Set     time.Time
 	Expires time.Time
-	Data    []byte // call enc() to get an encoded value
-}
-
-func (c *Cache) GetAlertPageByURL(nextPage string) (*twilio.AlertPage, bool) {
-	ap := new(twilio.AlertPage)
-	if err := c.decodeValueAtKey(alertPagePrefix+"."+nextPage, ap); err != nil {
-		return nil, false
-	}
-	return ap, true
-}
-
-func (c *Cache) GetAlertPageByValues(data url.Values) (*twilio.AlertPage, bool) {
-	key := "expiring_alerts." + data.Encode()
-	ap := new(twilio.AlertPage)
-	if err := c.decodeValueAtKey(key, ap); err != nil {
-		return nil, false
-	}
-	return ap, true
-}
-
-func (c *Cache) AddExpiringAlertPage(key string, mp *twilio.AlertPage, valid time.Duration) {
-	bits := enc(mp)
-	e := &ExpiringData{
-		Expires: time.Now().UTC().Add(valid),
-		Data:    bits,
-	}
-	c.store("expiring_alerts."+key, e)
-}
-
-func (c *Cache) AddAlertPage(npuri string, mp *twilio.AlertPage, valid time.Duration) {
-	bits := enc(mp)
-	e := &ExpiringData{
-		Expires: time.Now().UTC().Add(valid),
-		Data:    bits,
-	}
-	c.store(alertPagePrefix+"."+npuri, e)
+	Bits    []byte // call enc() to get an encoded value
 }

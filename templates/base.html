@@ -82,7 +82,11 @@
             Response time: {{ render .ReqStart }}
           </div>
           {{- end }}
-          {{- if gt .Duration 0 }}
+          {{- if not .CachedAt.IsZero }}
+          <div class="col-md-2">
+            (from cache, {{ render .CachedAt }} old)
+          </div>
+          {{- else if gt .Duration 0 }}
           <div class="col-md-2">
             API request time: {{ duration .Duration }}
           </div>

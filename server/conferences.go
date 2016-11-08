@@ -202,6 +202,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	page := new(views.ConferencePage)
+	cachedAt := time.Time{}
 	start := time.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
@@ -209,7 +210,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			c.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = c.Client.GetNextConferencePageInRange(ctx, u, startTime, endTime, next)
+		page, cachedAt, err = c.Client.GetNextConferencePageInRange(ctx, u, startTime, endTime, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		data := url.Values{}
@@ -218,7 +219,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			c.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = c.Client.GetConferencePageInRange(ctx, u, startTime, endTime, data)
+		page, cachedAt, err = c.Client.GetConferencePageInRange(ctx, u, startTime, endTime, data)
 	}
 	if err == twilio.NoMoreResults {
 		page = new(views.ConferencePage)
@@ -231,7 +232,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString, start, end time.Time) {
 		if n.Valid {
-			if _, err := c.Client.GetNextConferencePageInRange(context.Background(), u, start, end, n.String); err != nil {
+			if _, _, err := c.Client.GetNextConferencePageInRange(context.Background(), u, start, end, n.String); err != nil {
 				c.Debug("Error fetching next page", "err", err)
 			}
 		}
@@ -239,6 +240,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = render(w, r, c.tpl, "base", &baseData{
 		LF:       c.LocationFinder,
+		CachedAt: cachedAt,
 		Duration: time.Since(start),
 		Data: &conferenceListData{
 			Query:                 r.URL.Query(),

@@ -207,6 +207,7 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	page := new(views.AlertPage)
+	cachedAt := time.Time{}
 	start := time.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, twilio.MonitorBaseURL) {
@@ -214,7 +215,7 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = s.Client.GetNextAlertPageInRange(ctx, u, startTime, endTime, next)
+		page, cachedAt, err = s.Client.GetNextAlertPageInRange(ctx, u, startTime, endTime, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		vals := url.Values{}
@@ -223,7 +224,7 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = s.Client.GetAlertPageInRange(ctx, u, startTime, endTime, vals)
+		page, cachedAt, err = s.Client.GetAlertPageInRange(ctx, u, startTime, endTime, vals)
 	}
 	if err == twilio.NoMoreResults {
 		page = new(views.AlertPage)
@@ -248,13 +249,14 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Fetch the next page into the cache
 	go func(u *config.User, n types.NullString, start, end time.Time) {
 		if n.Valid {
-			if _, err := s.Client.GetNextAlertPageInRange(context.Background(), u, start, end, n.String); err != nil {
+			if _, _, err := s.Client.GetNextAlertPageInRange(context.Background(), u, start, end, n.String); err != nil {
 				s.Debug("Error fetching next page", "err", err)
 			}
 		}
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
+		CachedAt: cachedAt,
 		Duration: time.Since(start),
 	}
 	ad := &alertListData{

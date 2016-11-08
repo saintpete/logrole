@@ -1,5 +1,17 @@
 # Changes
 
+## 0.71
+
+Implement caching for Messages
+
+Show whether a result was returned from the cache, and if so how old that
+result is. Alters services.Duration to show fewer bits after the decimal if the
+Duration is larger than one second.
+
+## 0.70
+
+Implement search filters for Alerts
+
 ## 0.69
 
 Add back caching for calls/messages/conferences
