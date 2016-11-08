@@ -174,6 +174,10 @@ func (c *conferenceListServer) renderError(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (s *conferenceListServer) validParams() []string {
+	return []string{"status", "friendly-name", "next", "created-after", "created-before"}
+}
+
 func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, ok := config.GetUser(r)
 	if !ok {
@@ -184,11 +188,13 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
 		return
 	}
-	var err error
 	query := r.URL.Query()
+	if err := validateParams(c.validParams(), query); err != nil {
+		c.renderError(w, r, http.StatusBadRequest, query, err)
+		return
+	}
+	var err error
 	loc := c.LocationFinder.GetLocationReq(r)
-	ctx, cancel := getContext(r.Context(), 3*time.Second)
-	defer cancel()
 	// We always set startTime and endTime on the request, though they may end
 	// up just being sentinels
 	startTime, endTime, wroteError := getTimes(w, r, "created-after", "created-before", loc, query, c)
@@ -201,6 +207,8 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		c.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
 	page := new(views.ConferencePage)
 	cachedAt := time.Time{}
 	start := time.Now()

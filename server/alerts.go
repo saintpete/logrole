@@ -179,6 +179,10 @@ func (s *alertListServer) renderError(w http.ResponseWriter, r *http.Request, co
 	}
 }
 
+func (s *alertListServer) validParams() []string {
+	return []string{"log-level", "next", "alert-start", "alert-end"}
+}
+
 func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, ok := config.GetUser(r)
 	if !ok {
@@ -190,6 +194,10 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	query := r.URL.Query()
+	if err := validateParams(s.validParams(), query); err != nil {
+		s.renderError(w, r, http.StatusBadRequest, query, err)
+		return
+	}
 	loc := s.LocationFinder.GetLocationReq(r)
 	// We always set startTime and endTime on the request, though they may end
 	// up just being sentinels

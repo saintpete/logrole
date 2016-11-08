@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -62,6 +63,20 @@ func getTimes(w http.ResponseWriter, r *http.Request, startVal, endVal string, l
 		endTime = endTime.In(loc)
 	}
 	return startTime, endTime, false
+}
+
+// validateParams returns an error if there are any unknown query parameters.
+func validateParams(params []string, query url.Values) error {
+	paramsMap := make(map[string]bool, len(params))
+	for _, param := range params {
+		paramsMap[param] = true
+	}
+	for k := range query {
+		if _, ok := paramsMap[k]; !ok {
+			return fmt.Errorf(`Unknown query parameter "%s"`, k)
+		}
+	}
+	return nil
 }
 
 // setNextPageValsOnQuery takes query values that have been sent to the Twilio

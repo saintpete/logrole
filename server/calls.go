@@ -156,6 +156,10 @@ func (s *callListServer) EndSearchVal(query url.Values, loc *time.Location) stri
 	return maxLoc(loc)
 }
 
+func (s *callListServer) validParams() []string {
+	return []string{"from", "to", "next", "start-after", "start-before"}
+}
+
 func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, ok := config.GetUser(r)
 	if !ok {
@@ -169,6 +173,10 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// This is modified as we parse the query; specifically we add some values
 	// if they are present in the next page URI.
 	query := r.URL.Query()
+	if err := validateParams(s.validParams(), query); err != nil {
+		s.renderError(w, r, http.StatusBadRequest, query, err)
+		return
+	}
 	loc := s.LocationFinder.GetLocationReq(r)
 	// We always set startTime and endTime on the request, though they may end
 	// up just being sentinels

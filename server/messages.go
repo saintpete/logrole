@@ -254,6 +254,10 @@ func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+func (s *messageListServer) validParams() []string {
+	return []string{"start", "end", "next", "to", "from"}
+}
+
 func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, ok := config.GetUser(r)
 	if !ok {
@@ -267,6 +271,10 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// This is modified as we parse the query; specifically we add some values
 	// if they are present in the next page URI.
 	query := r.URL.Query()
+	if err := validateParams(s.validParams(), query); err != nil {
+		s.renderError(w, r, http.StatusBadRequest, query, err)
+		return
+	}
 	page := new(views.MessagePage)
 	loc := s.LocationFinder.GetLocationReq(r)
 	var err error
