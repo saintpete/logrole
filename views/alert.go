@@ -22,6 +22,9 @@ type Alert struct {
 }
 
 func NewAlert(alert *twilio.Alert, p *config.Permission, u *config.User) (*Alert, error) {
+	if u.CanViewAlerts() == false {
+		return nil, config.PermissionDenied
+	}
 	if alert.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for alert")
 	}
@@ -33,6 +36,9 @@ func NewAlert(alert *twilio.Alert, p *config.Permission, u *config.User) (*Alert
 }
 
 func NewAlertPage(ap *twilio.AlertPage, p *config.Permission, u *config.User) (*AlertPage, error) {
+	if u.CanViewAlerts() == false {
+		return nil, config.PermissionDenied
+	}
 	alerts := make([]*Alert, 0)
 	for _, alert := range ap.Alerts {
 		cl, err := NewAlert(alert, p, u)

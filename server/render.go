@@ -130,11 +130,6 @@ func minFunc(age time.Duration) func() string {
 	}
 }
 
-// max returns the current time in UTC, formatted as YYYY-MM-DD.
-func max() string {
-	return time.Now().Add(1 * time.Hour).Truncate(time.Hour).Format(HTML5DatetimeLocalFormat)
-}
-
 func maxLoc(l *time.Location) string {
 	return time.Now().In(l).Add(1 * time.Hour).Truncate(time.Hour).Format(HTML5DatetimeLocalFormat)
 }

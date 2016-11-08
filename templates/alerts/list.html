@@ -13,6 +13,32 @@
   <p>{{ if .HaveMore }}At least {{ end }}<span class="lead {{ if eq .Count 0 }}text-success{{ end }}" style="margin-right: 5px;">{{ .Count }}</span> alerts in the last {{ .Name }}</p>
   {{- end }}
 {{- end }}
+<div class="row row-search">
+  <form class="form-inline" method="get" action="{{ .Path }}">
+    <div class="form-search form-alerts-search col-md-10">
+      <div class="form-group">
+        <label for="log-level">Log Level</label>
+        <select name="log-level" class="form-control">
+          <option value="">Choose a log level..</option>
+          {{- range .LogLevels }}
+          <option {{ if eq ($.Query.Get "log-level") . }}selected="selected" {{ end }}value="{{ . }}">{{ .Friendly }}</option>
+          {{- end }}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="alert-start">On or after</label>
+        <input type="datetime-local" class="form-control" name="alert-start" id="alert-start" min="{{ min }}" max="{{ max .Loc }}" step=3600 value="{{ start_val .Query .Loc }}">
+      </div>
+      <div class="form-group">
+        <label for="alert-end">Before</label>
+        <input type="datetime-local" class="form-control" name="alert-end" id="alert-end" min="{{ min }}" max="{{ max .Loc }}" step=3600 value="{{ end_val .Query .Loc }}">
+      </div>
+    </div>
+    <div class="col-md-2">
+      <input type="submit" value="Search" class="btn-search btn btn-default btn-info" />
+    </div>
+  </form>
+</div>
 <table class="table table-striped">
   <thead>
     <tr>

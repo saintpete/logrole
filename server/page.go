@@ -79,6 +79,15 @@ func setNextPageValsOnQuery(nextpageuri string, query url.Values) {
 	if to := nq.Get("To"); to != "" {
 		query.Set("to", to)
 	}
+	if friendlyName := nq.Get("FriendlyName"); friendlyName != "" {
+		query.Set("friendly-name", friendlyName)
+	}
+	if status := nq.Get("Status"); status != "" {
+		query.Set("status", status)
+	}
+	if level := nq.Get("LogLevel"); level != "" {
+		query.Set("log-level", level)
+	}
 }
 
 // Reverse of the function above, with validation. Every list filter calls this
@@ -112,6 +121,9 @@ func setPageFilters(query url.Values, pageFilters url.Values) error {
 	}
 	if status := query.Get("status"); status != "" {
 		pageFilters.Set("Status", status)
+	}
+	if level := query.Get("log-level"); level != "" {
+		pageFilters.Set("LogLevel", level)
 	}
 	return nil
 }

@@ -38,14 +38,14 @@ type Client interface {
 	GetCall(context.Context, *config.User, string) (*Call, error)
 	GetConference(context.Context, *config.User, string) (*Conference, error)
 	GetMediaURLs(context.Context, *config.User, string) ([]*url.URL, error)
-	GetAlertPage(context.Context, *config.User, url.Values) (*AlertPage, error)
 	GetMessagePageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*MessagePage, error)
 	GetCallPageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*CallPage, error)
 	GetConferencePageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*ConferencePage, error)
+	GetAlertPageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*AlertPage, error)
 	GetNextMessagePageInRange(context.Context, *config.User, time.Time, time.Time, string) (*MessagePage, error)
 	GetNextCallPageInRange(context.Context, *config.User, time.Time, time.Time, string) (*CallPage, error)
 	GetNextConferencePageInRange(context.Context, *config.User, time.Time, time.Time, string) (*ConferencePage, error)
-	GetNextAlertPage(context.Context, *config.User, string) (*AlertPage, error)
+	GetNextAlertPageInRange(context.Context, *config.User, time.Time, time.Time, string) (*AlertPage, error)
 	GetNextRecordingPage(context.Context, *config.User, string) (*RecordingPage, error)
 	GetCallRecordings(context.Context, *config.User, string, url.Values) (*RecordingPage, error)
 	GetCallAlerts(context.Context, *config.User, string) (*AlertPage, error)
@@ -191,11 +191,12 @@ func (vc *client) getAndCacheConference(ctx context.Context, start, end time.Tim
 }
 
 func (vc *client) getAndCacheAlert(ctx context.Context, start, end time.Time, data url.Values) (*twilio.AlertPage, error) {
-	page, err := vc.client.Monitor.Alerts.GetPage(ctx, data)
+	page, err := vc.client.Monitor.Alerts.GetAlertsInRange(start, end, data).Next(ctx)
 	if err != nil {
 		return nil, err
 	}
-	vc.cache.AddExpiringAlertPage(data.Encode(), page, frontPageTimeout)
+	key := hash("alerts", data.Encode(), start, end)
+	vc.cache.Set(key, page, frontPageTimeout)
 	return page, nil
 }
 
@@ -209,13 +210,38 @@ func (vc *client) getAndCacheCall(ctx context.Context, start, end time.Time, dat
 	return page, nil
 }
 
-func (vc *client) GetAlertPage(ctx context.Context, user *config.User, data url.Values) (*AlertPage, error) {
-	val, err := vc.group.Do("alerts."+data.Encode(), func() (interface{}, error) {
-		if page, ok := vc.cache.GetAlertPageByValues(data); ok {
+func (vc *client) GetAlertPageInRange(ctx context.Context, user *config.User, start time.Time, end time.Time, data url.Values) (*AlertPage, error) {
+	key := hash("alerts", data.Encode(), start, end)
+	val, err := vc.group.Do(key, func() (interface{}, error) {
+		page := new(twilio.AlertPage)
+		if err := vc.cache.Get(key, page); err == nil {
 			return page, nil
 		}
-		page, err := vc.getAndCacheAlert(ctx, twilio.Epoch, twilio.HeatDeath, data)
-		return page, err
+		return vc.getAndCacheAlert(ctx, start, end, data)
+	})
+	if err != nil {
+		return nil, err
+	}
+	page, ok := val.(*twilio.AlertPage)
+	if !ok {
+		return nil, errors.New("Could not cast fetch result to a AlertPage")
+	}
+	return NewAlertPage(page, vc.permission, user)
+}
+
+func (vc *client) GetNextAlertPageInRange(ctx context.Context, user *config.User, start time.Time, end time.Time, nextPage string) (*AlertPage, error) {
+	key := hash("alerts", nextPage, start, end)
+	val, err := vc.group.Do(key, func() (interface{}, error) {
+		page := new(twilio.AlertPage)
+		if err := vc.cache.Get(key, page); err == nil {
+			return page, nil
+		}
+		page, err := vc.client.Monitor.Alerts.GetNextAlertsInRange(start, end, nextPage).Next(ctx)
+		if err != nil {
+			return nil, err
+		}
+		vc.cache.Set(key, page, nextPageTimeout)
+		return page, nil
 	})
 	if err != nil {
 		return nil, err

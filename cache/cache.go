@@ -7,8 +7,6 @@
 // improve latency.
 package cache
 
-// TODO work on the API's for storing/retrieving messages.
-
 import (
 	"bytes"
 	"compress/gzip"
@@ -76,6 +74,7 @@ func (c *Cache) decodeValueAtKey(key string, i interface{}) error {
 	defer c.mu.RUnlock()
 	val, ok := c.c.Get(key)
 	if !ok {
+		c.Debug("cache miss", "key", key)
 		return errNotFound
 	}
 	e, ok := val.(*ExpiringData)
@@ -88,7 +87,7 @@ func (c *Cache) decodeValueAtKey(key string, i interface{}) error {
 		c.c.Remove(key)
 		return expired
 	}
-	c.Debug("found value in cache", "key", key, "size", len(e.Data))
+	c.Debug("cache hit", "key", key, "size", len(e.Data))
 	reader, err := gzip.NewReader(bytes.NewReader(e.Data))
 	if err != nil {
 		panic(err)

@@ -19,6 +19,13 @@ import (
 	"golang.org/x/net/context"
 )
 
+var validAlertLevels = []twilio.LogLevel{
+	twilio.LogLevelError,
+	twilio.LogLevelWarning,
+	twilio.LogLevelNotice,
+	twilio.LogLevelDebug,
+}
+
 type alertListServer struct {
 	log.Logger
 	Client         views.Client
@@ -45,6 +52,38 @@ func (ad *alertListData) Title() string {
 
 func (ad *alertListData) Path() string {
 	return "/alerts"
+}
+
+func (d *alertListData) LogLevels() []twilio.LogLevel {
+	return validAlertLevels
+}
+
+func (c *alertListData) NextQuery() template.URL {
+	data := url.Values{}
+	if c.EncryptedNextPage != "" {
+		data.Set("next", c.EncryptedNextPage)
+	}
+	if start, ok := c.Query["alert-start"]; ok {
+		data.Set("alert-start", start[0])
+	}
+	if end, ok := c.Query["alert-end"]; ok {
+		data.Set("alert-end", end[0])
+	}
+	return template.URL(data.Encode())
+}
+
+func (c *alertListData) PreviousQuery() template.URL {
+	data := url.Values{}
+	if c.EncryptedPreviousPage != "" {
+		data.Set("next", c.EncryptedPreviousPage)
+	}
+	if start, ok := c.Query["alert-start"]; ok {
+		data.Set("alert-start", start[0])
+	}
+	if end, ok := c.Query["alert-end"]; ok {
+		data.Set("alert-end", end[0])
+	}
+	return template.URL(data.Encode())
 }
 
 type alertFrequency struct {
@@ -87,14 +126,35 @@ func newAlertListServer(l log.Logger, vc views.Client,
 	}
 	tpl, err := newTpl(template.FuncMap{
 		"min":        minFunc(s.MaxResourceAge),
-		"max":        max,
+		"max":        maxLoc,
 		"has_prefix": strings.HasPrefix,
+		"start_val":  s.StartSearchVal,
+		"end_val":    s.EndSearchVal,
 	}, base+alertListTpl+pagingTpl)
 	if err != nil {
 		return nil, err
 	}
 	s.tpl = tpl
 	return s, nil
+}
+
+func (s *alertListServer) StartSearchVal(query url.Values, loc *time.Location) string {
+	if start, ok := query["alert-start"]; ok {
+		return start[0]
+	}
+	if s.MaxResourceAge == config.DefaultMaxResourceAge {
+		// one week ago, arbitrary
+		return minLoc(7*24*time.Hour, loc)
+	} else {
+		return minLoc(s.MaxResourceAge, loc)
+	}
+}
+
+func (s *alertListServer) EndSearchVal(query url.Values, loc *time.Location) string {
+	if end, ok := query["alert-end"]; ok {
+		return end[0]
+	}
+	return maxLoc(loc)
 }
 
 func (s *alertListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
@@ -106,6 +166,7 @@ func (s *alertListServer) renderError(w http.ResponseWriter, r *http.Request, co
 		LF: s.LocationFinder,
 		Data: &alertListData{
 			Err:   str,
+			Loc:   s.LocationFinder.GetLocationReq(r),
 			Query: query,
 			Page:  new(views.AlertPage),
 		},
@@ -128,26 +189,32 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
 		return
 	}
+	query := r.URL.Query()
+	loc := s.LocationFinder.GetLocationReq(r)
+	// We always set startTime and endTime on the request, though they may end
+	// up just being sentinels
+	startTime, endTime, wroteError := getTimes(w, r, "alert-start", "alert-end", loc, query, s)
+	if wroteError {
+		return
+	}
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	query := r.URL.Query()
-	opaqueNext := query.Get("next")
-	page := new(views.AlertPage)
 	var err error
+	next, nextErr := getNext(query, s.secretKey)
+	if nextErr != nil {
+		err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
+		s.renderError(w, r, http.StatusBadRequest, query, err)
+		return
+	}
+	page := new(views.AlertPage)
 	start := time.Now()
-	if opaqueNext != "" {
-		next, nextErr := services.Unopaque(opaqueNext, s.secretKey)
-		if nextErr != nil {
-			err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
-			s.renderError(w, r, http.StatusBadRequest, query, err)
-			return
-		}
+	if next != "" {
 		if !strings.HasPrefix(next, twilio.MonitorBaseURL) {
-			s.Warn("Invalid next page URI", "next", next, "opaque", opaqueNext)
+			s.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
 			s.renderError(w, r, http.StatusBadRequest, query, errors.New("Invalid next page uri"))
 			return
 		}
-		page, err = s.Client.GetNextAlertPage(ctx, u, next)
+		page, err = s.Client.GetNextAlertPageInRange(ctx, u, startTime, endTime, next)
 		setNextPageValsOnQuery(next, query)
 	} else {
 		vals := url.Values{}
@@ -156,7 +223,11 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.renderError(w, r, http.StatusBadRequest, query, filterErr)
 			return
 		}
-		page, err = s.Client.GetAlertPage(ctx, u, vals)
+		page, err = s.Client.GetAlertPageInRange(ctx, u, startTime, endTime, vals)
+	}
+	if err == twilio.NoMoreResults {
+		page = new(views.AlertPage)
+		err = nil
 	}
 	if err != nil {
 		switch terr := err.(type) {
@@ -175,13 +246,13 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Fetch the next page into the cache
-	go func(u *config.User, n types.NullString) {
+	go func(u *config.User, n types.NullString, start, end time.Time) {
 		if n.Valid {
-			if _, err := s.Client.GetNextAlertPage(context.Background(), u, n.String); err != nil {
+			if _, err := s.Client.GetNextAlertPageInRange(context.Background(), u, start, end, n.String); err != nil {
 				s.Debug("Error fetching next page", "err", err)
 			}
 		}
-	}(u, page.NextPageURI())
+	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
 		Duration: time.Since(start),
@@ -193,7 +264,7 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
 		EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
 	}
-	if opaqueNext == "" {
+	if next == "" {
 		alerts := page.Alerts()
 		freq := []*alertFrequency{
 			getAlertFrequency(alerts, "5 minutes", 5*time.Minute),

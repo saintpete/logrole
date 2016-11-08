@@ -114,11 +114,11 @@ func (c *callListData) NextQuery() template.URL {
 	if c.EncryptedNextPage != "" {
 		data.Set("next", c.EncryptedNextPage)
 	}
-	if end, ok := c.Query["start-before"]; ok {
-		data.Set("start-before", end[0])
-	}
 	if start, ok := c.Query["start-after"]; ok {
 		data.Set("start-after", start[0])
+	}
+	if end, ok := c.Query["start-before"]; ok {
+		data.Set("start-before", end[0])
 	}
 	return template.URL(data.Encode())
 }
@@ -128,11 +128,11 @@ func (c *callListData) PreviousQuery() template.URL {
 	if c.EncryptedPreviousPage != "" {
 		data.Set("next", c.EncryptedPreviousPage)
 	}
-	if end, ok := c.Query["start-before"]; ok {
-		data.Set("start-before", end[0])
-	}
 	if start, ok := c.Query["start-after"]; ok {
 		data.Set("start-after", start[0])
+	}
+	if end, ok := c.Query["start-before"]; ok {
+		data.Set("start-before", end[0])
 	}
 	return template.URL(data.Encode())
 }
@@ -169,23 +169,23 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// This is modified as we parse the query; specifically we add some values
 	// if they are present in the next page URI.
 	query := r.URL.Query()
-	page := new(views.CallPage)
 	loc := s.LocationFinder.GetLocationReq(r)
-	var err error
-	ctx, cancel := getContext(r.Context(), 3*time.Second)
-	defer cancel()
 	// We always set startTime and endTime on the request, though they may end
 	// up just being sentinels
 	startTime, endTime, wroteError := getTimes(w, r, "start-after", "start-before", loc, query, s)
 	if wroteError {
 		return
 	}
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
+	var err error
 	next, nextErr := getNext(query, s.secretKey)
 	if nextErr != nil {
 		err = errors.New("Could not decrypt `next` query parameter: " + nextErr.Error())
 		s.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
+	page := new(views.CallPage)
 	queryStart := time.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
