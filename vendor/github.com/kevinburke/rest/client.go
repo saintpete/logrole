@@ -20,10 +20,18 @@ type UploadType string
 var JSON UploadType = "application/json"
 var FormURLEncoded UploadType = "application/x-www-form-urlencoded"
 
-const Version = "0.15"
+const Version = "0.16"
 
 var defaultTimeout = 6500 * time.Millisecond
 var defaultHttpClient = &http.Client{Timeout: defaultTimeout}
+
+var ua string
+
+func init() {
+	gv := strings.Replace(runtime.Version(), "go", "", 1)
+	ua = fmt.Sprintf("rest-client/%s (https://github.com/kevinburke/rest) go/%s (%s/%s)",
+		Version, gv, runtime.GOOS, runtime.GOARCH)
+}
 
 // Client is a generic Rest client for making HTTP requests.
 type Client struct {
@@ -80,9 +88,6 @@ func (c *Client) NewRequest(method, path string, body io.Reader) (*http.Request,
 	if c.ID != "" || c.Token != "" {
 		req.SetBasicAuth(c.ID, c.Token)
 	}
-	gv := strings.Replace(runtime.Version(), "go", "", 1)
-	ua := fmt.Sprintf("rest-client/%s (https://github.com/kevinburke/rest) go/%s (%s/%s)",
-		Version, gv, runtime.GOOS, runtime.GOARCH)
 	req.Header.Add("User-Agent", ua)
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Accept-Charset", "utf-8")

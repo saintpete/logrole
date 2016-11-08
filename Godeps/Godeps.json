@@ -36,7 +36,7 @@
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/proto",
-			"Rev": "3571fb58c2425ca244702e8e2dfb156d95c44246"
+			"Rev": "2bc9827a78f95c6665b5fe0abd1fd66b496ae2d8"
 		},
 		{
 			"ImportPath": "github.com/inconshreveable/log15",
@@ -64,8 +64,8 @@
 		},
 		{
 			"ImportPath": "github.com/kevinburke/rest",
-			"Comment": "0.15",
-			"Rev": "d3f028c5a0d45baa0b99386218c83d039397b9b7"
+			"Comment": "0.16",
+			"Rev": "0346062e755eba5b7f9d633bc46d078c5f9d29e8"
 		},
 		{
 			"ImportPath": "github.com/kevinburke/twilio-go",
@@ -92,7 +92,7 @@
 		},
 		{
 			"ImportPath": "github.com/ttacon/libphonenumber",
-			"Rev": "5cb77679a4c77d45f2496c9ed8e60b5eec03bb47"
+			"Rev": "142e1e6846f4166d5ed27d28fa3487af98a29b1e"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/nacl/secretbox",
