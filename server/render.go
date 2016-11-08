@@ -18,13 +18,14 @@ import (
 var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
 	callInstanceTpl, callListTpl, conferenceListTpl, conferenceInstanceTpl,
 	alertListTpl,
-	indexTpl, loginTpl, recordingTpl, pagingTpl, openSearchTpl, errorTpl string
+	indexTpl, loginTpl, recordingTpl, pagingTpl, openSearchTpl,
+	openSourceTpl, errorTpl string
 
 // TODO move these to newServer() constructors with an error handler
 var errorTemplate *template.Template
-var indexTemplate *template.Template
 var loginTemplate *template.Template
 var openSearchTemplate *template.Template
+var openSourceTemplate *template.Template
 
 func init() {
 	base = assets.MustAssetString("templates/base.html")
@@ -44,9 +45,9 @@ func init() {
 	pagingTpl = assets.MustAssetString("templates/snippets/paging.html")
 	openSearchTpl = assets.MustAssetString("templates/opensearch.xml")
 	errorTpl = assets.MustAssetString("templates/errors.html")
+	openSourceTpl = assets.MustAssetString("templates/opensource.html")
 
 	errorTemplate = template.Must(newTpl(template.FuncMap{}, base+errorTpl))
-	indexTemplate = template.Must(newTpl(template.FuncMap{}, base+indexTpl))
 	loginTemplate = template.Must(newTpl(template.FuncMap{}, base+loginTpl))
 	openSearchTemplate = template.Must(newTpl(template.FuncMap{}, openSearchTpl))
 }

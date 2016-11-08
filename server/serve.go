@@ -7,6 +7,8 @@ package server
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"html/template"
 	"net"
 	"net/http"
 	"regexp"
@@ -108,7 +110,17 @@ func (s *static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, r.URL.Path, s.modTime, bytes.NewReader(bits))
 }
 
-type indexServer struct{}
+type indexServer struct {
+	tpl *template.Template
+}
+
+func newIndexServer() (*indexServer, error) {
+	indexTemplate, err := newTpl(template.FuncMap{}, base+indexTpl)
+	if err != nil {
+		return nil, err
+	}
+	return &indexServer{tpl: indexTemplate}, nil
+}
 
 type indexData struct {
 	baseData
@@ -121,7 +133,36 @@ func (i *indexData) Title() string {
 func (i *indexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := &baseData{Data: &indexData{}}
-	if err := render(w, r, indexTemplate, "base", data); err != nil {
+	if err := render(w, r, i.tpl, "base", data); err != nil {
+		rest.ServerError(w, r, err)
+	}
+}
+
+type openSourceServer struct {
+	tpl *template.Template
+}
+
+func newOpenSourceServer() (*openSourceServer, error) {
+	openTemplate, err := newTpl(template.FuncMap{}, base+openSourceTpl)
+	if err != nil {
+		return nil, err
+	}
+	return &openSourceServer{tpl: openTemplate}, nil
+}
+
+type openSourceData struct {
+	baseData
+}
+
+func (o *openSourceData) Title() string {
+	return "Open Source"
+}
+
+func (o *openSourceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("serving http")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data := &baseData{Data: &openSourceData{}}
+	if err := render(w, r, o.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -263,7 +304,14 @@ func NewServer(settings *config.Settings) (*Server, error) {
 		PublicHost:              settings.PublicHost,
 		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
 	}
-	index := &indexServer{}
+	index, err := newIndexServer()
+	if err != nil {
+		return nil, err
+	}
+	openSource, err := newOpenSourceServer()
+	if err != nil {
+		return nil, err
+	}
 	image := &imageServer{
 		secretKey: settings.SecretKey,
 	}
@@ -315,8 +363,8 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	}
 
 	r := new(handlers.Regexp)
-	// TODO - don't protect static routes with basic auth
 	r.Handle(regexp.MustCompile(`(^/static|^/favicon.ico$)`), []string{"GET"}, handlers.GZip(staticServer))
+	r.Handle(regexp.MustCompile(`^/open-source$`), []string{"GET"}, openSource)
 	r.Handle(regexp.MustCompile(`^/opensearch.xml$`), []string{"GET"}, o)
 	r.Handle(regexp.MustCompile(`^/auth/logout$`), []string{"POST"}, logout)
 	// todo awkward using HTTP methods here

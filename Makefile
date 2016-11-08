@@ -12,9 +12,10 @@ WATCH_TARGETS = static/css/style.css \
 	cache/cache.go \
 	commands/logrole_server/main.go \
 	config/permission.go config/settings.go config/auth.go config/user.go \
-	templates/base.html templates/index.html templates/messages/list.html \
-	templates/messages/instance.html templates/calls/list.html \
-	templates/calls/instance.html templates/calls/recordings.html \
+	templates/base.html templates/index.html templates/opensource.html \
+	templates/messages/list.html templates/messages/instance.html \
+	templates/calls/list.html templates/calls/instance.html \
+	templates/calls/recordings.html \
 	templates/conferences/instance.html templates/conferences/list.html \
 	templates/alerts/list.html \
 	templates/errors.html templates/login.html \
