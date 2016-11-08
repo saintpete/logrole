@@ -106,6 +106,13 @@ tests, or run `make race-test` to run the tests with the race detector enabled.
 
 Run `make docs`.
 
+## Vendoring
+
+Logrole is available as a library, which means the `vendor` folder is
+shipped empty. A suggested set of dependency versions is available in
+`vendor/vendor.json`. To download these dependencies to your project, run
+`govendor sync`.
+
 ## Errata
 
 The Twilio Dashboard displays Participants for completed Conferences, but [this

@@ -7,7 +7,7 @@ go:
   - tip
 
 before_script:
-  - go get ./...
+  - make deps
 
 script:
     - make race-test

@@ -4,7 +4,7 @@ SHELL = /bin/bash
 BUMP_VERSION := $(shell command -v bump_version)
 GODOCDOC := $(shell command -v godocdoc)
 GO_BINDATA := $(shell command -v go-bindata)
-GODEP := $(shell command -v godep)
+GOVENDOR := $(shell command -v govendor)
 JUSTRUN := $(shell command -v justrun)
 BENCHSTAT := $(shell command -v benchstat)
 
@@ -71,10 +71,10 @@ endif
 	justrun --delay=100ms -c 'make assets serve' $(WATCH_TARGETS)
 
 deps:
-ifndef GODEP
-	go get -u github.com/tools/godep
+ifndef GOVENDOR
+	go get -u github.com/kardianos/govendor
 endif
-	cd commands && godep save ./...
+	govendor sync
 
 release: race-test
 ifndef BUMP_VERSION
