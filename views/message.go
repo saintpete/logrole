@@ -54,6 +54,9 @@ func (mp *MessagePage) ShowHeader(fieldName string) bool {
 }
 
 func NewMessagePage(mp *twilio.MessagePage, p *config.Permission, u *config.User) (*MessagePage, error) {
+	if u.CanViewMessages() == false {
+		return nil, config.PermissionDenied
+	}
 	messages := make([]*Message, 0)
 	for _, message := range mp.Messages {
 		msg, err := NewMessage(message, p, u)
@@ -231,6 +234,9 @@ func (m *Message) CanViewMedia() bool {
 // NewMessage creates a new Message, setting fields to be hidden or shown as
 // appropriate for the given Permission and User.
 func NewMessage(msg *twilio.Message, p *config.Permission, u *config.User) (*Message, error) {
+	if u.CanViewMessages() == false {
+		return nil, config.PermissionDenied
+	}
 	if msg.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for message")
 	}

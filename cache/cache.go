@@ -60,6 +60,17 @@ func (c *Cache) store(key string, e *ExpiringData) {
 	c.Debug("stored data in cache", "key", key, "size", len(e.Data), "cache_size", c.c.Len())
 }
 
+func (c *Cache) Get(key string, val interface{}) error {
+	return c.decodeValueAtKey(key, val)
+}
+
+func (c *Cache) Set(key string, val interface{}, timeout time.Duration) {
+	c.store(key, &ExpiringData{
+		Expires: time.Now().UTC().Add(timeout),
+		Data:    enc(val),
+	})
+}
+
 func (c *Cache) decodeValueAtKey(key string, i interface{}) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -97,55 +108,12 @@ type ExpiringData struct {
 	Data    []byte // call enc() to get an encoded value
 }
 
-// GetMessagePageByValues retrieves messages for given set of query values.
-func (c *Cache) GetMessagePageByValues(data url.Values) (*twilio.MessagePage, bool) {
-	key := "expiring_messages." + data.Encode()
-	e := new(twilio.MessagePage)
-	if err := c.decodeValueAtKey(key, e); err != nil {
-		return nil, false
-	}
-	return e, true
-}
-
-func (c *Cache) GetConferencePageByURL(nextPage string) (*twilio.ConferencePage, bool) {
-	cp := new(twilio.ConferencePage)
-	if err := c.decodeValueAtKey(conferencePagePrefix+"."+nextPage, cp); err != nil {
-		return nil, false
-	}
-	return cp, true
-}
-
-func (c *Cache) GetMessagePageByURL(nextPage string) (*twilio.MessagePage, bool) {
-	mp := new(twilio.MessagePage)
-	if err := c.decodeValueAtKey(messagePagePrefix+"."+nextPage, mp); err != nil {
-		return nil, false
-	}
-	return mp, true
-}
-
-func (c *Cache) GetCallPageByURL(nextPage string) (*twilio.CallPage, bool) {
-	cp := new(twilio.CallPage)
-	if err := c.decodeValueAtKey(callPagePrefix+"."+nextPage, cp); err != nil {
-		return nil, false
-	}
-	return cp, true
-}
-
 func (c *Cache) GetAlertPageByURL(nextPage string) (*twilio.AlertPage, bool) {
 	ap := new(twilio.AlertPage)
 	if err := c.decodeValueAtKey(alertPagePrefix+"."+nextPage, ap); err != nil {
 		return nil, false
 	}
 	return ap, true
-}
-
-func (c *Cache) GetCallPageByValues(data url.Values) (*twilio.CallPage, bool) {
-	key := "expiring_calls." + data.Encode()
-	cp := new(twilio.CallPage)
-	if err := c.decodeValueAtKey(key, cp); err != nil {
-		return nil, false
-	}
-	return cp, true
 }
 
 func (c *Cache) GetAlertPageByValues(data url.Values) (*twilio.AlertPage, bool) {
@@ -157,27 +125,6 @@ func (c *Cache) GetAlertPageByValues(data url.Values) (*twilio.AlertPage, bool) 
 	return ap, true
 }
 
-// GetConferencePageByValues retrieves messages for given set of query values.
-func (c *Cache) GetConferencePageByValues(data url.Values) (*twilio.ConferencePage, bool) {
-	key := "expiring_conferences." + data.Encode()
-	cp := new(twilio.ConferencePage)
-	if err := c.decodeValueAtKey(key, cp); err != nil {
-		return nil, false
-	}
-	return cp, true
-}
-
-// AddExpiringMessagePage caches mp at the given key for the provided duration.
-// Use GetMessagePageByValues to retrieve it.
-func (c *Cache) AddExpiringMessagePage(key string, mp *twilio.MessagePage, valid time.Duration) {
-	bits := enc(mp)
-	e := &ExpiringData{
-		Expires: time.Now().UTC().Add(valid),
-		Data:    bits,
-	}
-	c.store("expiring_messages."+key, e)
-}
-
 func (c *Cache) AddExpiringAlertPage(key string, mp *twilio.AlertPage, valid time.Duration) {
 	bits := enc(mp)
 	e := &ExpiringData{
@@ -187,26 +134,6 @@ func (c *Cache) AddExpiringAlertPage(key string, mp *twilio.AlertPage, valid tim
 	c.store("expiring_alerts."+key, e)
 }
 
-func (c *Cache) AddExpiringConferencePage(key string, cp *twilio.ConferencePage, valid time.Duration) {
-	bits := enc(cp)
-	e := &ExpiringData{
-		Expires: time.Now().UTC().Add(valid),
-		Data:    bits,
-	}
-	c.store("expiring_conferences."+key, e)
-}
-
-// AddExpiringCallPage caches mp at the given key for the provided duration.
-// Use GetCallPageByValues to retrieve it.
-func (c *Cache) AddExpiringCallPage(key string, cp *twilio.CallPage, valid time.Duration) {
-	bits := enc(cp)
-	e := &ExpiringData{
-		Expires: time.Now().UTC().Add(valid),
-		Data:    bits,
-	}
-	c.store("expiring_calls."+key, e)
-}
-
 func (c *Cache) AddAlertPage(npuri string, mp *twilio.AlertPage, valid time.Duration) {
 	bits := enc(mp)
 	e := &ExpiringData{
@@ -214,31 +141,4 @@ func (c *Cache) AddAlertPage(npuri string, mp *twilio.AlertPage, valid time.Dura
 		Data:    bits,
 	}
 	c.store(alertPagePrefix+"."+npuri, e)
-}
-
-func (c *Cache) AddMessagePage(npuri string, mp *twilio.MessagePage, valid time.Duration) {
-	bits := enc(mp)
-	e := &ExpiringData{
-		Expires: time.Now().UTC().Add(valid),
-		Data:    bits,
-	}
-	c.store(messagePagePrefix+"."+npuri, e)
-}
-
-func (c *Cache) AddCallPage(npuri string, cp *twilio.CallPage, valid time.Duration) {
-	bits := enc(cp)
-	e := &ExpiringData{
-		Expires: time.Now().UTC().Add(valid),
-		Data:    bits,
-	}
-	c.store(callPagePrefix+"."+npuri, e)
-}
-
-func (c *Cache) AddConferencePage(npuri string, cp *twilio.ConferencePage, valid time.Duration) {
-	bits := enc(cp)
-	e := &ExpiringData{
-		Expires: time.Now().UTC().Add(valid),
-		Data:    bits,
-	}
-	c.store(conferencePagePrefix+"."+npuri, e)
 }

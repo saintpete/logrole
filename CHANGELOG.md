@@ -1,5 +1,9 @@
 # Changes
 
+## 0.69
+
+Add back caching for calls/messages/conferences
+
 ## 0.67
 
 Switch the date filtering system from day-and-UTC based to timezone aware, to

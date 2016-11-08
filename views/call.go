@@ -21,6 +21,9 @@ type Call struct {
 }
 
 func NewCall(call *twilio.Call, p *config.Permission, u *config.User) (*Call, error) {
+	if u.CanViewCalls() == false {
+		return nil, config.PermissionDenied
+	}
 	if call.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for call")
 	}
@@ -139,6 +142,9 @@ func (c *Call) Failed() (bool, error) {
 }
 
 func NewCallPage(cp *twilio.CallPage, p *config.Permission, u *config.User) (*CallPage, error) {
+	if u.CanViewCalls() == false {
+		return nil, config.PermissionDenied
+	}
 	calls := make([]*Call, 0)
 	for _, call := range cp.Calls {
 		cl, err := NewCall(call, p, u)
