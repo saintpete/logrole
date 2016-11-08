@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html/template"
 	"net/http"
 	"regexp"
 
@@ -38,6 +39,19 @@ func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type openSearchXMLServer struct {
 	PublicHost              string
 	AllowUnencryptedTraffic bool
+	tpl                     *template.Template
+}
+
+func newOpenSearchServer(publicHost string, allowUnencryptedTraffic bool) (*openSearchXMLServer, error) {
+	openSearchTemplate, err := newTpl(template.FuncMap{}, openSearchTpl)
+	if err != nil {
+		return nil, err
+	}
+	return &openSearchXMLServer{
+		PublicHost:              publicHost,
+		AllowUnencryptedTraffic: allowUnencryptedTraffic,
+		tpl: openSearchTemplate,
+	}, nil
 }
 
 type searchData struct {
@@ -61,7 +75,7 @@ func (o *openSearchXMLServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		PublicHost: o.PublicHost,
 	}
 	w.Header().Set("Content-Type", "text/xml; charset=utf-8")
-	if err := openSearchTemplate.Execute(w, data); err != nil {
+	if err := o.tpl.Execute(w, data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }

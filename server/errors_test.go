@@ -22,7 +22,7 @@ func clearErrorHandlers() {
 func TestErrorsRender(t *testing.T) {
 	t.Parallel()
 	defer clearErrorHandlers()
-	es := &errorServer{}
+	es, _ := newErrorServer(nil, nil)
 	registerErrorHandlers(es)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/", nil)
@@ -41,7 +41,7 @@ func TestErrorsRender(t *testing.T) {
 func Test401RendersHTML(t *testing.T) {
 	t.Parallel()
 	defer clearErrorHandlers()
-	es := &errorServer{}
+	es, _ := newErrorServer(nil, nil)
 	registerErrorHandlers(es)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/", nil)
@@ -55,7 +55,7 @@ func TestErrorShowsEmail(t *testing.T) {
 	t.Parallel()
 	address, _ := mail.ParseAddress("test@example.com")
 	defer clearErrorHandlers()
-	es := &errorServer{Mailto: address}
+	es, _ := newErrorServer(address, nil)
 	registerErrorHandlers(es)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/", nil)

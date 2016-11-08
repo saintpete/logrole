@@ -192,12 +192,19 @@ func (l *loginData) Title() string {
 	return "Log In"
 }
 
-func GoogleLoginRenderer() func(http.ResponseWriter, *http.Request, string) {
-	return func(w http.ResponseWriter, r *http.Request, url string) {
-	}
+type loginServer struct {
+	tpl *template.Template
 }
 
-type loginServer struct{}
+func newLoginServer() (*loginServer, error) {
+	loginTemplate, err := newTpl(template.FuncMap{}, base+loginTpl)
+	if err != nil {
+		return nil, err
+	}
+	return &loginServer{
+		tpl: loginTemplate,
+	}, nil
+}
 
 func (ls *loginServer) Serve(w http.ResponseWriter, r *http.Request, URL string) {
 	if r.URL.Path != "/login" {
@@ -212,7 +219,7 @@ func (ls *loginServer) Serve(w http.ResponseWriter, r *http.Request, URL string)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(401)
-	if err := render(w, r, loginTemplate, "base", bd); err != nil {
+	if err := render(w, r, ls.tpl, "base", bd); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -300,9 +307,9 @@ func NewServer(settings *config.Settings) (*Server, error) {
 		return nil, err
 	}
 	ss := &searchServer{}
-	o := &openSearchXMLServer{
-		PublicHost:              settings.PublicHost,
-		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
+	o, err := newOpenSearchServer(settings.PublicHost, settings.AllowUnencryptedTraffic)
+	if err != nil {
+		return nil, err
 	}
 	index, err := newIndexServer()
 	if err != nil {
@@ -330,16 +337,19 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	logout := &logoutServer{
 		Authenticator: settings.Authenticator,
 	}
-	ls := &loginServer{}
+	ls, err := newLoginServer()
+	if err != nil {
+		return nil, err
+	}
 	tz := &tzServer{
 		Logger:                  settings.Logger,
 		AllowUnencryptedTraffic: settings.AllowUnencryptedTraffic,
 		LocationFinder:          settings.LocationFinder,
 	}
 
-	e := &errorServer{
-		Mailto:   settings.Mailto,
-		Reporter: settings.Reporter,
+	e, err := newErrorServer(settings.Mailto, settings.Reporter)
+	if err != nil {
+		return nil, err
 	}
 	registerErrorHandlers(e)
 

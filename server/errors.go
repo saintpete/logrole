@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/mail"
 
@@ -20,6 +21,7 @@ type errorData struct {
 type errorServer struct {
 	Mailto   *mail.Address
 	Reporter services.ErrorReporter
+	tpl      *template.Template
 }
 
 func (e *errorServer) Serve401(w http.ResponseWriter, r *http.Request) {
@@ -33,9 +35,21 @@ func (e *errorServer) Serve401(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(401)
-	if err := render(w, r, errorTemplate, "base", data); err != nil {
+	if err := render(w, r, e.tpl, "base", data); err != nil {
 		handlers.Logger.Error("Error rendering error template", "err", err)
 	}
+}
+
+func newErrorServer(mailto *mail.Address, reporter services.ErrorReporter) (*errorServer, error) {
+	errorTemplate, err := newTpl(template.FuncMap{}, base+errorTpl)
+	if err != nil {
+		return nil, err
+	}
+	return &errorServer{
+		Mailto:   mailto,
+		Reporter: reporter,
+		tpl:      errorTemplate,
+	}, nil
 }
 
 func (e *errorServer) Serve403(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +60,7 @@ func (e *errorServer) Serve403(w http.ResponseWriter, r *http.Request) {
 	}}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(403)
-	if err := render(w, r, errorTemplate, "base", data); err != nil {
+	if err := render(w, r, e.tpl, "base", data); err != nil {
 		handlers.Logger.Error("Error rendering error template", "err", err)
 	}
 }
@@ -59,7 +73,7 @@ func (e *errorServer) Serve404(w http.ResponseWriter, r *http.Request) {
 	}}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(404)
-	if err := render(w, r, errorTemplate, "base", data); err != nil {
+	if err := render(w, r, e.tpl, "base", data); err != nil {
 		handlers.Logger.Info("Error rendering error template", "err", err)
 	}
 }
@@ -72,7 +86,7 @@ func (e *errorServer) Serve405(w http.ResponseWriter, r *http.Request) {
 	}}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(405)
-	if err := render(w, r, errorTemplate, "base", data); err != nil {
+	if err := render(w, r, e.tpl, "base", data); err != nil {
 		handlers.Logger.Info("Error rendering error template", "err", err)
 	}
 }
@@ -90,7 +104,7 @@ func (e *errorServer) Serve500(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(500)
-	if err := render(w, r, errorTemplate, "base", data); err != nil {
+	if err := render(w, r, e.tpl, "base", data); err != nil {
 		handlers.Logger.Error("Error rendering error template", "err", err)
 	}
 }

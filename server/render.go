@@ -21,12 +21,6 @@ var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
 	indexTpl, loginTpl, recordingTpl, pagingTpl, openSearchTpl,
 	openSourceTpl, errorTpl string
 
-// TODO move these to newServer() constructors with an error handler
-var errorTemplate *template.Template
-var loginTemplate *template.Template
-var openSearchTemplate *template.Template
-var openSourceTemplate *template.Template
-
 func init() {
 	base = assets.MustAssetString("templates/base.html")
 	phoneTpl = assets.MustAssetString("templates/snippets/phonenumber.html")
@@ -46,10 +40,6 @@ func init() {
 	openSearchTpl = assets.MustAssetString("templates/opensearch.xml")
 	errorTpl = assets.MustAssetString("templates/errors.html")
 	openSourceTpl = assets.MustAssetString("templates/opensource.html")
-
-	errorTemplate = template.Must(newTpl(template.FuncMap{}, base+errorTpl))
-	loginTemplate = template.Must(newTpl(template.FuncMap{}, base+loginTpl))
-	openSearchTemplate = template.Must(newTpl(template.FuncMap{}, openSearchTpl))
 }
 
 // newTpl creates a new Template with the given base and common set of
