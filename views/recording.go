@@ -2,7 +2,6 @@ package views
 
 import (
 	"errors"
-	"time"
 
 	types "github.com/kevinburke/go-types"
 	twilio "github.com/kevinburke/twilio-go"
@@ -114,8 +113,7 @@ func NewRecording(r *twilio.Recording, p *config.Permission, u *config.User, key
 	if r.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for recording")
 	}
-	oldest := time.Now().UTC().Add(-1 * p.MaxResourceAge())
-	if r.DateCreated.Time.Before(oldest) {
+	if !u.CanViewResource(r.DateCreated.Time, p.MaxResourceAge()) {
 		return nil, config.ErrTooOld
 	}
 	url := services.Opaque(r.URL(".wav"), key)

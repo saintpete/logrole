@@ -2,7 +2,6 @@ package views
 
 import (
 	"errors"
-	"time"
 
 	types "github.com/kevinburke/go-types"
 	twilio "github.com/kevinburke/twilio-go"
@@ -52,8 +51,7 @@ func NewConference(conference *twilio.Conference, p *config.Permission, u *confi
 	if conference.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for conference")
 	}
-	oldest := time.Now().UTC().Add(-1 * p.MaxResourceAge())
-	if conference.DateCreated.Time.Before(oldest) {
+	if !u.CanViewResource(conference.DateCreated.Time, p.MaxResourceAge()) {
 		return nil, config.ErrTooOld
 	}
 	return &Conference{user: u, conference: conference}, nil

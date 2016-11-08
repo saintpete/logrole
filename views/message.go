@@ -2,7 +2,6 @@ package views
 
 import (
 	"errors"
-	"time"
 
 	types "github.com/kevinburke/go-types"
 	twilio "github.com/kevinburke/twilio-go"
@@ -240,8 +239,7 @@ func NewMessage(msg *twilio.Message, p *config.Permission, u *config.User) (*Mes
 	if msg.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for message")
 	}
-	oldest := time.Now().UTC().Add(-1 * p.MaxResourceAge())
-	if msg.DateCreated.Time.Before(oldest) {
+	if !u.CanViewResource(msg.DateCreated.Time, p.MaxResourceAge()) {
 		return nil, config.ErrTooOld
 	}
 	return &Message{user: u, message: msg}, nil

@@ -3,7 +3,6 @@ package views
 import (
 	"errors"
 	"strings"
-	"time"
 
 	types "github.com/kevinburke/go-types"
 	twilio "github.com/kevinburke/twilio-go"
@@ -28,8 +27,7 @@ func NewAlert(alert *twilio.Alert, p *config.Permission, u *config.User) (*Alert
 	if alert.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for alert")
 	}
-	oldest := time.Now().UTC().Add(-1 * p.MaxResourceAge())
-	if alert.DateCreated.Time.Before(oldest) {
+	if !u.CanViewResource(alert.DateCreated.Time, p.MaxResourceAge()) {
 		return nil, config.ErrTooOld
 	}
 	return &Alert{user: u, alert: alert}, nil

@@ -2,6 +2,7 @@ package config
 
 import (
 	"net/http"
+	"time"
 
 	"golang.org/x/net/context"
 )
@@ -26,6 +27,9 @@ type User struct {
 	canViewConferences    bool
 	canViewAlerts         bool
 	canViewCallbackURLs   bool
+	// The maximum viewable age this viewer can view resources. If nonzero,
+	// this overrides any global setting.
+	maxResourceAge time.Duration
 }
 
 // UserSettings are used to define which permissions a User has. When parsing
@@ -67,6 +71,10 @@ type UserSettings struct {
 	CanViewAlerts bool `yaml:"can_view_alerts"`
 	// Can the user view a StatusCallbackURL?
 	CanViewCallbackURLs bool `yaml:"can_view_callback_urls"`
+
+	// The maximum viewable age of resources this user can view. If nonzero,
+	// this overrides any global setting.
+	MaxResourceAge time.Duration `yaml:"max_resource_age"`
 }
 
 // An alias type to avoid infinite recursion when calling UnmarshalYAML.
@@ -109,6 +117,7 @@ func AllUserSettings() *UserSettings {
 		CanViewConferences:    true,
 		CanViewAlerts:         true,
 		CanViewCallbackURLs:   true,
+		MaxResourceAge:        DefaultMaxResourceAge,
 	}
 }
 
@@ -135,6 +144,7 @@ func NewUser(us *UserSettings) *User {
 		canViewConferences:    us.CanViewConferences,
 		canViewAlerts:         us.CanViewAlerts,
 		canViewCallbackURLs:   us.CanViewCallbackURLs,
+		maxResourceAge:        us.MaxResourceAge,
 	}
 }
 
@@ -204,6 +214,21 @@ func (u *User) CanViewAlerts() bool {
 
 func (u *User) CanViewCallbackURLs() bool {
 	return u.canViewCallbackURLs
+}
+
+// CanViewResource returns true if the specified timestamp is within the
+// user's maxResourceAge setting. If the user's maxResourceAge is nonzero, it
+// overrides the globalMaxAge. Returns true if the globalMaxAge and the user's
+// maxResourceAge are both zero.
+func (u *User) CanViewResource(resourceCreatedAt time.Time, globalMaxAge time.Duration) bool {
+	var maxAge = globalMaxAge
+	if u.maxResourceAge != 0 {
+		maxAge = u.maxResourceAge
+	}
+	if maxAge == 0 {
+		return true
+	}
+	return time.Since(resourceCreatedAt) < maxAge
 }
 
 type ctxVar int

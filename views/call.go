@@ -2,7 +2,6 @@ package views
 
 import (
 	"errors"
-	"time"
 
 	types "github.com/kevinburke/go-types"
 	twilio "github.com/kevinburke/twilio-go"
@@ -27,8 +26,7 @@ func NewCall(call *twilio.Call, p *config.Permission, u *config.User) (*Call, er
 	if call.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for call")
 	}
-	oldest := time.Now().UTC().Add(-1 * p.MaxResourceAge())
-	if call.DateCreated.Time.Before(oldest) {
+	if !u.CanViewResource(call.DateCreated.Time, p.MaxResourceAge()) {
 		return nil, config.ErrTooOld
 	}
 	return &Call{user: u, call: call}, nil
