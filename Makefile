@@ -7,6 +7,7 @@ GO_BINDATA := $(shell command -v go-bindata)
 GOVENDOR := $(shell command -v govendor)
 JUSTRUN := $(shell command -v justrun)
 BENCHSTAT := $(shell command -v benchstat)
+WRITE_MAILMAP := $(shell command -v write_mailmap)
 
 WATCH_TARGETS = static/css/style.css \
 	cache/cache.go \
@@ -96,3 +97,9 @@ endif
 
 loc:
 	cloc --exclude-dir=.git,tmp,vendor --not-match-f='bootstrap.min.css|all.css|bindata.go' .
+
+authors:
+ifndef WRITE_MAILMAP
+	go get github.com/kevinburke/write_mailmap
+endif
+	write_mailmap > AUTHORS.txt
