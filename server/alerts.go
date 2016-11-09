@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -19,11 +21,132 @@ import (
 	"golang.org/x/net/context"
 )
 
+const alertPattern = `(?P<sid>NO[a-f0-9]{32})`
+
+var alertInstanceRoute = regexp.MustCompile("^/alerts/" + alertPattern + "$")
+
 var validAlertLevels = []twilio.LogLevel{
 	twilio.LogLevelError,
 	twilio.LogLevelWarning,
 	twilio.LogLevelNotice,
 	twilio.LogLevelDebug,
+}
+
+type alertInstanceServer struct {
+	log.Logger
+	Client         views.Client
+	LocationFinder services.LocationFinder
+	tpl            *template.Template
+}
+
+func halve(firstHalf bool, vals url.Values) map[string]string {
+	switch len(vals) {
+	case 0:
+		return map[string]string{}
+	case 1:
+		if firstHalf {
+			m := make(map[string]string, 1)
+			for k, v := range vals {
+				m[k] = v[0]
+			}
+			return m
+		} else {
+			return map[string]string{}
+		}
+	default:
+		keys := make([]string, len(vals))
+		i := 0
+		for k := range vals {
+			keys[i] = k
+			i++
+		}
+		sort.Strings(keys)
+		split := (len(vals) + 1) / 2
+		var keyHalf []string
+		if firstHalf {
+			keyHalf = keys[:split]
+		} else {
+			keyHalf = keys[split:]
+		}
+		d := make(map[string]string, len(keyHalf))
+		for _, k := range keyHalf {
+			d[k] = vals.Get(k)
+		}
+		return d
+	}
+}
+
+func newAlertInstanceServer(l log.Logger, vc views.Client, lf services.LocationFinder) (*alertInstanceServer, error) {
+	tpl, err := newTpl(template.FuncMap{
+		"has_prefix": strings.HasPrefix,
+		"halve":      halve,
+	}, base+alertInstanceTpl+sidTpl)
+	if err != nil {
+		return nil, err
+	}
+	return &alertInstanceServer{
+		Logger:         l,
+		Client:         vc,
+		LocationFinder: lf,
+		tpl:            tpl,
+	}, nil
+}
+
+type alertInstanceData struct {
+	Alert *views.Alert
+	Loc   *time.Location
+}
+
+func (a *alertInstanceData) Title() string {
+	return "Alert Details"
+}
+
+func (s *alertInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	u, ok := config.GetUser(r)
+	if !ok {
+		rest.ServerError(w, r, errors.New("No user available"))
+		return
+	}
+	if !u.CanViewAlerts() {
+		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
+		return
+	}
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
+	sid := alertInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
+	start := time.Now()
+	alert, err := s.Client.GetAlert(ctx, u, sid)
+	switch err {
+	case nil:
+		break
+	case config.PermissionDenied, config.ErrTooOld:
+		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
+		return
+	default:
+		switch terr := err.(type) {
+		case *rest.Error:
+			switch terr.StatusCode {
+			case 404:
+				rest.NotFound(w, r)
+			default:
+				rest.ServerError(w, r, terr)
+			}
+		default:
+			rest.ServerError(w, r, err)
+		}
+		return
+	}
+	data := &baseData{
+		LF:       s.LocationFinder,
+		Duration: time.Since(start),
+		Data: &alertInstanceData{
+			Alert: alert,
+			Loc:   s.LocationFinder.GetLocationReq(r),
+		},
+	}
+	if err := render(w, r, s.tpl, "base", data); err != nil {
+		rest.ServerError(w, r, err)
+	}
 }
 
 type alertListServer struct {
@@ -180,7 +303,7 @@ func (s *alertListServer) renderError(w http.ResponseWriter, r *http.Request, co
 }
 
 func (s *alertListServer) validParams() []string {
-	return []string{"log-level", "next", "alert-start", "alert-end"}
+	return []string{"log-level", "resource-sid", "next", "alert-start", "alert-end"}
 }
 
 func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {

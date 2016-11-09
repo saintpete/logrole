@@ -97,6 +97,9 @@ func setNextPageValsOnQuery(nextpageuri string, query url.Values) {
 	if friendlyName := nq.Get("FriendlyName"); friendlyName != "" {
 		query.Set("friendly-name", friendlyName)
 	}
+	if sid := nq.Get("ResourceSid"); sid != "" {
+		query.Set("resource-sid", sid)
+	}
 	if status := nq.Get("Status"); status != "" {
 		query.Set("status", status)
 	}
@@ -128,11 +131,12 @@ func setPageFilters(query url.Values, pageFilters url.Values) error {
 		pageFilters.Set("To", s)
 		query.Set("to", s)
 	}
-	// NB - we purposely don't do date validation here since we filter out
-	// older messages as part of the message view.
-	// conferences
+	// for conferences
 	if friendlyName := query.Get("friendly-name"); friendlyName != "" {
 		pageFilters.Set("FriendlyName", friendlyName)
+	}
+	if sid := query.Get("resource-sid"); sid != "" {
+		pageFilters.Set("ResourceSid", sid)
 	}
 	if status := query.Get("status"); status != "" {
 		pageFilters.Set("Status", status)

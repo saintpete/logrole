@@ -13,6 +13,7 @@ type searchServer struct{}
 var smsSid = regexp.MustCompile("^" + messagePattern + "$")
 var callSid = regexp.MustCompile("^" + callPattern + "$")
 var conferenceSid = regexp.MustCompile("^" + conferencePattern + "$")
+var notificationSid = regexp.MustCompile("^" + alertPattern + "$")
 
 func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -31,6 +32,10 @@ func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if conferenceSid.MatchString(q) {
 		http.Redirect(w, r, "/conferences/"+q, http.StatusMovedPermanently)
+		return
+	}
+	if notificationSid.MatchString(q) {
+		http.Redirect(w, r, "/alerts/"+q, http.StatusMovedPermanently)
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusFound)

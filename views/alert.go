@@ -100,9 +100,10 @@ func (c *Alert) CanViewProperty(property string) bool {
 	}
 	switch property {
 	case "Sid", "ErrorCode", "MoreInfo", "DateCreated", "DateUpdated",
-		"ResourceSid", "LogLevel":
+		"ResourceSid", "LogLevel", "ServiceSid":
 		return c.user.CanViewAlerts()
-	case "RequestURL", "RequestMethod", "AlertText":
+	case "RequestURL", "RequestMethod", "RequestVariables", "AlertText",
+		"ResponseHeaders", "ResponseBody":
 		return c.user.CanViewCallbackURLs()
 	default:
 		panic("unknown property " + property)
@@ -156,6 +157,14 @@ func (a *Alert) ResourceSid() (string, error) {
 	return "", config.PermissionDenied
 }
 
+func (a *Alert) ServiceSid() (string, error) {
+	if a.CanViewProperty("ServiceSid") {
+		return string(a.alert.ServiceSid), nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
 func (a *Alert) LogLevel() (twilio.LogLevel, error) {
 	if a.CanViewProperty("Sid") {
 		return a.alert.LogLevel, nil
@@ -177,6 +186,22 @@ func (a *Alert) RequestMethod() (string, error) {
 		return a.alert.RequestMethod, nil
 	} else {
 		return "", config.PermissionDenied
+	}
+}
+
+func (a *Alert) RequestVariables() (twilio.Values, error) {
+	if a.CanViewProperty("RequestVariables") {
+		return a.alert.RequestVariables, nil
+	} else {
+		return twilio.Values{}, config.PermissionDenied
+	}
+}
+
+func (a *Alert) ResponseHeaders() (twilio.Values, error) {
+	if a.CanViewProperty("ResponseHeaders") {
+		return a.alert.ResponseHeaders, nil
+	} else {
+		return twilio.Values{}, config.PermissionDenied
 	}
 }
 
@@ -209,5 +234,13 @@ func (a *Alert) DateUpdated() (twilio.TwilioTime, error) {
 		return a.alert.DateUpdated, nil
 	} else {
 		return twilio.TwilioTime{}, config.PermissionDenied
+	}
+}
+
+func (a *Alert) ResponseBody() (string, error) {
+	if a.CanViewProperty("ResponseBody") {
+		return a.alert.ResponseBody, nil
+	} else {
+		return "", config.PermissionDenied
 	}
 }

@@ -37,6 +37,7 @@ type Client interface {
 	GetMessage(context.Context, *config.User, string) (*Message, error)
 	GetCall(context.Context, *config.User, string) (*Call, error)
 	GetConference(context.Context, *config.User, string) (*Conference, error)
+	GetAlert(context.Context, *config.User, string) (*Alert, error)
 	GetMediaURLs(context.Context, *config.User, string) ([]*url.URL, error)
 	GetMessagePageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*MessagePage, time.Time, error)
 	GetCallPageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*CallPage, time.Time, error)
@@ -127,6 +128,16 @@ func (vc *client) GetCall(ctx context.Context, user *config.User, sid string) (*
 		return nil, err
 	}
 	return NewCall(call, vc.permission, user)
+}
+
+// GetAlert fetches a single Alert from the Twilio API, and returns any
+// network or permission errors that occur.
+func (vc *client) GetAlert(ctx context.Context, user *config.User, sid string) (*Alert, error) {
+	call, err := vc.client.Monitor.Alerts.Get(ctx, sid)
+	if err != nil {
+		return nil, err
+	}
+	return NewAlert(call, vc.permission, user)
 }
 
 // GetConference fetches a single Conference from the Twilio API, and returns any
