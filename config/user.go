@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -90,6 +92,10 @@ func (us *UserSettings) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	aus := AllUserSettings()
 	ys := yamlSettings(*aus)
 	if err := unmarshal(&ys); err != nil {
+		if strings.Contains(err.Error(), "unmarshal !!seq") {
+			return fmt.Errorf("%s. Double check that permissions is a map and "+
+				"not a list (with dashes)", err.Error())
+		}
 		return err
 	}
 	*us = UserSettings(ys)

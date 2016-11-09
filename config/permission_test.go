@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"testing"
 
 	yaml "gopkg.in/yaml.v2"
@@ -59,6 +60,53 @@ func TestLoadPermission(t *testing.T) {
 	}
 	if p[2].Permissions.CanViewCalls == false {
 		t.Errorf("expected CanViewCalls to be true, got false")
+	}
+}
+
+var extraPolicy = []byte(`
+policy:
+  - name: empty
+    users:
+      - empty@example.com
+`)
+
+func TestUnmarshalExtraPolicy(t *testing.T) {
+	t.Parallel()
+	var p Policy
+	if err := yaml.Unmarshal(extraPolicy, &p); err != nil {
+		t.Fatal(err)
+	}
+	if p == nil {
+		t.Fatal("unmarshal: got nil")
+	}
+	if len(p) != 1 {
+		t.Fatalf("expected 1 group, got %d", len(p))
+	}
+	if len(p[0].Users) != 1 {
+		t.Errorf("expected 1 user, got %d", len(p[0].Users))
+	}
+	if p[0].Name != "empty" {
+		t.Errorf("expected Name to be 'empty', got %s", p[0].Name)
+	}
+}
+
+var badPolicy = []byte(`
+- name: empty
+  permissions:
+    - can_view_messages: True
+  users:
+    - empty@example.com
+`)
+
+func TestUnmarshalBetterError(t *testing.T) {
+	t.Parallel()
+	var p Policy
+	err := yaml.Unmarshal(badPolicy, &p)
+	if err == nil {
+		t.Fatalf("nil error")
+	}
+	if !strings.Contains(err.Error(), "Double check that permissions is a map") {
+		t.Errorf("bad error: %v", err)
 	}
 }
 

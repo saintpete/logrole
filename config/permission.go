@@ -16,6 +16,10 @@ type Group struct {
 	Users       []string      `yaml:"users"`
 }
 
+type PolicyPolicy struct {
+	Policy *Policy `yaml:"policy"`
+}
+
 // TODO naming here
 type Policy []*Group
 
@@ -27,6 +31,13 @@ type yamlPolicy Policy
 func (p *Policy) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if p == nil {
 		p = new(Policy)
+	}
+	// try to unmarshal the higher level first - if the user put "policy:" in
+	// an error message
+	pp := new(PolicyPolicy)
+	if err := unmarshal(pp); err == nil && pp.Policy != nil && len(*pp.Policy) > 0 {
+		*p = *pp.Policy
+		return nil
 	}
 	yp := yamlPolicy(*p)
 	if err := unmarshal(&yp); err != nil {
