@@ -122,6 +122,18 @@ func (a *Alert) Description() (string, error) {
 	}
 }
 
+func (a *Alert) CanViewStatusCode() bool {
+	return a.user.CanViewCallbackURLs()
+}
+
+func (a *Alert) StatusCode() (int, error) {
+	if a.CanViewStatusCode() {
+		return a.alert.StatusCode(), nil
+	} else {
+		return 0, config.PermissionDenied
+	}
+}
+
 func (a *Alert) Sid() (string, error) {
 	if a.CanViewProperty("Sid") {
 		return a.alert.Sid, nil

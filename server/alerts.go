@@ -78,8 +78,9 @@ func halve(firstHalf bool, vals url.Values) map[string]string {
 
 func newAlertInstanceServer(l log.Logger, vc views.Client, lf services.LocationFinder) (*alertInstanceServer, error) {
 	tpl, err := newTpl(template.FuncMap{
-		"has_prefix": strings.HasPrefix,
-		"halve":      halve,
+		"has_prefix":  strings.HasPrefix,
+		"status_text": http.StatusText,
+		"halve":       halve,
 	}, base+alertInstanceTpl+sidTpl)
 	if err != nil {
 		return nil, err
