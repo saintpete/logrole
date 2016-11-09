@@ -40,13 +40,13 @@
           {{- if .Alert.CanViewProperty "ResourceSid" }}
           <td>
             {{- if has_prefix .Alert.ResourceSid "CA" }}
-            <a href="/calls/{{ .Alert.ResourceSid }}">Call</a>
+            <a href="/calls/{{ .Alert.ResourceSid }}">{{ .Alert.ResourceSid }}</a>
             {{- else if has_prefix .Alert.ResourceSid "SM" }}
-            <a href="/messages/{{ .Alert.ResourceSid }}">SMS</a>
+            <a href="/messages/{{ .Alert.ResourceSid }}">{{ .Alert.ResourceSid }}</a>
             {{- else if has_prefix .Alert.ResourceSid "MM" }}
-            <a href="/messages/{{ .Alert.ResourceSid }}">MMS</a>
+            <a href="/messages/{{ .Alert.ResourceSid }}">{{ .Alert.ResourceSid }}</a>
             {{- else if has_prefix .Alert.ResourceSid "CF" }}
-            <a href="/conferences/{{ .Alert.ResourceSid }}">Conference</a>
+            <a href="/conferences/{{ .Alert.ResourceSid }}">{{ .Alert.ResourceSid }}</a>
             {{- else }}
             Resource {{ .Alert.ResourceSid }}
             {{- end }}
