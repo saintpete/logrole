@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +19,11 @@ import (
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
 )
+
+const numberInstancePattern = `(?P<number>[^/\s]+)`
+const numberSidPattern = `(?P<sid>CF[a-f0-9]{32})`
+
+var numberInstanceRoute = regexp.MustCompile("^/phone-numbers/" + numberInstancePattern + "$")
 
 type numberListServer struct {
 	log.Logger
@@ -188,6 +194,87 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
+	if err := render(w, r, s.tpl, "base", data); err != nil {
+		rest.ServerError(w, r, err)
+	}
+}
+
+type numberInstanceServer struct {
+	log.Logger
+	Client         views.Client
+	LocationFinder services.LocationFinder
+	tpl            *template.Template
+}
+
+func newNumberInstanceServer(l log.Logger, vc views.Client, lf services.LocationFinder) (*numberInstanceServer, error) {
+	s := &numberInstanceServer{
+		Logger:         l,
+		Client:         vc,
+		LocationFinder: lf,
+	}
+	tpl, err := newTpl(template.FuncMap{}, base+numberInstanceTpl+sidTpl+copyScript)
+	if err != nil {
+		return nil, err
+	}
+	s.tpl = tpl
+	return s, nil
+}
+
+type numberInstanceData struct {
+	Number *views.IncomingNumber
+	Loc    *time.Location
+}
+
+func (n *numberInstanceData) Title() string {
+	if n != nil && n.Number != nil && n.Number.CanViewProperty("PhoneNumber") {
+		num, _ := n.Number.PhoneNumber()
+		return "Number " + num.Friendly()
+	}
+	return "Number Details"
+}
+
+func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	u, ok := config.GetUser(r)
+	if !ok {
+		rest.ServerError(w, r, errors.New("No user available"))
+		return
+	}
+	// TODO sid redirect to the actual PN
+	pn := numberInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
+	start := time.Now()
+	number, err := s.Client.GetIncomingNumber(ctx, u, pn)
+	switch err {
+	case nil:
+		break
+	case config.PermissionDenied, config.ErrTooOld:
+		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
+		return
+	default:
+		switch terr := err.(type) {
+		case *rest.Error:
+			switch terr.StatusCode {
+			case 404:
+				rest.NotFound(w, r)
+			default:
+				rest.ServerError(w, r, terr)
+			}
+		default:
+			rest.ServerError(w, r, err)
+		}
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(200)
+	data := &baseData{
+		LF:       s.LocationFinder,
+		Duration: time.Since(start),
+		Data: &numberInstanceData{
+			Number: number,
+			Loc:    s.LocationFinder.GetLocationReq(r),
+		},
+	}
 	if err := render(w, r, s.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}

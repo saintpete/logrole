@@ -90,9 +90,13 @@ func (n *IncomingNumber) CanViewProperty(property string) bool {
 		return false
 	}
 	switch property {
-	case "Sid", "DateCreated", "PhoneNumber", "FriendlyName":
+	case "Sid", "DateCreated", "PhoneNumber", "FriendlyName", "Beta",
+		"TrunkSid", "Capabilities", "EmergencyStatus":
 		return true
-	case "VoiceURL", "SMSURL":
+	case "VoiceURL", "SMSURL", "VoiceMethod", "SMSMethod", "StatusCallback",
+		"StatusCallbackMethod", "VoiceFallbackURL", "VoiceFallbackMethod",
+		"SMSFallbackURL", "SMSFallbackMethod", "VoiceApplicationSid",
+		"SMSApplicationSid":
 		return n.user.CanViewCallbackURLs()
 	default:
 		panic("unknown property " + property)
@@ -112,6 +116,14 @@ func (a *IncomingNumber) DateCreated() (twilio.TwilioTime, error) {
 		return a.number.DateCreated, nil
 	} else {
 		return twilio.TwilioTime{}, config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) Capabilities() (*twilio.NumberCapability, error) {
+	if n.CanViewProperty("Capabilities") {
+		return n.number.Capabilities, nil
+	} else {
+		return nil, config.PermissionDenied
 	}
 }
 
@@ -139,10 +151,114 @@ func (n *IncomingNumber) VoiceURL() (string, error) {
 	}
 }
 
+func (n *IncomingNumber) VoiceMethod() (string, error) {
+	if n.CanViewProperty("VoiceMethod") {
+		return n.number.VoiceMethod, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
 func (n *IncomingNumber) SMSURL() (string, error) {
 	if n.CanViewProperty("SMSURL") {
 		return n.number.SMSURL, nil
 	} else {
 		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) Beta() (bool, error) {
+	if n.CanViewProperty("Beta") {
+		return n.number.Beta, nil
+	} else {
+		return false, config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) SMSMethod() (string, error) {
+	if n.CanViewProperty("SMSMethod") {
+		return n.number.SMSMethod, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) StatusCallback() (string, error) {
+	if n.CanViewProperty("StatusCallback") {
+		return n.number.StatusCallback, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) StatusCallbackMethod() (string, error) {
+	if n.CanViewProperty("StatusCallbackMethod") {
+		return n.number.StatusCallbackMethod, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) VoiceFallbackMethod() (string, error) {
+	if n.CanViewProperty("VoiceFallbackMethod") {
+		return n.number.VoiceFallbackMethod, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) VoiceFallbackURL() (string, error) {
+	if n.CanViewProperty("VoiceFallbackURL") {
+		return n.number.VoiceFallbackURL, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) SMSFallbackMethod() (string, error) {
+	if n.CanViewProperty("SMSFallbackMethod") {
+		return n.number.SMSFallbackMethod, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) SMSFallbackURL() (string, error) {
+	if n.CanViewProperty("SMSFallbackURL") {
+		return n.number.SMSFallbackURL, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) VoiceApplicationSid() (string, error) {
+	if n.CanViewProperty("VoiceApplicationSid") {
+		return n.number.VoiceApplicationSid, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) SMSApplicationSid() (string, error) {
+	if n.CanViewProperty("SMSApplicationSid") {
+		return n.number.SMSApplicationSid, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) EmergencyStatus() (string, error) {
+	if n.CanViewProperty("EmergencyStatus") {
+		return n.number.EmergencyStatus, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) TrunkSid() (types.NullString, error) {
+	if n.CanViewProperty("TrunkSid") {
+		return n.number.TrunkSid, nil
+	} else {
+		return types.NullString{}, config.PermissionDenied
 	}
 }

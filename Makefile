@@ -10,14 +10,14 @@ BENCHSTAT := $(shell command -v benchstat)
 WRITE_MAILMAP := $(shell command -v write_mailmap)
 
 WATCH_TARGETS = static/css/style.css \
-	templates/phone-numbers/list.html \
+	templates/phone-numbers/list.html templates/phone-numbers/instance.html \
 	templates/conferences/instance.html templates/conferences/list.html \
 	templates/alerts/list.html templates/alerts/instance.html \
 	templates/errors.html templates/login.html \
 	templates/snippets/phonenumber.html \
 	services/error_reporter.go services/services.go \
 	server/conferences.go server/alerts.go server/phonenumbers.go \
-	server/serve.go views/numbers.go \
+	server/serve.go views/client.go views/numbers.go \
 	Makefile config.yml
 
 ASSET_TARGETS = templates/base.html templates/index.html \

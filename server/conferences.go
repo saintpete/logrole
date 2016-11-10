@@ -65,7 +65,7 @@ func newConferenceInstanceServer(l log.Logger, vc views.Client,
 		Client:         vc,
 		LocationFinder: lf,
 	}
-	tpl, err := newTpl(template.FuncMap{}, base+conferenceInstanceTpl+sidTpl)
+	tpl, err := newTpl(template.FuncMap{}, base+conferenceInstanceTpl+sidTpl+copyScript)
 	if err != nil {
 		return nil, err
 	}
@@ -273,9 +273,9 @@ func (c *conferenceInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		rest.Forbidden(w, r, &rest.Error{Title: "Access denied"})
 		return
 	}
+	sid := conferenceInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	sid := conferenceInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	start := time.Now()
 	conference, err := c.Client.GetConference(ctx, u, sid)
 	switch err {

@@ -315,6 +315,10 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	nis, err := newNumberInstanceServer(settings.Logger, vc, settings.LocationFinder)
+	if err != nil {
+		return nil, err
+	}
 	ss := &searchServer{}
 	o, err := newOpenSearchServer(settings.PublicHost, settings.AllowUnencryptedTraffic)
 	if err != nil {
@@ -374,6 +378,7 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	authR.Handle(regexp.MustCompile(`^/alerts$`), []string{"GET"}, als)
 	authR.Handle(regexp.MustCompile(`^/tz$`), []string{"POST"}, tz)
 	authR.Handle(alertInstanceRoute, []string{"GET"}, ais)
+	authR.Handle(numberInstanceRoute, []string{"GET"}, nis)
 	authR.Handle(conferenceInstanceRoute, []string{"GET"}, confInstance)
 	authR.Handle(callInstanceRoute, []string{"GET"}, cis)
 	authR.Handle(messageInstanceRoute, []string{"GET"}, mis)

@@ -1,0 +1,157 @@
+{{- define "content" }}
+<div class="row">
+  <div class="col-md-6">
+    <table class="table table-striped">
+      <tbody>
+        <tr>
+          <th>Sid</th>
+          {{- if .Number.CanViewProperty "Sid" }}
+            {{- template "sid" .Number }}
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Friendly Name</th>
+          {{- if .Number.CanViewProperty "FriendlyName" }}
+          <td>{{- .Number.FriendlyName }}</td>
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Number</th>
+          {{- if .Number.CanViewProperty "PhoneNumber" }}
+          <td>{{- .Number.PhoneNumber }}</td>
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Beta</th>
+          {{- if .Number.CanViewProperty "Beta" }}
+          <td>{{- .Number.Beta }}</td>
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Voice URL</th>
+          {{- if .Number.CanViewProperty "VoiceURL" }}
+          <td>{{ .Number.VoiceMethod }} <a href="{{ .Number.VoiceURL }}">{{ .Number.VoiceURL }}</a></td>
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Voice Application Sid</th>
+          {{- if .Number.CanViewProperty "VoiceApplicationSid" }}
+            {{- if .Number.VoiceApplicationSid }}
+            <td>{{ .Number.VoiceApplicationSid }}</td>
+            {{- else }}
+            <td>No application sid configured</td>
+            {{- end }}
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Voice Fallback</th>
+          {{- if .Number.CanViewProperty "VoiceFallbackURL" }}
+            {{ if .Number.VoiceFallbackURL }}
+            <td>{{ .Number.VoiceFallbackMethod }} <a href="{{ .Number.VoiceFallbackURL }}">{{ .Number.VoiceFallbackURL }}</a></td>
+            {{- else }}
+            <td>No voice fallback configured</td>
+            {{- end }}
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Status Callback (for ended calls)</th>
+          {{- if .Number.CanViewProperty "StatusCallback" }}
+            {{ if .Number.StatusCallback }}
+            <td>{{ .Number.StatusCallbackMethod }} <a href="{{ .Number.StatusCallback }}">{{ .Number.StatusCallback }}</a></td>
+            {{- else }}
+            <td>No callback configured</td>
+            {{- end }}
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>SMS URL</th>
+          {{- if .Number.CanViewProperty "SMSURL" }}
+          <td>{{ .Number.SMSMethod }} <a href="{{ .Number.SMSURL }}">{{ .Number.SMSURL }}</a></td>
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>SMS Application Sid</th>
+          {{- if .Number.CanViewProperty "SMSApplicationSid" }}
+            {{- if .Number.SMSApplicationSid }}
+            <td>{{ .Number.SMSApplicationSid }}</td>
+            {{- else }}
+            <td>No application sid configured</td>
+            {{- end }}
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>SMS Fallback URL</th>
+          {{- if .Number.CanViewProperty "SMSFallbackURL" }}
+            {{ if .Number.SMSFallbackURL }}
+            <td>{{ .Number.SMSFallbackMethod }} <a href="{{ .Number.SMSFallbackURL }}">{{ .Number.SMSFallbackURL }}</a></td>
+            {{- else }}
+            <td>No SMS fallback configured</td>
+            {{- end }}
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col-md-6">
+    <table class="table table-striped">
+      <tbody>
+        <tr>
+          <th>Trunk Sid</th>
+          {{- if .Number.CanViewProperty "TrunkSid" }}
+            {{ if .Number.TrunkSid.Valid }}
+            <td>{{ .Number.TrunkSid.String }}</td>
+            {{- else }}
+            <td>No trunk sid</td>
+            {{- end }}
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Capabilities</th>
+          {{- if .Number.CanViewProperty "Capabilities" }}
+          <td>
+            MMS: {{ .Number.Capabilities.MMS }}<br>
+            Voice: {{ .Number.Capabilities.Voice }}<br>
+            SMS: {{ .Number.Capabilities.SMS }}
+          </td>
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+        <tr>
+          <th>Emergency Status</th>
+          {{- if .Number.CanViewProperty "EmergencyStatus" }}
+          <td>{{ .Number.EmergencyStatus }}</td>
+          {{- else }}
+          <td><i>hidden</i></td>
+          {{- end }}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{{- template "copy-phonenumber" }}
+{{- end }}

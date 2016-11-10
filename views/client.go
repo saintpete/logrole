@@ -7,6 +7,7 @@ package views
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/golang/groupcache/singleflight"
 	log "github.com/inconshreveable/log15"
+	"github.com/kevinburke/rest"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/cache"
 	"github.com/saintpete/logrole/config"
@@ -37,6 +39,7 @@ type Client interface {
 	GetMessage(context.Context, *config.User, string) (*Message, error)
 	GetCall(context.Context, *config.User, string) (*Call, error)
 	GetConference(context.Context, *config.User, string) (*Conference, error)
+	GetIncomingNumber(context.Context, *config.User, string) (*IncomingNumber, error)
 	GetAlert(context.Context, *config.User, string) (*Alert, error)
 	GetMediaURLs(context.Context, *config.User, string) ([]*url.URL, error)
 	GetMessagePageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*MessagePage, time.Time, error)
@@ -140,6 +143,23 @@ func (vc *client) GetAlert(ctx context.Context, user *config.User, sid string) (
 		return nil, err
 	}
 	return NewAlert(call, vc.permission, user)
+}
+
+// GetIncomingNumber fetches a single IncomingNumber from the Twilio API, and
+// returns any network or permission errors that occur.
+func (vc *client) GetIncomingNumber(ctx context.Context, user *config.User, pn string) (*IncomingNumber, error) {
+	data := url.Values{"PhoneNumber": []string{pn}}
+	page, err := vc.client.IncomingNumbers.GetPage(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	if len(page.IncomingPhoneNumbers) != 1 {
+		return nil, &rest.Error{
+			StatusCode: 404,
+			Title:      fmt.Sprintf("Phone number %s not found, or too many numbers match that result", pn),
+		}
+	}
+	return NewIncomingNumber(page.IncomingPhoneNumbers[0], vc.permission, user)
 }
 
 // GetConference fetches a single Conference from the Twilio API, and returns any
