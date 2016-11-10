@@ -26,7 +26,7 @@ var searchTests = []struct {
 
 func TestSearchRedirects(t *testing.T) {
 	t.Parallel()
-	s := &searchServer{}
+	s := &searchServer{dlog}
 	for _, tt := range searchTests {
 		req, _ := http.NewRequest("GET", tt.in, nil)
 		w := httptest.NewRecorder()
