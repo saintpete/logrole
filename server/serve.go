@@ -319,7 +319,9 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	ss := &searchServer{}
+	ss := &searchServer{
+		Logger: settings.Logger,
+	}
 	o, err := newOpenSearchServer(settings.PublicHost, settings.AllowUnencryptedTraffic)
 	if err != nil {
 		return nil, err

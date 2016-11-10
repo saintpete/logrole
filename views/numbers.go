@@ -35,9 +35,8 @@ func NewIncomingNumber(pn *twilio.IncomingPhoneNumber, p *config.Permission, u *
 	if pn.DateCreated.Valid == false {
 		return nil, errors.New("Invalid DateCreated for phone number")
 	}
-	if !u.CanViewResource(pn.DateCreated.Time, p.MaxResourceAge()) {
-		return nil, config.ErrTooOld
-	}
+	// NB: Phone numbers are *exempt* from max resource age rules, they don't
+	// really make sense.
 	return &IncomingNumber{user: u, number: pn}, nil
 }
 

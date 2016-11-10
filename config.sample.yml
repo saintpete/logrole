@@ -52,6 +52,10 @@ page_size: 100
 # field are defined here: https://golang.org/pkg/time/#ParseDuration. Defaults
 # to "all resources are viewable."
 #
+# Note phone numbers are *exempt* from this rule. All of your account's phone
+# numbers will be viewable even if the phone number was purchased before this
+# age.
+#
 # If a user/group has a max_resource_age configured, that will override
 # any value provided here.
 max_resource_age: 720h

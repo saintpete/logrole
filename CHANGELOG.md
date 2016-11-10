@@ -1,5 +1,11 @@
 # Changes
 
+## 0.76
+
+Flush out the phone number list view (paging, filters). Implement a phone
+number instance view. Redirect /phone-numbers/PN123 to /phone-numbers/+1410...
+and implement tab-to-search.
+
 ## 0.73
 
 Add a phone number list view.

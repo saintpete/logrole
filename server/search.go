@@ -5,15 +5,20 @@ import (
 	"net/http"
 	"regexp"
 
+	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/rest"
+	twilio "github.com/kevinburke/twilio-go"
 )
 
-type searchServer struct{}
+type searchServer struct {
+	log.Logger
+}
 
 var smsSid = regexp.MustCompile("^" + messagePattern + "$")
 var callSid = regexp.MustCompile("^" + callPattern + "$")
 var conferenceSid = regexp.MustCompile("^" + conferencePattern + "$")
 var notificationSid = regexp.MustCompile("^" + alertPattern + "$")
+var numberSid = regexp.MustCompile("^" + numberSidPattern + "$")
 
 func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -38,6 +43,15 @@ func (s *searchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/alerts/"+q, http.StatusMovedPermanently)
 		return
 	}
+	if numberSid.MatchString(q) {
+		http.Redirect(w, r, "/phone-numbers/"+q, http.StatusMovedPermanently)
+		return
+	}
+	num, err := twilio.NewPhoneNumber(q)
+	if err == nil && len(num) > 3 {
+		http.Redirect(w, r, "/phone-numbers/"+string(num), http.StatusFound)
+	}
+	s.Warn("Unknown search query", "q", q)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 

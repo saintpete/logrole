@@ -39,7 +39,8 @@ type Client interface {
 	GetMessage(context.Context, *config.User, string) (*Message, error)
 	GetCall(context.Context, *config.User, string) (*Call, error)
 	GetConference(context.Context, *config.User, string) (*Conference, error)
-	GetIncomingNumber(context.Context, *config.User, string) (*IncomingNumber, error)
+	GetIncomingNumber(ctx context.Context, u *config.User, sid string) (*IncomingNumber, error)
+	GetIncomingNumberByPN(ctx context.Context, u *config.User, pn string) (*IncomingNumber, error)
 	GetAlert(context.Context, *config.User, string) (*Alert, error)
 	GetMediaURLs(context.Context, *config.User, string) ([]*url.URL, error)
 	GetMessagePageInRange(context.Context, *config.User, time.Time, time.Time, url.Values) (*MessagePage, time.Time, error)
@@ -147,7 +148,17 @@ func (vc *client) GetAlert(ctx context.Context, user *config.User, sid string) (
 
 // GetIncomingNumber fetches a single IncomingNumber from the Twilio API, and
 // returns any network or permission errors that occur.
-func (vc *client) GetIncomingNumber(ctx context.Context, user *config.User, pn string) (*IncomingNumber, error) {
+func (vc *client) GetIncomingNumber(ctx context.Context, user *config.User, sid string) (*IncomingNumber, error) {
+	number, err := vc.client.IncomingNumbers.Get(ctx, sid)
+	if err != nil {
+		return nil, err
+	}
+	return NewIncomingNumber(number, vc.permission, user)
+}
+
+// GetIncomingNumberByPN fetches a single IncomingNumber from the Twilio API, and
+// returns any network or permission errors that occur.
+func (vc *client) GetIncomingNumberByPN(ctx context.Context, user *config.User, pn string) (*IncomingNumber, error) {
 	data := url.Values{"PhoneNumber": []string{pn}}
 	page, err := vc.client.IncomingNumbers.GetPage(ctx, data)
 	if err != nil {

@@ -76,6 +76,10 @@ type UserSettings struct {
 
 	// The maximum viewable age of resources this user can view. If nonzero,
 	// this overrides any global setting.
+	//
+	// Note phone numbers are *exempt* from this rule. All of your account's phone
+	// numbers will be viewable even if the phone number was purchased before this
+	// age.
 	MaxResourceAge time.Duration `yaml:"max_resource_age"`
 }
 

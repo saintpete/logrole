@@ -20,10 +20,15 @@ import (
 	"github.com/saintpete/logrole/views"
 )
 
+// We handle two different routes - /phone-numbers/PN123 and
+// /phone-numbers/+1925... The former redirects to the latter
 const numberInstancePattern = `(?P<number>[^/\s]+)`
-const numberSidPattern = `(?P<sid>CF[a-f0-9]{32})`
+
+// for PN123 redirects
+const numberSidPattern = `(?P<sid>PN[a-f0-9]{32})`
 
 var numberInstanceRoute = regexp.MustCompile("^/phone-numbers/" + numberInstancePattern + "$")
+var numberSidRegex = regexp.MustCompile(numberSidPattern)
 
 type numberListServer struct {
 	log.Logger
@@ -233,18 +238,56 @@ func (n *numberInstanceData) Title() string {
 	return "Number Details"
 }
 
+// Given a PN sid, retrieve it from the API to get the associated phone number,
+// then redirect to the phone-number URL.
+func (s *numberInstanceServer) redirectPN(w http.ResponseWriter, r *http.Request, u *config.User, pnSid string) {
+	ctx, cancel := getContext(r.Context(), 3*time.Second)
+	defer cancel()
+	number, err := s.Client.GetIncomingNumber(ctx, u, pnSid)
+	switch err {
+	case nil:
+		break
+	case config.PermissionDenied, config.ErrTooOld:
+		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
+		return
+	default:
+		switch terr := err.(type) {
+		case *rest.Error:
+			switch terr.StatusCode {
+			case 404:
+				rest.NotFound(w, r)
+			default:
+				rest.ServerError(w, r, terr)
+			}
+		default:
+			rest.ServerError(w, r, err)
+		}
+		return
+	}
+	pn, err := number.PhoneNumber()
+	if err != nil {
+		rest.Forbidden(w, r, &rest.Error{Title: err.Error()})
+		return
+	}
+	http.Redirect(w, r, "/phone-numbers/"+string(pn), 301)
+	return
+}
+
 func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, ok := config.GetUser(r)
 	if !ok {
 		rest.ServerError(w, r, errors.New("No user available"))
 		return
 	}
-	// TODO sid redirect to the actual PN
+	if match := numberSidRegex.FindStringSubmatch(r.URL.Path); len(match) > 0 {
+		s.redirectPN(w, r, u, match[0])
+		return
+	}
 	pn := numberInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
 	start := time.Now()
-	number, err := s.Client.GetIncomingNumber(ctx, u, pn)
+	number, err := s.Client.GetIncomingNumberByPN(ctx, u, pn)
 	switch err {
 	case nil:
 		break
