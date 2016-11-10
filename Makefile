@@ -10,24 +10,15 @@ BENCHSTAT := $(shell command -v benchstat)
 WRITE_MAILMAP := $(shell command -v write_mailmap)
 
 WATCH_TARGETS = static/css/style.css \
-	cache/cache.go \
-	commands/logrole_server/main.go \
-	config/permission.go config/settings.go config/auth.go config/user.go \
-	templates/base.html templates/index.html templates/opensource.html \
-	templates/messages/list.html templates/messages/instance.html \
-	templates/calls/list.html templates/calls/instance.html \
-	templates/calls/recordings.html \
+	templates/phone-numbers/list.html \
 	templates/conferences/instance.html templates/conferences/list.html \
 	templates/alerts/list.html templates/alerts/instance.html \
 	templates/errors.html templates/login.html \
 	templates/snippets/phonenumber.html \
 	services/error_reporter.go services/services.go \
 	server/authenticator.go server/render.go server/tz.go \
-	server/conferences.go server/alerts.go \
+	server/conferences.go server/alerts.go server/phonenumbers.go \
 	server/serve.go server/messages.go server/search.go server/images.go \
-	server/calls.go server/page.go server/audio.go server/errors.go \
-	views/message.go views/client.go views/call.go views/recording.go \
-	views/conference.go views/alert.go \
 	Makefile config.yml
 
 ASSET_TARGETS = templates/base.html templates/index.html \
@@ -35,6 +26,8 @@ ASSET_TARGETS = templates/base.html templates/index.html \
 	templates/calls/list.html templates/calls/instance.html \
 	templates/calls/recordings.html \
 	templates/conferences/list.html templates/conferences/instance.html \
+	templates/alerts/list.html templates/alerts/instance.html \
+	templates/phone-numbers/list.html \
 	templates/snippets/phonenumber.html \
 	templates/errors.html templates/login.html \
 	static/css/style.css static/css/bootstrap.min.css
@@ -69,7 +62,7 @@ watch:
 ifndef JUSTRUN
 	go get -u github.com/jmhodges/justrun
 endif
-	justrun --delay=100ms -c 'make assets serve' $(WATCH_TARGETS)
+	justrun -v --delay=100ms -c 'make assets serve' $(WATCH_TARGETS)
 
 deps:
 ifndef GOVENDOR

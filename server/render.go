@@ -17,7 +17,7 @@ import (
 
 var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
 	callInstanceTpl, callListTpl, conferenceListTpl, conferenceInstanceTpl,
-	alertListTpl, alertInstanceTpl,
+	alertListTpl, alertInstanceTpl, numberListTpl,
 	indexTpl, loginTpl, recordingTpl, pagingTpl, openSearchTpl,
 	openSourceTpl, errorTpl string
 
@@ -32,6 +32,7 @@ func init() {
 	callListTpl = assets.MustAssetString("templates/calls/list.html")
 	conferenceInstanceTpl = assets.MustAssetString("templates/conferences/instance.html")
 	conferenceListTpl = assets.MustAssetString("templates/conferences/list.html")
+	numberListTpl = assets.MustAssetString("templates/phone-numbers/list.html")
 	alertListTpl = assets.MustAssetString("templates/alerts/list.html")
 	alertInstanceTpl = assets.MustAssetString("templates/alerts/instance.html")
 	indexTpl = assets.MustAssetString("templates/index.html")

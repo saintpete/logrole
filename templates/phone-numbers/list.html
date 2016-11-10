@@ -1,0 +1,59 @@
+{{- define "content" }}
+{{- if .Err }}
+<div class="row">
+  <div class="col-md-12">
+    <div class="alert alert-danger">
+      <p>{{ .Err }}</p>
+    </div>
+  </div>
+</div>
+{{- end }}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Number</th>
+      <th>Friendly Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{- range .Page.Numbers }}
+    {{- if .CanViewProperty "Sid" }}
+    <tr class="pn">
+      <td class="friendly-date">
+        <a href="/phone-numbers/{{ .Sid }}" title="View more details">
+          {{- if .CanViewProperty "DateCreated" }}
+            {{ friendly_date (.DateCreated.Time.In $.Loc) }}
+          {{- else }}
+          View more details
+          {{- end }}
+        </a>
+      </td>
+
+      {{- if .CanViewProperty "PhoneNumber" }}
+      <td>{{ .PhoneNumber.Friendly }}</td>
+      {{- end -}}
+
+      {{- if .CanViewProperty "FriendlyName" }}
+      <td>{{ .FriendlyName }}</td>
+      {{- end -}}
+    </tr>
+    {{- end }}
+    {{- end }}
+  </tbody>
+</table>
+{{- if eq 0 (len .Page.Numbers) }}
+  {{/* Don't need if/else with range .Page.Numbers, that will always be empty
+       if this is non-empty and vice versa */}}
+  No phone numbers match the search criteria
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+{{- end }}
+{{- template "paging" . }}
+{{- end }}

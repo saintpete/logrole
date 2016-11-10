@@ -310,6 +310,11 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	ns, err := newNumberListServer(settings.Logger, vc, settings.LocationFinder,
+		settings.PageSize, settings.MaxResourceAge, settings.SecretKey)
+	if err != nil {
+		return nil, err
+	}
 	ss := &searchServer{}
 	o, err := newOpenSearchServer(settings.PublicHost, settings.AllowUnencryptedTraffic)
 	if err != nil {
@@ -364,6 +369,7 @@ func NewServer(settings *config.Settings) (*Server, error) {
 	authR.Handle(regexp.MustCompile(`^/search$`), []string{"GET"}, ss)
 	authR.Handle(regexp.MustCompile(`^/calls$`), []string{"GET"}, cls)
 	authR.Handle(regexp.MustCompile(`^/conferences$`), []string{"GET"}, confs)
+	authR.Handle(regexp.MustCompile(`^/phone-numbers$`), []string{"GET"}, ns)
 	authR.Handle(regexp.MustCompile(`^/messages$`), []string{"GET"}, mls)
 	authR.Handle(regexp.MustCompile(`^/alerts$`), []string{"GET"}, als)
 	authR.Handle(regexp.MustCompile(`^/tz$`), []string{"POST"}, tz)
