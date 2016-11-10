@@ -64,6 +64,27 @@ func NewIncomingNumberPage(pn *twilio.IncomingPhoneNumberPage, p *config.Permiss
 	}, nil
 }
 
+func (page *IncomingNumberPage) ShowHeader(property string) bool {
+	if page == nil {
+		return showAllColumnsOnEmptyPage
+	}
+	numbers := page.Numbers()
+	if len(numbers) == 0 {
+		return showAllColumnsOnEmptyPage
+	}
+	for _, number := range numbers {
+		var show bool
+		switch property {
+		default:
+			show = number.CanViewProperty(property)
+		}
+		if show {
+			return true
+		}
+	}
+	return false
+}
+
 func (n *IncomingNumber) CanViewProperty(property string) bool {
 	if n.number == nil {
 		return false
@@ -71,6 +92,8 @@ func (n *IncomingNumber) CanViewProperty(property string) bool {
 	switch property {
 	case "Sid", "DateCreated", "PhoneNumber", "FriendlyName":
 		return true
+	case "VoiceURL", "SMSURL":
+		return n.user.CanViewCallbackURLs()
 	default:
 		panic("unknown property " + property)
 	}
@@ -103,6 +126,22 @@ func (n *IncomingNumber) PhoneNumber() (twilio.PhoneNumber, error) {
 func (n *IncomingNumber) FriendlyName() (string, error) {
 	if n.CanViewProperty("FriendlyName") {
 		return n.number.FriendlyName, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) VoiceURL() (string, error) {
+	if n.CanViewProperty("VoiceURL") {
+		return n.number.VoiceURL, nil
+	} else {
+		return "", config.PermissionDenied
+	}
+}
+
+func (n *IncomingNumber) SMSURL() (string, error) {
+	if n.CanViewProperty("SMSURL") {
+		return n.number.SMSURL, nil
 	} else {
 		return "", config.PermissionDenied
 	}

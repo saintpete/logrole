@@ -16,9 +16,8 @@ WATCH_TARGETS = static/css/style.css \
 	templates/errors.html templates/login.html \
 	templates/snippets/phonenumber.html \
 	services/error_reporter.go services/services.go \
-	server/authenticator.go server/render.go server/tz.go \
 	server/conferences.go server/alerts.go server/phonenumbers.go \
-	server/serve.go server/messages.go server/search.go server/images.go \
+	server/serve.go views/numbers.go \
 	Makefile config.yml
 
 ASSET_TARGETS = templates/base.html templates/index.html \

@@ -1,5 +1,9 @@
 # Changes
 
+## 0.73
+
+Add a phone number list view.
+
 ## 0.72
 
 Reject invalid query parameters on list views

@@ -49,7 +49,7 @@ func newNumberListServer(l log.Logger, vc views.Client,
 }
 
 func (s *numberListServer) validParams() []string {
-	return []string{"phone-number", "next"}
+	return []string{"phone-number", "friendly-name", "next"}
 }
 
 func (s *numberListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
@@ -59,11 +59,11 @@ func (s *numberListServer) renderError(w http.ResponseWriter, r *http.Request, c
 	str := strings.Replace(err.Error(), "twilio: ", "", 1)
 	data := &baseData{
 		LF: s.LocationFinder,
-		Data: &alertListData{
+		Data: &numberListData{
 			Err:   str,
 			Loc:   s.LocationFinder.GetLocationReq(r),
 			Query: query,
-			Page:  new(views.AlertPage),
+			Page:  new(views.IncomingNumberPage),
 		},
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -130,6 +130,7 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	page := new(views.IncomingNumberPage)
 	cachedAt := time.Time{}
+	start := time.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
 			s.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
@@ -177,6 +178,7 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data := &baseData{
 		LF:       s.LocationFinder,
 		CachedAt: cachedAt,
+		Duration: time.Since(start),
 		Data: &numberListData{
 			Page:                  page,
 			Query:                 query,

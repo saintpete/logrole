@@ -8,12 +8,34 @@
   </div>
 </div>
 {{- end }}
+<div class="row row-search">
+  <form class="form-inline" method="get" action="{{ .Path }}">
+    <div class="form-search form-alerts-search col-md-10">
+      <div class="form-group">
+        <label for="friendly-name">Friendly Name</label>
+        <input type="text" class="form-control" name="friendly-name" id="friendly-name" placeholder="Name (exact match)" value="{{ (.Query.Get "friendly-name") }}">
+      </div>
+    </div>
+    <div class="col-md-2">
+      <input type="submit" value="Search" class="btn-search btn btn-default btn-info" />
+    </div>
+  </form>
+</div>
 <table class="table table-striped">
   <thead>
     <tr>
+      {{- if .Page.ShowHeader "DateCreated" }}
       <th>Date</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "PhoneNumber" }}
       <th>Number</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "FriendlyName" }}
       <th>Friendly Name</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "VoiceURL" }}
+      <th>Configuration</th>
+      {{- end }}
     </tr>
   </thead>
   <tbody>
@@ -21,7 +43,7 @@
     {{- if .CanViewProperty "Sid" }}
     <tr class="pn">
       <td class="friendly-date">
-        <a href="/phone-numbers/{{ .Sid }}" title="View more details">
+        <a href="/phone-numbers/{{ .PhoneNumber }}" title="View more details">
           {{- if .CanViewProperty "DateCreated" }}
             {{ friendly_date (.DateCreated.Time.In $.Loc) }}
           {{- else }}
@@ -37,6 +59,14 @@
       {{- if .CanViewProperty "FriendlyName" }}
       <td>{{ .FriendlyName }}</td>
       {{- end -}}
+      <td>
+        {{- if .CanViewProperty "VoiceURL" }}
+        Voice URL: <a href="{{ .VoiceURL }}">{{ .VoiceURL }}</a><br>
+        {{- end }}
+        {{- if .CanViewProperty "SMSURL" }}
+        SMS URL: <a href="{{ .SMSURL }}">{{ .SMSURL }}</a>
+        {{- end }}
+      </td>
     </tr>
     {{- end }}
     {{- end }}
