@@ -147,6 +147,9 @@ func setPageFilters(query url.Values, pageFilters url.Values) error {
 	if friendlyName := query.Get("friendly-name"); friendlyName != "" {
 		pageFilters.Set("FriendlyName", friendlyName)
 	}
+	if phoneNumber := query.Get("phone-number"); phoneNumber != "" {
+		pageFilters.Set("PhoneNumber", phoneNumber)
+	}
 	if sid := query.Get("resource-sid"); sid != "" {
 		pageFilters.Set("ResourceSid", sid)
 	}

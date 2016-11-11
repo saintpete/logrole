@@ -13,11 +13,11 @@
     <div class="form-search form-messages-search col-md-10">
       <div class="form-group">
         <label for="from">From</label>
-        <input type="text" class="form-control" name="from" id="from" placeholder="From" value="{{ (.Query.Get "from") }}">
+        <input type="text" class="number-input form-control" name="from" id="from" placeholder="From" value="{{ (.Query.Get "from") }}">
       </div>
       <div class="form-group">
         <label for="to">To</label>
-        <input type="text" class="form-control" name="to" id="to" placeholder="To" value="{{ (.Query.Get "to") }}">
+        <input type="text" class="form-control number-input" name="to" id="to" placeholder="To" value="{{ (.Query.Get "to") }}">
       </div>
       <div class="form-group">
         <label for="start">On or after</label>

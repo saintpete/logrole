@@ -131,11 +131,11 @@ pre, code {
 }
 
 .form-search label {
-    margin-right: 10px;
+    margin-right: 7px;
 }
 
 .form-search input, .form-search select {
-    margin-right: 20px;
+    margin-right: 10px;
 }
 
 .number-input {
