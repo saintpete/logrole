@@ -38,6 +38,10 @@ Javascript, so render times and memory performance are very good.
 
 If you need to search your Twilio Logs, this is the tool you should be using.
 
+[Read more about what makes Logrole fast][blog-post].
+
+[blog-post]: https://kev.inburke.com/kevin/logrole-api-client-speed/
+
 ## Installation
 
 To install Logrole, run
@@ -52,6 +56,11 @@ GOPATH environment variable to `$HOME/go` in your .bashrc or equivalent.
 ```bash
 export GOPATH="$HOME/go"
 ```
+
+The `vendor` directory contains a list of dependencies (and suggested versions)
+in `vendor/vendor.json`. To download these into your `vendor` directory, run
+`make deps`. You can also use `go install ./...` to download the latest version
+of every dependency into the normal place in your `$GOPATH`.
 
 ## Configuration and Deployment
 
@@ -119,13 +128,7 @@ The Twilio Dashboard displays Participants for completed Conferences, but [this
 functionality is not available via the API][issue-4]. Please [contact Support
 to request this feature][support] if you'd like it to be available in Logrole.
 
-The Twilio Dashboard lets you search Calls and Messages with up-to-the minute
-precision, with timezone support. The public API only supports UTC, and only
-supports searching for resources in a particular date range. Please [contact
-Support to request this feature][support] if you'd like it to be available in
-Logrole.
+The Start/End date filters may only work in Chrome.
 
 [support]: mailto:help@twilio.com
 [issue-4]: https://github.com/saintpete/logrole/issues/4
-
-The Start/End date filters may only work in Chrome.
