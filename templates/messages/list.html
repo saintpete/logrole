@@ -70,22 +70,7 @@
         {{- if .CanViewProperty "Direction" }}
         <td class="direction">{{ .Direction.Friendly }}</td>
         {{- end }}
-        {{- if .CanViewProperty "Status" }}
-        <td>
-          <a href="/messages/{{ .Sid }}"
-            title="{{ if .CanViewProperty "ErrorCode" -}}
-              {{- if gt .ErrorCode 0 -}}
-                {{- .ErrorCode }}: {{ .ErrorMessage -}}
-              {{- else -}}
-                View more details
-              {{- end }}
-            {{- else -}}
-            View more details
-            {{- end -}}">
-          {{ .Status.Friendly }}
-          </a>
-        </td>
-        {{- end }}
+        {{- template "message-status" . }}
         {{- if .CanViewProperty "From" }}
           {{- template "phonenumber" .From }}
         {{- end }}

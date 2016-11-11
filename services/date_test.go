@@ -27,7 +27,7 @@ var dateTests = []struct {
 	{mustParse(layout, "2016-10-11 23:59:59 -0800 PST"), "Yesterday, 11:59pm"},
 	{mustParse(layout, "2016-10-11 00:00:00 -0800 PST"), "Yesterday, 12:00am"},
 	{mustParse(layout, "2016-10-10 00:00:00 -0800 PST"), "12:00am, October 10"},
-	{mustParse(layout, "2015-10-10 00:00:00 -0800 PST"), "12:00am, October 10, 2015"},
+	{mustParse(layout, "2015-10-10 00:00:00 -0800 PST"), "October 10, 2015"},
 }
 
 func TestFriendlyDate(t *testing.T) {

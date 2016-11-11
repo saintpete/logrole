@@ -1,4 +1,5 @@
 {{- define "content" }}
+{{ if .OwnNumber }}
 <div class="row">
   <div class="col-md-6">
     <table class="table table-striped">
@@ -151,6 +152,45 @@
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+{{- else }}
+<p>This is a customer's phone number.</p>
+{{- end }}
+<div class="row">
+  <div class="col-md-6">
+    <h3>Messages From This Number</h3>
+    {{- if .SMSFromErr }}
+    <p>Error retrieving messages: {{ .SMSFromErr }}
+    {{- else }}
+      {{- template "message-summary-table" .SMSFrom }}
+    {{- end }}
+  </div>
+  <div class="col-md-6">
+    <h3>Messages To This Number</h3>
+    {{- if .SMSToErr }}
+    <p>Error retrieving messages: {{ .SMSToErr }}
+    {{- else }}
+      {{- template "message-summary-table" .SMSTo }}
+    {{- end }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6">
+    <h3>Calls From This Number</h3>
+    {{- if .CallsFromErr }}
+    <p>Error retrieving messages: {{ .CallsFromErr }}
+    {{- else }}
+      {{- template "call-summary-table" .CallsFrom }}
+    {{- end }}
+  </div>
+  <div class="col-md-6">
+    <h3>Calls To This Number</h3>
+    {{- if .CallsToErr }}
+    <p>Error retrieving messages: {{ .CallsToErr }}
+    {{- else }}
+      {{- template "call-summary-table" .CallsTo }}
+    {{- end }}
   </div>
 </div>
 {{- template "copy-phonenumber" }}

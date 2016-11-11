@@ -1,0 +1,54 @@
+{{- define "message-summary-table" }}
+{{/* This is used in the phone number summary page. Data structure is a
+     pageLoc, see server/phonenumbers.go for more details. */}}
+{{- if not .Page }}
+<p>No messages</p>
+{{- else }}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Date</th>
+      {{- if .Page.ShowHeader "Status" }}
+      <th>Status</th>
+      {{- end }}
+      {{- if and .IsFrom (.Page.ShowHeader "From") }}
+      <th class="pn">From</th>
+      {{- end }}
+      {{- if and (not .IsFrom) (.Page.ShowHeader "To") }}
+      <th class="pn">To</th>
+      {{- end }}
+      {{- if .Page.ShowHeader "Body" }}
+      <th>Body</th>
+      {{- end }}
+    </tr>
+  </thead>
+  <tbody>
+    {{- range .Page.Messages }}
+      {{ if .CanViewProperty "Sid" }}
+      <tr class="message {{ if .CanViewProperty "ErrorCode" }}{{ if gt .ErrorCode 0 }}list-error{{ end }}{{ end }}">
+        <td class="friendly-date">
+          <a href="/messages/{{ .Sid }}" title="View more details">
+            {{- if .CanViewProperty "DateCreated" }}
+              {{ friendly_date (.DateCreated.Time.In $.Loc) }}
+            {{- else }}
+            View more details
+            {{- end }}
+          </a>
+        </td>
+        {{- template "message-status" . }}
+        {{- if and (.CanViewProperty "From") $.IsFrom }}
+          {{- template "phonenumber" .From }}
+        {{- end }}
+        {{- if and (.CanViewProperty "To") (not $.IsFrom) }}
+          {{- template "phonenumber" .To }}
+        {{- end }}
+        {{- if .CanViewProperty "Body" }}
+        <td>{{ .Body }}</td>
+        {{- end }}
+      </tr>
+      {{- end }}
+    {{- end }}
+  </tbody>
+</table>
+{{- end }}{{/* end "page has messages" block */}}
+{{- end }}{{/* end define */}}

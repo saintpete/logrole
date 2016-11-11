@@ -32,11 +32,11 @@
             <li {{ if eq .Path "/messages" }}class="active"{{ end }}>
               <a href="/messages">Messages</a>
             </li>
-            <li {{ if eq .Path "/alerts" }}class="active"{{ end }}>
-              <a href="/alerts">Alerts</a>
-            </li>
             <li {{ if eq .Path "/phone-numbers" }}class="active"{{ end }}>
               <a href="/phone-numbers">Phone Numbers</a>
+            </li>
+            <li {{ if eq .Path "/alerts" }}class="active"{{ end }}>
+              <a href="/alerts">Alerts</a>
             </li>
           </ul>
           <ul class="nav navbar-nav pull-right">

@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/inconshreveable/log15"
@@ -217,7 +218,10 @@ func newNumberInstanceServer(l log.Logger, vc views.Client, lf services.Location
 		Client:         vc,
 		LocationFinder: lf,
 	}
-	tpl, err := newTpl(template.FuncMap{}, base+numberInstanceTpl+sidTpl+copyScript)
+	tpl, err := newTpl(template.FuncMap{
+		"is_our_pn": vc.IsTwilioNumber,
+	}, base+messageStatusTpl+messageSummaryTpl+callSummaryTpl+phoneTpl+
+		numberInstanceTpl+sidTpl+copyScript)
 	if err != nil {
 		return nil, err
 	}
@@ -225,9 +229,33 @@ func newNumberInstanceServer(l log.Logger, vc views.Client, lf services.Location
 	return s, nil
 }
 
-type numberInstanceData struct {
-	Number *views.IncomingNumber
+// ugh, go templates
+type msgPageLoc struct {
+	Page *views.MessagePage
+	// False for "Messages to this number"
+	IsFrom bool
 	Loc    *time.Location
+}
+
+type callPageLoc struct {
+	Page *views.CallPage
+	// False for "Calls to this number"
+	IsFrom bool
+	Loc    *time.Location
+}
+
+type numberInstanceData struct {
+	Number       *views.IncomingNumber
+	OwnNumber    bool
+	Loc          *time.Location
+	SMSFrom      *msgPageLoc
+	SMSFromErr   string
+	SMSTo        *msgPageLoc
+	SMSToErr     string
+	CallsFrom    *callPageLoc
+	CallsFromErr string
+	CallsTo      *callPageLoc
+	CallsToErr   string
 }
 
 func (n *numberInstanceData) Title() string {
@@ -286,8 +314,82 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	pn := numberInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
+	var wg sync.WaitGroup
+	wg.Add(4)
+	loc := s.LocationFinder.GetLocationReq(r)
+	innerData := &numberInstanceData{
+		Loc: loc,
+	}
 	start := time.Now()
 	number, err := s.Client.GetIncomingNumberByPN(ctx, u, pn)
+	go func() {
+		// get SMS from this number
+		data := url.Values{}
+		data.Set("From", pn)
+		data.Set("PageSize", "20")
+		fromMsgs, _, err := s.Client.GetMessagePageInRange(ctx, u, twilio.Epoch, twilio.HeatDeath, data)
+		if err == nil || err == twilio.NoMoreResults {
+			innerData.SMSFrom = &msgPageLoc{
+				Page:   fromMsgs,
+				IsFrom: true,
+				Loc:    loc,
+			}
+		} else {
+			innerData.SMSFromErr = err.Error()
+		}
+		wg.Done()
+	}()
+	go func() {
+		// get SMS to this number
+		data := url.Values{}
+		data.Set("To", pn)
+		data.Set("PageSize", "20")
+		toMsgs, _, err := s.Client.GetMessagePageInRange(ctx, u, twilio.Epoch, twilio.HeatDeath, data)
+		if err == nil || err == twilio.NoMoreResults {
+			innerData.SMSTo = &msgPageLoc{
+				Page:   toMsgs,
+				IsFrom: false,
+				Loc:    loc,
+			}
+		} else {
+			innerData.SMSToErr = err.Error()
+		}
+		wg.Done()
+	}()
+	go func() {
+		// get Calls to this number
+		data := url.Values{}
+		data.Set("To", pn)
+		data.Set("PageSize", "20")
+		callsTo, _, err := s.Client.GetCallPageInRange(ctx, u, twilio.Epoch, twilio.HeatDeath, data)
+		if err == nil || err == twilio.NoMoreResults {
+			innerData.CallsTo = &callPageLoc{
+				Page:   callsTo,
+				IsFrom: false,
+				Loc:    loc,
+			}
+		} else {
+			innerData.CallsToErr = err.Error()
+		}
+		wg.Done()
+	}()
+	go func() {
+		// get Calls from this number
+		data := url.Values{}
+		data.Set("From", pn)
+		data.Set("PageSize", "20")
+		callsFrom, _, err := s.Client.GetCallPageInRange(ctx, u, twilio.Epoch, twilio.HeatDeath, data)
+		if err == nil || err == twilio.NoMoreResults {
+			innerData.CallsFrom = &callPageLoc{
+				Page:   callsFrom,
+				IsFrom: false,
+				Loc:    loc,
+			}
+		} else {
+			innerData.CallsFromErr = err.Error()
+		}
+		wg.Done()
+	}()
 	switch err {
 	case nil:
 		break
@@ -299,24 +401,26 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		case *rest.Error:
 			switch terr.StatusCode {
 			case 404:
-				rest.NotFound(w, r)
+				// We still want to show the calls to/from this number
+				innerData.OwnNumber = false
+				break
 			default:
 				rest.ServerError(w, r, terr)
+				return
 			}
 		default:
 			rest.ServerError(w, r, err)
+			return
 		}
-		return
 	}
+	wg.Wait()
+	innerData.Number = number
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
 	data := &baseData{
 		LF:       s.LocationFinder,
 		Duration: time.Since(start),
-		Data: &numberInstanceData{
-			Number: number,
-			Loc:    s.LocationFinder.GetLocationReq(r),
-		},
+		Data:     innerData,
 	}
 	if err := render(w, r, s.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)

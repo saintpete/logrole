@@ -71,7 +71,8 @@ type UserSettings struct {
 	// Can the user view information about errors that occurred while routing
 	// a call? e.g. "HTTP retrieval failure" at the callback URL.
 	CanViewAlerts bool `yaml:"can_view_alerts"`
-	// Can the user view a StatusCallbackURL?
+	// Can the user view a StatusCallbackURL? Also protects
+	// Voice/SMS/Fallback/Callback URL's for phone numbers.
 	CanViewCallbackURLs bool `yaml:"can_view_callback_urls"`
 
 	// The maximum viewable age of resources this user can view. If nonzero,

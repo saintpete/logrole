@@ -103,15 +103,19 @@ func friendlyDate(t time.Time, utcnow time.Time) string {
 	now := utcnow.In(t.Location())
 	y, m, d := now.Date()
 	if d == t.Day() && m == t.Month() && y == t.Year() {
+		// if the same day, return just the time
 		return t.Format("3:04pm")
 	}
 	y1, m1, d1 := now.Add(-24 * time.Hour).Date()
 	if d1 == t.Day() && m1 == t.Month() && y1 == t.Year() {
+		// if yesterday, say "Yesterday"
 		return t.Format("Yesterday, 3:04pm")
 	}
 	// if the same year, return the day
 	if y == t.Year() {
 		return t.Format("3:04pm, January 2")
 	}
-	return t.Format("3:04pm, January 2, 2006")
+	// if a previous year just return the day - may need to change this based
+	// on space in the UI.
+	return t.Format("January 2, 2006")
 }

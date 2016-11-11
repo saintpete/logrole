@@ -174,7 +174,7 @@ func newMessageListServer(l log.Logger, vc views.Client, lf services.LocationFin
 		"max":       maxLoc,
 		"start_val": s.StartSearchVal,
 		"end_val":   s.EndSearchVal,
-	}, base+messageListTpl+pagingTpl+phoneTpl+copyScript)
+	}, base+messageListTpl+messageStatusTpl+pagingTpl+phoneTpl+copyScript)
 	if err != nil {
 		return nil, err
 	}

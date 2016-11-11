@@ -51,11 +51,9 @@
           {{- end }}
         </a>
       </td>
-
       {{- if .CanViewProperty "PhoneNumber" }}
       <td>{{ .PhoneNumber.Friendly }}</td>
       {{- end -}}
-
       {{- if .CanViewProperty "FriendlyName" }}
       <td>{{ .FriendlyName }}</td>
       {{- end -}}

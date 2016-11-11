@@ -19,13 +19,18 @@ var base, phoneTpl, copyScript, sidTpl, messageInstanceTpl, messageListTpl,
 	callInstanceTpl, callListTpl, conferenceListTpl, conferenceInstanceTpl,
 	alertListTpl, alertInstanceTpl, numberListTpl, numberInstanceTpl,
 	indexTpl, loginTpl, recordingTpl, pagingTpl, openSearchTpl,
-	openSourceTpl, errorTpl string
+	messageStatusTpl, messageSummaryTpl, callSummaryTpl, openSourceTpl,
+	errorTpl string
 
 func init() {
 	base = assets.MustAssetString("templates/base.html")
 	phoneTpl = assets.MustAssetString("templates/snippets/phonenumber.html")
 	copyScript = assets.MustAssetString("templates/snippets/copy-phonenumber.js")
 	sidTpl = assets.MustAssetString("templates/snippets/sid.html")
+	pagingTpl = assets.MustAssetString("templates/snippets/paging.html")
+	messageStatusTpl = assets.MustAssetString("templates/snippets/message-status.html")
+	messageSummaryTpl = assets.MustAssetString("templates/snippets/message-summary-table.html")
+	callSummaryTpl = assets.MustAssetString("templates/snippets/call-summary-table.html")
 	messageInstanceTpl = assets.MustAssetString("templates/messages/instance.html")
 	messageListTpl = assets.MustAssetString("templates/messages/list.html")
 	callInstanceTpl = assets.MustAssetString("templates/calls/instance.html")
@@ -39,7 +44,6 @@ func init() {
 	indexTpl = assets.MustAssetString("templates/index.html")
 	loginTpl = assets.MustAssetString("templates/login.html")
 	recordingTpl = assets.MustAssetString("templates/calls/recordings.html")
-	pagingTpl = assets.MustAssetString("templates/snippets/paging.html")
 	openSearchTpl = assets.MustAssetString("templates/opensearch.xml")
 	errorTpl = assets.MustAssetString("templates/errors.html")
 	openSourceTpl = assets.MustAssetString("templates/opensource.html")
