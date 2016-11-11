@@ -1,5 +1,14 @@
 # Changes
 
+## 1.1
+
+Tweak the README/homepage and describe how to contribute to the project.
+
+## 1.0
+
+We made it! Link from every phone number on the site to the phone number
+instance view.
+
 ## 0.77
 
 Flush out the phone number instance view - show calls and messages to and from
