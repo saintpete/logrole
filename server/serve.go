@@ -25,7 +25,7 @@ import (
 )
 
 // Server version, run "make release" to increase this value
-const Version = "0.76"
+const Version = "0.77"
 
 func getRemoteIP(r *http.Request) string {
 	fwd := r.Header.Get("X-Forwarded-For")
