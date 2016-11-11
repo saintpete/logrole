@@ -190,6 +190,11 @@ pre, code {
     margin-right: 10px;
 }
 
-.owned-number {
+.owned-number a, .owned-number a:visited {
     color: #348034;
+}
+
+/* Messages From / Calls From shouldn't be that close together */
+.pn-message-list {
+    min-height: 300px;
 }

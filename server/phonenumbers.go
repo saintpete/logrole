@@ -235,6 +235,7 @@ type msgPageLoc struct {
 	// False for "Messages to this number"
 	IsFrom bool
 	Loc    *time.Location
+	Number string
 }
 
 type callPageLoc struct {
@@ -242,6 +243,7 @@ type callPageLoc struct {
 	// False for "Calls to this number"
 	IsFrom bool
 	Loc    *time.Location
+	Number string
 }
 
 type numberInstanceData struct {
@@ -333,6 +335,7 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 				Page:   fromMsgs,
 				IsFrom: true,
 				Loc:    loc,
+				Number: pn,
 			}
 		} else {
 			innerData.SMSFromErr = err.Error()
@@ -350,6 +353,7 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 				Page:   toMsgs,
 				IsFrom: false,
 				Loc:    loc,
+				Number: pn,
 			}
 		} else {
 			innerData.SMSToErr = err.Error()
@@ -367,6 +371,7 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 				Page:   callsTo,
 				IsFrom: false,
 				Loc:    loc,
+				Number: pn,
 			}
 		} else {
 			innerData.CallsToErr = err.Error()
@@ -384,6 +389,7 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 				Page:   callsFrom,
 				IsFrom: false,
 				Loc:    loc,
+				Number: pn,
 			}
 		} else {
 			innerData.CallsFromErr = err.Error()

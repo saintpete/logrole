@@ -11,10 +11,10 @@
       {{- if .Page.ShowHeader "Status" }}
       <th>Status</th>
       {{- end }}
-      {{- if and .IsFrom (.Page.ShowHeader "From") }}
+      {{- if and (not .IsFrom) (.Page.ShowHeader "From") }}
       <th class="pn">From</th>
       {{- end }}
-      {{- if and (not .IsFrom) (.Page.ShowHeader "To") }}
+      {{- if and .IsFrom (.Page.ShowHeader "To") }}
       <th class="pn">To</th>
       {{- end }}
       {{- if .Page.ShowHeader "Duration" }}
@@ -43,10 +43,10 @@
           </a>
         </td>
         {{- end }}
-        {{- if and (.CanViewProperty "From") $.IsFrom }}
+        {{- if and (.CanViewProperty "From") (not $.IsFrom) }}
           {{- template "phonenumber" .From }}
         {{- end }}
-        {{- if and (.CanViewProperty "To") (not $.IsFrom) }}
+        {{- if and (.CanViewProperty "To") $.IsFrom }}
           {{- template "phonenumber" .To }}
         {{- end }}
         {{- if .CanViewProperty "Duration" }}
@@ -58,5 +58,6 @@
     {{- end }}
   </tbody>
 </table>
+<a class="btn btn-info btn-lg btn-default btn-next" href="/calls?{{ if .IsFrom }}from={{ else }}to={{ end }}{{ .Number }}">More Calls</a>
 {{- end }}{{/* end "page has calls" block */}}
 {{- end }}{{/* end define */}}

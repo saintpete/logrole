@@ -1,5 +1,11 @@
 # Changes
 
+## 0.77
+
+Flush out the phone number instance view - show calls and messages to and from
+this number. Add links to the fuller list of those resources. Show dates in
+a shorter format if a message is old.
+
 ## 0.76
 
 Flush out the phone number list view (paging, filters). Implement a phone
