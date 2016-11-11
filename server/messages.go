@@ -229,10 +229,7 @@ func (m *messageListData) PreviousQuery() template.URL {
 }
 
 func (s *messageListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
-	if err == nil {
-		panic("called renderError with a nil error")
-	}
-	str := strings.Replace(err.Error(), "twilio: ", "", 1)
+	str := cleanError(err)
 	data := &baseData{LF: s.LocationFinder,
 		Data: &messageListData{
 			Err:            str,

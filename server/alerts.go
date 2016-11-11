@@ -282,10 +282,7 @@ func (s *alertListServer) EndSearchVal(query url.Values, loc *time.Location) str
 }
 
 func (s *alertListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
-	if err == nil {
-		panic("called renderError with a nil error")
-	}
-	str := strings.Replace(err.Error(), "twilio: ", "", 1)
+	str := cleanError(err)
 	data := &baseData{
 		LF: s.LocationFinder,
 		Data: &alertListData{

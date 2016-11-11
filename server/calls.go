@@ -250,10 +250,7 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *callListServer) renderError(w http.ResponseWriter, r *http.Request, code int, query url.Values, err error) {
-	if err == nil {
-		panic("called renderError with a nil error")
-	}
-	str := strings.Replace(err.Error(), "twilio: ", "", 1)
+	str := cleanError(err)
 	data := &baseData{
 		LF: c.LocationFinder,
 		Data: &callListData{

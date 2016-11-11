@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	types "github.com/kevinburke/go-types"
@@ -35,6 +36,17 @@ func getNext(query url.Values, secretKey *[32]byte) (string, error) {
 
 type errorRenderer interface {
 	renderError(http.ResponseWriter, *http.Request, int, url.Values, error)
+}
+
+func cleanError(err error) string {
+	if err == nil {
+		panic("called renderError with a nil error")
+	}
+	str := strings.Replace(err.Error(), "twilio: ", "", 1)
+	if strings.Contains(strings.ToLower(str), "aftersid is required for paging") {
+		str = str + " See https://github.com/saintpete/logrole/issues/2"
+	}
+	return str
 }
 
 func getTimes(w http.ResponseWriter, r *http.Request, startVal, endVal string, loc *time.Location, query url.Values, renderer errorRenderer) (time.Time, time.Time, bool) {

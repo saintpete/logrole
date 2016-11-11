@@ -16,7 +16,7 @@ WATCH_TARGETS = static/css/style.css \
 	templates/errors.html templates/login.html \
 	templates/snippets/phonenumber.html \
 	services/error_reporter.go services/services.go \
-	server/conferences.go server/alerts.go server/phonenumbers.go \
+	server/calls.go server/alerts.go server/phonenumbers.go \
 	server/serve.go server/render.go views/client.go views/numbers.go \
 	Makefile config.yml
 
