@@ -193,7 +193,7 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
-	page := new(views.CallPage)
+	var page *views.CallPage
 	cachedAt := time.Time{}
 	queryStart := time.Now()
 	if next != "" {

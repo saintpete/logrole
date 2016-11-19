@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/kevinburke/handlers"
 	twilio "github.com/kevinburke/twilio-go"
 	"github.com/saintpete/logrole/test"
 )
@@ -52,7 +50,6 @@ func TestExpiredValueNotFound(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := NewCache(1, test.NullLogger)
-	c = NewCache(1, handlers.NewLoggerLevel(log15.LvlDebug))
 	c.Set("npuri", mp, time.Nanosecond)
 	mp2 := new(twilio.MessagePage)
 	_, err := c.Get("npuri", mp2)

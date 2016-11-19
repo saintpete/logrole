@@ -335,7 +335,7 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
-	page := new(views.AlertPage)
+	var page *views.AlertPage
 	cachedAt := time.Time{}
 	start := time.Now()
 	if next != "" {

@@ -8,6 +8,7 @@ GOVENDOR := $(shell command -v govendor)
 JUSTRUN := $(shell command -v justrun)
 BENCHSTAT := $(shell command -v benchstat)
 WRITE_MAILMAP := $(shell command -v write_mailmap)
+STATICCHECK := $(shell command -v staticcheck)
 
 WATCH_TARGETS = static/css/style.css \
 	templates/phone-numbers/list.html templates/phone-numbers/instance.html \
@@ -42,8 +43,12 @@ serve:
 	go run commands/logrole_server/main.go
 
 vet:
+ifndef STATICCHECK
+	go get -u honnef.co/go/staticcheck/cmd/staticcheck
+endif
 	@# We can't vet the vendor directory, it fails.
 	go list ./... | grep -v vendor | xargs go vet
+	go list ./... | grep -v vendor | xargs staticcheck
 
 deploy:
 	git push heroku master

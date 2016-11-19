@@ -163,10 +163,9 @@ func writeConfig(b *bytes.Buffer, e environment) {
 	}
 
 	checkErr(validatePolicy(e), "loading policy from the environment")
-	ok = writeVal(b, e, "POLICY_FILE", "policy_file") || ok
-	specified, err := downloadFile(b, e, "POLICY_URL", "policy_file")
+	_ = writeVal(b, e, "POLICY_FILE", "policy_file")
+	_, err := downloadFile(b, e, "POLICY_URL", "policy_file")
 	checkErr(err, "downloading file from URL")
-	ok = ok || specified
 }
 
 // downloadFile assumes there is a URL at varname and attempts to download

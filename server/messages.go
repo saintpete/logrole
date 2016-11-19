@@ -272,7 +272,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
-	page := new(views.MessagePage)
+	var page *views.MessagePage
 	loc := s.LocationFinder.GetLocationReq(r)
 	var err error
 	startTime, endTime, wroteError := getTimes(w, r, "start", "end", loc, query, s)

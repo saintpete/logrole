@@ -206,7 +206,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	page := new(views.ConferencePage)
+	var page *views.ConferencePage
 	cachedAt := time.Time{}
 	start := time.Now()
 	if next != "" {

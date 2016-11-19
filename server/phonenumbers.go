@@ -137,7 +137,7 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
-	page := new(views.IncomingNumberPage)
+	var page *views.IncomingNumberPage
 	cachedAt := time.Time{}
 	start := time.Now()
 	if next != "" {
