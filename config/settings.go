@@ -232,7 +232,7 @@ func NewSettingsFromConfig(c *FileConfig, l log.Logger) (settings *Settings, err
 	}
 	var authenticator Authenticator
 	switch c.AuthScheme {
-	case "":
+	case "", "noop":
 		l.Warn("Disabling basic authentication")
 		authenticator = &NoopAuthenticator{User: DefaultUser}
 	case "basic":
