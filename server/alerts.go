@@ -401,7 +401,7 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			getAlertFrequency(alerts, "5 minutes", 5*time.Minute),
 			getAlertFrequency(alerts, "hour", time.Hour),
 			getAlertFrequency(alerts, "day", 24*time.Hour),
-			getAlertFrequency(alerts, "3 days", 24*time.Hour),
+			getAlertFrequency(alerts, "3 days", 3*24*time.Hour),
 		}
 		ad.Freq = freq
 	}
