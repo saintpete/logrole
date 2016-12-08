@@ -10,7 +10,7 @@ import (
 
 	"github.com/kevinburke/handlers"
 	"github.com/kevinburke/rest"
-	twilio "github.com/kevinburke/twilio-go"
+	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/services"
 )
 

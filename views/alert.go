@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	types "github.com/kevinburke/go-types"
-	twilio "github.com/kevinburke/twilio-go"
+	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/config"
 )
 

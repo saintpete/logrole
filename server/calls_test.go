@@ -12,7 +12,7 @@ import (
 
 func TestGetFiltersGeneratesCorrectQuery(t *testing.T) {
 	t.Parallel()
-	expected := "/Accounts/AC123/Calls.json?PageSize=1&StartTime%3C=2016-10-28&StartTime%3E=2016-10-27"
+	expected := "/2010-04-01/Accounts/AC123/Calls.json?PageSize=1&StartTime%3C=2016-10-28&StartTime%3E=2016-10-27"
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.String() != expected {
 			t.Errorf("expected URL to be %s, got %s", expected, r.URL.String())
@@ -40,7 +40,7 @@ func TestGetFiltersGeneratesCorrectQuery(t *testing.T) {
 
 func TestNoEndGeneratesCorrectQuery(t *testing.T) {
 	t.Parallel()
-	expected := "/Accounts/AC123/Calls.json?PageSize=1&StartTime%3E=2016-10-27"
+	expected := "/2010-04-01/Accounts/AC123/Calls.json?PageSize=1&StartTime%3E=2016-10-27"
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.String() != expected {
 			t.Errorf("expected URL to be %s, got %s", expected, r.URL.String())

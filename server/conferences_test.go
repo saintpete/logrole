@@ -49,7 +49,7 @@ func TestUnauthorizedUserCantViewConferenceInstance(t *testing.T) {
 
 func TestGetConferenceFiltersGeneratesCorrectQuery(t *testing.T) {
 	t.Parallel()
-	expected := "/Accounts/AC123/Conferences.json?DateCreated%3C=2016-10-28&DateCreated%3E=2016-10-27&PageSize=1"
+	expected := "/2010-04-01/Accounts/AC123/Conferences.json?DateCreated%3C=2016-10-28&DateCreated%3E=2016-10-27&PageSize=1"
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.String() != expected {
 			t.Errorf("expected URL to be %s, got %s", expected, r.URL.String())

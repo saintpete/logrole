@@ -11,7 +11,7 @@ import (
 
 	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/handlers"
-	twilio "github.com/kevinburke/twilio-go"
+	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/services"
 	yaml "gopkg.in/yaml.v2"
 )

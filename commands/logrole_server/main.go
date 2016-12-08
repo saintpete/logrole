@@ -13,7 +13,7 @@ import (
 
 	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/handlers"
-	twilio "github.com/kevinburke/twilio-go"
+	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/server"
 	"github.com/saintpete/logrole/services"
