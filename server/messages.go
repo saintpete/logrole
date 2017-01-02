@@ -10,13 +10,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aristanetworks/goarista/monotime"
 	log "github.com/inconshreveable/log15"
 	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/rest"
-	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	twilio "github.com/saintpete/twilio-go"
 	"golang.org/x/net/context"
 )
 
@@ -74,7 +75,7 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 	sid := messageInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	start := time.Now()
+	start := monotime.Now()
 	rch := make(chan *mediaResp, 1)
 	go func(sid string) {
 		urls, err := s.Client.GetMediaURLs(ctx, u, sid)
@@ -109,7 +110,10 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 		rest.Forbidden(w, r, &rest.Error{Title: "Cannot view this message"})
 		return
 	}
-	baseData := &baseData{LF: s.LocationFinder, Duration: time.Since(start)}
+	baseData := &baseData{
+		LF:       s.LocationFinder,
+		Duration: time.Duration(monotime.Now() - start),
+	}
 	data := &messageInstanceData{
 		Message:            message,
 		Loc:                s.LocationFinder.GetLocationReq(r),
@@ -272,7 +276,6 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
-	var page *views.MessagePage
 	loc := s.LocationFinder.GetLocationReq(r)
 	var err error
 	startTime, endTime, wroteError := getTimes(w, r, "start", "end", loc, query, s)
@@ -287,8 +290,9 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r, http.StatusBadRequest, query, err)
 		return
 	}
-	cachedAt := time.Time{}
-	start := time.Now()
+	var page *views.MessagePage
+	var cachedAt uint64
+	start := monotime.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
 			s.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
@@ -337,8 +341,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Since(start),
-		CachedAt: cachedAt,
+		Duration: time.Duration(monotime.Now() - start),
 		Data: &messageListData{
 			Page:                  page,
 			Loc:                   loc,
@@ -347,6 +350,9 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
 			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
 		}}
+	if cachedAt > 0 {
+		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := render(w, r, s.tpl, "base", data); err != nil {
 		s.renderError(w, r, http.StatusInternalServerError, query, err)

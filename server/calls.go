@@ -11,13 +11,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aristanetworks/goarista/monotime"
 	log "github.com/inconshreveable/log15"
 	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/rest"
-	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	twilio "github.com/saintpete/twilio-go"
 	"golang.org/x/net/context"
 )
 
@@ -194,8 +195,8 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var page *views.CallPage
-	cachedAt := time.Time{}
-	queryStart := time.Now()
+	var cachedAt uint64
+	queryStart := monotime.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
 			s.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
@@ -232,8 +233,10 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
-		CachedAt: cachedAt,
-		Duration: time.Since(queryStart),
+		Duration: time.Duration(monotime.Now() - queryStart),
+	}
+	if cachedAt > 0 {
+		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
 	}
 	data.Data = &callListData{
 		Page:                  page,
@@ -340,7 +343,7 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rch := make(chan *recordingResp, 1)
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	start := time.Now()
+	start := monotime.Now()
 	go c.fetchRecordings(ctx, sid, u, rch)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -374,7 +377,7 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 	data := &baseData{
 		LF:       c.LocationFinder,
-		Duration: time.Since(start),
+		Duration: time.Duration(monotime.Now() - start),
 	}
 	cid := &callInstanceData{
 		Call:       call,

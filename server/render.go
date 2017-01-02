@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aristanetworks/goarista/monotime"
 	"github.com/kevinburke/handlers"
 	"github.com/saintpete/logrole/assets"
 	"github.com/saintpete/logrole/services"
@@ -63,8 +64,8 @@ var year = time.Now().UTC().Year()
 // renderTime returns the amount of time since we began rendering this
 // template; it's designed to approximate the amount of time spent in the
 // render phase on the server.
-func renderTime(start time.Time) string {
-	return services.Duration(time.Since(start))
+func renderTime(start uint64) string {
+	return services.Duration(time.Duration(monotime.Now() - start))
 }
 
 var funcMap = template.FuncMap{
@@ -91,14 +92,16 @@ var templatePool = sync.Pool{
 }
 
 type baseData struct {
-	Duration  time.Duration
-	ReqStart  time.Time
-	CachedAt  time.Time
-	Start     time.Time
-	Path      string
-	LoggedOut bool
-	TZ        string
-	LF        services.LocationFinder
+	Duration    time.Duration
+	ReqDuration time.Duration
+	// Age of the cached response. Set to 0 to indicate request wasn't cached.
+	CachedDuration time.Duration
+	Start          uint64
+	Now            time.Time
+	Path           string
+	LoggedOut      bool
+	TZ             string
+	LF             services.LocationFinder
 	// Whatever data gets sent to the child template. Should have a Title
 	// property or Title() function.
 	Data interface{}
@@ -139,9 +142,10 @@ func maxLoc(l *time.Location) string {
 //
 // data should inherit from baseData
 func render(w io.Writer, r *http.Request, tpl *template.Template, name string, data *baseData) error {
-	data.Start = time.Now()
+	data.Start = monotime.Now()
+	data.Now = time.Now().UTC()
 	data.Path = r.URL.Path
-	data.ReqStart = handlers.GetStartTime(r.Context())
+	data.ReqDuration = handlers.GetDuration(r.Context())
 	if data.LF != nil {
 		data.TZ = data.LF.GetLocationReq(r).String()
 	}

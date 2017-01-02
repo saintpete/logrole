@@ -51,7 +51,7 @@
                   <option>Choose a timezone...</option>
                   {{- range .LF.Locations }}
                   <option value="{{ .String }}" {{ if eq $.TZ .String }}selected="selected"{{ end }}>
-                    {{ friendly_loc . }} ({{ tztime $.Start $.LF .String }})
+                    {{ friendly_loc . }} ({{ tztime $.Now $.LF .String }})
                   </option>
                   {{- end }}
                 </select>
@@ -83,14 +83,14 @@
     <footer class="footer">
       <div class="container-fluid">
         <div class="row timings">
-          {{- if not .ReqStart.IsZero }}
+          {{- if gt .ReqDuration 0 }}
           <div class="col-md-2">
-            Response time: {{ render .ReqStart }}
+            Response time: {{ duration .ReqDuration }}
           </div>
           {{- end }}
-          {{- if not .CachedAt.IsZero }}
+          {{- if gt .CachedDuration 0 }}
           <div class="col-md-2">
-            (from cache, {{ render .CachedAt }} old)
+            (from cache, {{ duration .CachedDuration }} old)
           </div>
           {{- else if gt .Duration 0 }}
           <div class="col-md-2">

@@ -11,13 +11,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aristanetworks/goarista/monotime"
 	log "github.com/inconshreveable/log15"
 	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/rest"
-	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	twilio "github.com/saintpete/twilio-go"
 	"golang.org/x/net/context"
 )
 
@@ -115,7 +116,7 @@ func (s *alertInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
 	sid := alertInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
-	start := time.Now()
+	start := monotime.Now()
 	alert, err := s.Client.GetAlert(ctx, u, sid)
 	switch err {
 	case nil:
@@ -139,7 +140,7 @@ func (s *alertInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Since(start),
+		Duration: time.Duration(monotime.Now() - start),
 		Data: &alertInstanceData{
 			Alert: alert,
 			Loc:   s.LocationFinder.GetLocationReq(r),
@@ -336,8 +337,8 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var page *views.AlertPage
-	cachedAt := time.Time{}
-	start := time.Now()
+	var cachedAt uint64
+	start := monotime.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, twilio.MonitorBaseURL) {
 			s.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
@@ -385,8 +386,10 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
-		CachedAt: cachedAt,
-		Duration: time.Since(start),
+		Duration: time.Duration(monotime.Now() - start),
+	}
+	if cachedAt > 0 {
+		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
 	}
 	ad := &alertListData{
 		Page:                  page,

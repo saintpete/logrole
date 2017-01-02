@@ -10,13 +10,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aristanetworks/goarista/monotime"
 	log "github.com/inconshreveable/log15"
 	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/rest"
-	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	twilio "github.com/saintpete/twilio-go"
 	"golang.org/x/net/context"
 )
 
@@ -207,8 +208,8 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
 	var page *views.ConferencePage
-	cachedAt := time.Time{}
-	start := time.Now()
+	var cachedAt uint64
+	start := monotime.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
 			c.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
@@ -243,10 +244,9 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		}
 	}(u, page.NextPageURI(), startTime, endTime)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err = render(w, r, c.tpl, "base", &baseData{
+	data := &baseData{
 		LF:       c.LocationFinder,
-		CachedAt: cachedAt,
-		Duration: time.Since(start),
+		Duration: time.Duration(monotime.Now() - start),
 		Data: &conferenceListData{
 			Query:                 r.URL.Query(),
 			Page:                  page,
@@ -254,8 +254,11 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), c.secretKey),
 			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), c.secretKey),
 		},
-	})
-	if err != nil {
+	}
+	if cachedAt > 0 {
+		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
+	}
+	if err = render(w, r, c.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
 	}
 }
@@ -273,7 +276,7 @@ func (c *conferenceInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	sid := conferenceInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	start := time.Now()
+	start := monotime.Now()
 	conference, err := c.Client.GetConference(ctx, u, sid)
 	switch err {
 	case nil:
@@ -297,7 +300,7 @@ func (c *conferenceInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	}
 	data := &baseData{
 		LF:       c.LocationFinder,
-		Duration: time.Since(start),
+		Duration: time.Duration(monotime.Now() - start),
 		Data: &conferenceInstanceData{
 			Conference: conference,
 			Loc:        c.LocationFinder.GetLocationReq(r),

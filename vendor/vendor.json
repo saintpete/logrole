@@ -20,6 +20,12 @@
 			"revisionTime": "2016-11-08T21:42:06Z"
 		},
 		{
+			"checksumSHA1": "y9DYOmNAIdP9y7h0qlkWN+X/ojY=",
+			"path": "github.com/aristanetworks/goarista/monotime",
+			"revision": "34c98d5e5f9b0c0a627fb48fd28ec6392dae5dbf",
+			"revisionTime": "2016-12-30T08:24:03Z"
+		},
+		{
 			"checksumSHA1": "D8gUHzS23ynNPS4imXcAqGnfTck=",
 			"path": "github.com/certifi/gocertifi",
 			"revision": "a61bf5eafa3aee233ec8043e9da052447e5463dd",
@@ -68,10 +74,10 @@
 			"revisionTime": "2016-10-19T05:17:10Z"
 		},
 		{
-			"checksumSHA1": "AelMKUOlHEfoLj9gstapdgOuORU=",
+			"checksumSHA1": "VSCuDjqaPzrJfc41CveaqInpm4U=",
 			"path": "github.com/kevinburke/handlers",
-			"revision": "2ea5ccc3d822eb515c76f3fb9fd7d243e7f0bd48",
-			"revisionTime": "2016-11-03T05:56:42Z"
+			"revision": "dcdee59d3df268c2b0f842a206873b7f388849a1",
+			"revisionTime": "2017-01-02T18:12:49Z"
 		},
 		{
 			"checksumSHA1": "ftX244Ta16KyiS2XO72kI7yfVko=",

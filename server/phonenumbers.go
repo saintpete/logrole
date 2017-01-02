@@ -12,13 +12,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aristanetworks/goarista/monotime"
 	log "github.com/inconshreveable/log15"
 	types "github.com/kevinburke/go-types"
 	"github.com/kevinburke/rest"
-	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
+	twilio "github.com/saintpete/twilio-go"
 )
 
 // We handle two different routes - /phone-numbers/PN123 and
@@ -138,8 +139,8 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var page *views.IncomingNumberPage
-	cachedAt := time.Time{}
-	start := time.Now()
+	var cachedAt uint64
+	start := monotime.Now()
 	if next != "" {
 		if !strings.HasPrefix(next, "/"+twilio.APIVersion) {
 			s.Warn("Invalid next page URI", "next", next, "opaque", query.Get("next"))
@@ -186,8 +187,7 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI())
 	data := &baseData{
 		LF:       s.LocationFinder,
-		CachedAt: cachedAt,
-		Duration: time.Since(start),
+		Duration: time.Duration(monotime.Now() - start),
 		Data: &numberListData{
 			Page:                  page,
 			Query:                 query,
@@ -195,6 +195,9 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
 			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
 		}}
+	if cachedAt > 0 {
+		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
 	if err := render(w, r, s.tpl, "base", data); err != nil {
@@ -319,7 +322,7 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	innerData := &numberInstanceData{
 		Loc: loc,
 	}
-	start := time.Now()
+	start := monotime.Now()
 	number, err := s.Client.GetIncomingNumberByPN(ctx, u, pn)
 	go func() {
 		// get SMS from this number
@@ -422,7 +425,7 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(200)
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Since(start),
+		Duration: time.Duration(monotime.Now() - start),
 		Data:     innerData,
 	}
 	if err := render(w, r, s.tpl, "base", data); err != nil {

@@ -11,6 +11,7 @@ WRITE_MAILMAP := $(shell command -v write_mailmap)
 STATICCHECK := $(shell command -v staticcheck)
 
 WATCH_TARGETS = static/css/style.css \
+	templates/base.html \
 	templates/phone-numbers/list.html templates/phone-numbers/instance.html \
 	templates/conferences/instance.html templates/conferences/list.html \
 	templates/alerts/list.html templates/alerts/instance.html \
