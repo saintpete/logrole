@@ -233,10 +233,10 @@ func (s *callListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Duration(monotime.Now() - queryStart),
+		Duration: monotime.Since(queryStart),
 	}
 	if cachedAt > 0 {
-		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
+		data.CachedDuration = monotime.Since(cachedAt)
 	}
 	data.Data = &callListData{
 		Page:                  page,
@@ -377,7 +377,7 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 	data := &baseData{
 		LF:       c.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 	}
 	cid := &callInstanceData{
 		Call:       call,

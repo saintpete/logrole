@@ -187,7 +187,7 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI())
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 		Data: &numberListData{
 			Page:                  page,
 			Query:                 query,
@@ -196,7 +196,7 @@ func (s *numberListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			EncryptedPreviousPage: getEncryptedPage(page.PreviousPageURI(), s.secretKey),
 		}}
 	if cachedAt > 0 {
-		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
+		data.CachedDuration = monotime.Since(cachedAt)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
@@ -425,7 +425,7 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(200)
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 		Data:     innerData,
 	}
 	if err := render(w, r, s.tpl, "base", data); err != nil {

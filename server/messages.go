@@ -112,7 +112,7 @@ func (s *messageInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 	baseData := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 	}
 	data := &messageInstanceData{
 		Message:            message,
@@ -341,7 +341,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 		Data: &messageListData{
 			Page:                  page,
 			Loc:                   loc,
@@ -351,7 +351,7 @@ func (s *messageListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			EncryptedNextPage:     getEncryptedPage(page.NextPageURI(), s.secretKey),
 		}}
 	if cachedAt > 0 {
-		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
+		data.CachedDuration = monotime.Since(cachedAt)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := render(w, r, s.tpl, "base", data); err != nil {

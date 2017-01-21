@@ -140,7 +140,7 @@ func (s *alertInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 		Data: &alertInstanceData{
 			Alert: alert,
 			Loc:   s.LocationFinder.GetLocationReq(r),
@@ -386,10 +386,10 @@ func (s *alertListServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}(u, page.NextPageURI(), startTime, endTime)
 	data := &baseData{
 		LF:       s.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 	}
 	if cachedAt > 0 {
-		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
+		data.CachedDuration = monotime.Since(cachedAt)
 	}
 	ad := &alertListData{
 		Page:                  page,

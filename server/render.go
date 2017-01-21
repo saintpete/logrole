@@ -65,7 +65,7 @@ var year = time.Now().UTC().Year()
 // template; it's designed to approximate the amount of time spent in the
 // render phase on the server.
 func renderTime(start uint64) string {
-	return services.Duration(time.Duration(monotime.Now() - start))
+	return services.Duration(monotime.Since(start))
 }
 
 var funcMap = template.FuncMap{

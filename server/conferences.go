@@ -246,7 +246,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := &baseData{
 		LF:       c.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 		Data: &conferenceListData{
 			Query:                 r.URL.Query(),
 			Page:                  page,
@@ -256,7 +256,7 @@ func (c *conferenceListServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		},
 	}
 	if cachedAt > 0 {
-		data.CachedDuration = time.Duration(monotime.Now() - cachedAt)
+		data.CachedDuration = monotime.Since(cachedAt)
 	}
 	if err = render(w, r, c.tpl, "base", data); err != nil {
 		rest.ServerError(w, r, err)
@@ -300,7 +300,7 @@ func (c *conferenceInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	}
 	data := &baseData{
 		LF:       c.LocationFinder,
-		Duration: time.Duration(monotime.Now() - start),
+		Duration: monotime.Since(start),
 		Data: &conferenceInstanceData{
 			Conference: conference,
 			Loc:        c.LocationFinder.GetLocationReq(r),
