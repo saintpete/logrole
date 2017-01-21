@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/aristanetworks/goarista/monotime"
@@ -20,6 +19,7 @@ import (
 	"github.com/saintpete/logrole/views"
 	twilio "github.com/saintpete/twilio-go"
 	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
 )
 
 const callPattern = `(?P<sid>CA[a-f0-9]{32})`
@@ -345,14 +345,13 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	start := monotime.Now()
 	go c.fetchRecordings(ctx, sid, u, rch)
-	var wg sync.WaitGroup
-	wg.Add(1)
+	g, errctx := errgroup.WithContext(ctx)
 	var alerts *views.AlertPage
-	var alertsErr error
-	go func() {
-		alerts, alertsErr = c.Client.GetCallAlerts(ctx, u, sid)
-		wg.Done()
-	}()
+	g.Go(func() error {
+		var err error
+		alerts, err = c.Client.GetCallAlerts(errctx, u, sid)
+		return err
+	})
 	call, err := c.Client.GetCall(ctx, u, sid)
 	switch err {
 	case nil:
@@ -374,7 +373,7 @@ func (c *callInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	wg.Wait()
+	alertsErr := g.Wait()
 	data := &baseData{
 		LF:       c.LocationFinder,
 		Duration: monotime.Since(start),

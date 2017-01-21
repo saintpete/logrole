@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/aristanetworks/goarista/monotime"
@@ -20,6 +19,7 @@ import (
 	"github.com/saintpete/logrole/services"
 	"github.com/saintpete/logrole/views"
 	twilio "github.com/saintpete/twilio-go"
+	"golang.org/x/sync/errgroup"
 )
 
 // We handle two different routes - /phone-numbers/PN123 and
@@ -316,86 +316,13 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	pn := numberInstanceRoute.FindStringSubmatch(r.URL.Path)[1]
 	ctx, cancel := getContext(r.Context(), 3*time.Second)
 	defer cancel()
-	var wg sync.WaitGroup
-	wg.Add(4)
+	g, errctx := errgroup.WithContext(ctx)
 	loc := s.LocationFinder.GetLocationReq(r)
 	innerData := &numberInstanceData{
 		Loc: loc,
 	}
 	start := monotime.Now()
 	number, err := s.Client.GetIncomingNumberByPN(ctx, u, pn)
-	go func() {
-		// get SMS from this number
-		data := url.Values{}
-		data.Set("From", pn)
-		data.Set("PageSize", "20")
-		fromMsgs, _, err := s.Client.GetMessagePageInRange(ctx, u, twilio.Epoch, twilio.HeatDeath, data)
-		if err == nil || err == twilio.NoMoreResults {
-			innerData.SMSFrom = &msgPageLoc{
-				Page:   fromMsgs,
-				IsFrom: true,
-				Loc:    loc,
-				Number: pn,
-			}
-		} else {
-			innerData.SMSFromErr = err.Error()
-		}
-		wg.Done()
-	}()
-	go func() {
-		// get SMS to this number
-		data := url.Values{}
-		data.Set("To", pn)
-		data.Set("PageSize", "20")
-		toMsgs, _, err := s.Client.GetMessagePageInRange(ctx, u, twilio.Epoch, twilio.HeatDeath, data)
-		if err == nil || err == twilio.NoMoreResults {
-			innerData.SMSTo = &msgPageLoc{
-				Page:   toMsgs,
-				IsFrom: false,
-				Loc:    loc,
-				Number: pn,
-			}
-		} else {
-			innerData.SMSToErr = err.Error()
-		}
-		wg.Done()
-	}()
-	go func() {
-		// get Calls to this number
-		data := url.Values{}
-		data.Set("To", pn)
-		data.Set("PageSize", "20")
-		callsTo, _, err := s.Client.GetCallPageInRange(ctx, u, twilio.Epoch, twilio.HeatDeath, data)
-		if err == nil || err == twilio.NoMoreResults {
-			innerData.CallsTo = &callPageLoc{
-				Page:   callsTo,
-				IsFrom: false,
-				Loc:    loc,
-				Number: pn,
-			}
-		} else {
-			innerData.CallsToErr = err.Error()
-		}
-		wg.Done()
-	}()
-	go func() {
-		// get Calls from this number
-		data := url.Values{}
-		data.Set("From", pn)
-		data.Set("PageSize", "20")
-		callsFrom, _, err := s.Client.GetCallPageInRange(ctx, u, twilio.Epoch, twilio.HeatDeath, data)
-		if err == nil || err == twilio.NoMoreResults {
-			innerData.CallsFrom = &callPageLoc{
-				Page:   callsFrom,
-				IsFrom: false,
-				Loc:    loc,
-				Number: pn,
-			}
-		} else {
-			innerData.CallsFromErr = err.Error()
-		}
-		wg.Done()
-	}()
 	switch err {
 	case nil:
 		break
@@ -419,8 +346,80 @@ func (s *numberInstanceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			return
 		}
 	}
-	wg.Wait()
 	innerData.Number = number
+	g.Go(func() error {
+		// get SMS from this number
+		data := url.Values{}
+		data.Set("From", pn)
+		data.Set("PageSize", "20")
+		fromMsgs, _, err := s.Client.GetMessagePageInRange(errctx, u, twilio.Epoch, twilio.HeatDeath, data)
+		if err == nil || err == twilio.NoMoreResults {
+			innerData.SMSFrom = &msgPageLoc{
+				Page:   fromMsgs,
+				IsFrom: true,
+				Loc:    loc,
+				Number: pn,
+			}
+		} else {
+			innerData.SMSFromErr = err.Error()
+		}
+		return nil
+	})
+	g.Go(func() error {
+		// get SMS to this number
+		data := url.Values{}
+		data.Set("To", pn)
+		data.Set("PageSize", "20")
+		toMsgs, _, err := s.Client.GetMessagePageInRange(errctx, u, twilio.Epoch, twilio.HeatDeath, data)
+		if err == nil || err == twilio.NoMoreResults {
+			innerData.SMSTo = &msgPageLoc{
+				Page:   toMsgs,
+				IsFrom: false,
+				Loc:    loc,
+				Number: pn,
+			}
+		} else {
+			innerData.SMSToErr = err.Error()
+		}
+		return nil
+	})
+	g.Go(func() error {
+		// get Calls to this number
+		data := url.Values{}
+		data.Set("To", pn)
+		data.Set("PageSize", "20")
+		callsTo, _, err := s.Client.GetCallPageInRange(errctx, u, twilio.Epoch, twilio.HeatDeath, data)
+		if err == nil || err == twilio.NoMoreResults {
+			innerData.CallsTo = &callPageLoc{
+				Page:   callsTo,
+				IsFrom: false,
+				Loc:    loc,
+				Number: pn,
+			}
+		} else {
+			innerData.CallsToErr = err.Error()
+		}
+		return nil
+	})
+	g.Go(func() error {
+		// get Calls from this number
+		data := url.Values{}
+		data.Set("From", pn)
+		data.Set("PageSize", "20")
+		callsFrom, _, err := s.Client.GetCallPageInRange(errctx, u, twilio.Epoch, twilio.HeatDeath, data)
+		if err == nil || err == twilio.NoMoreResults {
+			innerData.CallsFrom = &callPageLoc{
+				Page:   callsFrom,
+				IsFrom: false,
+				Loc:    loc,
+				Number: pn,
+			}
+		} else {
+			innerData.CallsFromErr = err.Error()
+		}
+		return nil
+	})
+	g.Wait()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
 	data := &baseData{
