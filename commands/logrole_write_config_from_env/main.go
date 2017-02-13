@@ -65,7 +65,6 @@ POLICY_URL             Download policy info from the specified URL. HTTPS only.
 Usage of write_config_from_env:
 `)
 		flag.PrintDefaults()
-		os.Exit(2)
 	}
 }
 

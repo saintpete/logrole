@@ -13,10 +13,10 @@ import (
 
 	log "github.com/inconshreveable/log15"
 	"github.com/kevinburke/handlers"
-	twilio "github.com/saintpete/twilio-go"
 	"github.com/saintpete/logrole/config"
 	"github.com/saintpete/logrole/server"
 	"github.com/saintpete/logrole/services"
+	twilio "github.com/saintpete/twilio-go"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -32,7 +32,6 @@ current directory) and passed to the binary via the --config flag.
 Usage of server:
 `)
 		flag.PrintDefaults()
-		os.Exit(2)
 	}
 
 	logger = handlers.Logger

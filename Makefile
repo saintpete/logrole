@@ -45,7 +45,7 @@ serve:
 
 vet:
 ifndef STATICCHECK
-	go get -u honnef.co/go/staticcheck/cmd/staticcheck
+	go get -u honnef.co/go/tools/cmd/staticcheck
 endif
 	@# We can't vet the vendor directory, it fails.
 	go list ./... | grep -v vendor | xargs go vet
