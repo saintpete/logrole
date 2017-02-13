@@ -1,5 +1,17 @@
 # Changes
 
+## 1.5
+
+Ensure repository works with latest version of kevinburke/rest.
+
+## 1.4
+
+- Use a monotonic clock for reporting durations.
+- Slight improvements to error handling and cancellation when actions are
+  completed in parallel.
+- 3 day alert view had problems.
+- Slight improvement for list view filters on normal sized laptops.
+
 ## 1.1
 
 Tweak the README/homepage and describe how to contribute to the project.
