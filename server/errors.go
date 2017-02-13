@@ -110,9 +110,9 @@ func (e *errorServer) Serve500(w http.ResponseWriter, r *http.Request) {
 }
 
 func registerErrorHandlers(e *errorServer) {
-	rest.RegisterHandler(401, e.Serve401)
-	rest.RegisterHandler(403, e.Serve403)
-	rest.RegisterHandler(404, e.Serve404)
-	rest.RegisterHandler(405, e.Serve405)
-	rest.RegisterHandler(500, e.Serve500)
+	rest.RegisterHandler(401, http.HandlerFunc(e.Serve401))
+	rest.RegisterHandler(403, http.HandlerFunc(e.Serve403))
+	rest.RegisterHandler(404, http.HandlerFunc(e.Serve404))
+	rest.RegisterHandler(405, http.HandlerFunc(e.Serve405))
+	rest.RegisterHandler(500, http.HandlerFunc(e.Serve500))
 }
