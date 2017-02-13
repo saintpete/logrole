@@ -96,6 +96,14 @@ endif
 loc:
 	cloc --exclude-dir=.git,tmp,vendor --not-match-f='bootstrap.min.css|all.css|bindata.go' .
 
+# For Travis. Run the tests with unvendored dependencies, just check the latest
+# version of everything out to the GOPATH.
+unvendored:
+	rm -rf vendor/*/
+	go get -u ./...
+	$(MAKE) race-test
+	govendor sync
+
 authors:
 ifndef WRITE_MAILMAP
 	go get github.com/kevinburke/write_mailmap
